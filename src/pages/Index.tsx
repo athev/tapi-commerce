@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -6,6 +5,7 @@ import HeroBanner from "@/components/home/HeroBanner";
 import FeaturedCategories from "@/components/home/FeaturedCategories";
 import ProductGrid from "@/components/products/ProductGrid";
 import { ProductCardProps } from "@/components/products/ProductCard";
+import { Button } from "@/components/ui/button";
 
 // Mock data
 const featuredProducts: ProductCardProps[] = [
