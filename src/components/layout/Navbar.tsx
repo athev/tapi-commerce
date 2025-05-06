@@ -1,16 +1,30 @@
 
-import { Link } from "react-router-dom";
-import { Search, ShoppingCart, User } from "lucide-react";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Search, ShoppingCart, User, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger 
+  DropdownMenuTrigger,
+  DropdownMenuSeparator 
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/context/AuthContext";
 
 const Navbar = () => {
+  const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      navigate(`/?search=${encodeURIComponent(searchTerm)}`);
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
       <div className="container flex h-16 items-center">
@@ -36,28 +50,32 @@ const Navbar = () => {
         </nav>
 
         {/* Search */}
-        <div className="hidden w-full max-w-sm md:flex items-center space-x-2 px-4">
+        <form onSubmit={handleSearch} className="hidden w-full max-w-sm md:flex items-center space-x-2 px-4">
           <Input 
             type="search" 
             placeholder="Tìm kiếm sản phẩm..." 
             className="h-9 md:w-[200px] lg:w-[300px]"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <Button size="icon" variant="ghost" className="h-9 w-9 text-muted-foreground">
+          <Button type="submit" size="icon" variant="ghost" className="h-9 w-9 text-muted-foreground">
             <Search className="h-4 w-4" />
             <span className="sr-only">Tìm kiếm</span>
           </Button>
-        </div>
+        </form>
 
         {/* User menu */}
         <div className="flex items-center space-x-4">
-          <Link to="/cart">
-            <Button variant="ghost" size="icon" className="relative">
-              <ShoppingCart className="h-5 w-5" />
-              <span className="absolute -right-1 -top-1 h-5 w-5 rounded-full bg-marketplace-primary text-xs font-medium text-white flex items-center justify-center">
-                0
-              </span>
-            </Button>
-          </Link>
+          {user && (
+            <Link to="/cart">
+              <Button variant="ghost" size="icon" className="relative">
+                <ShoppingCart className="h-5 w-5" />
+                <span className="absolute -right-1 -top-1 h-5 w-5 rounded-full bg-marketplace-primary text-xs font-medium text-white flex items-center justify-center">
+                  0
+                </span>
+              </Button>
+            </Link>
+          )}
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -66,15 +84,35 @@ const Navbar = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem asChild>
-                <Link to="/login">Đăng nhập</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/register">Đăng ký</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/seller/dashboard">Kênh người bán</Link>
-              </DropdownMenuItem>
+              {user ? (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link to="/my-account">Tài khoản của tôi</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/my-purchases">Sản phẩm đã mua</Link>
+                  </DropdownMenuItem>
+                  {profile?.role === 'seller' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/seller/dashboard">Kênh người bán</Link>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => signOut()}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Đăng xuất</span>
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link to="/login">Đăng nhập</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/register">Đăng ký</Link>
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

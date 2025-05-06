@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
 const Register = () => {
@@ -17,13 +18,20 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const { signUp, user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     document.title = "Đăng ký | DigitalMarket";
-  }, []);
+    
+    // Redirect if user is already logged in
+    if (user) {
+      navigate("/");
+    }
+  }, [user, navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
@@ -46,14 +54,24 @@ const Register = () => {
     
     setIsLoading(true);
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    try {
+      const { error } = await signUp(email, password, fullName);
+      if (!error) {
+        toast({
+          title: "Đăng ký thành công",
+          description: "Vui lòng kiểm tra email để xác nhận tài khoản.",
+        });
+        navigate("/login");
+      }
+    } catch (error) {
       toast({
-        title: "Đăng ký thành công",
-        description: "Chào mừng bạn đến với DigitalMarket!",
+        title: "Đăng ký thất bại",
+        description: error.message,
+        variant: "destructive",
       });
-    }, 1500);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
