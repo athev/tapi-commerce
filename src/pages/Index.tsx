@@ -8,7 +8,7 @@ import FeaturedCategories from "@/components/home/FeaturedCategories";
 import ProductGrid from "@/components/products/ProductGrid";
 import { ProductCardProps } from "@/components/products/ProductCard";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/lib/supabase";
+import { supabase, mockCategories, mockProducts } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -39,13 +39,18 @@ const Index = () => {
   const { data: categories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*')
-        .order('name');
-      
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('*')
+          .order('name');
+        
+        if (error) throw error;
+        return data;
+      } catch (error) {
+        console.warn('Error fetching categories, using mock data', error);
+        return mockCategories;
+      }
     },
   });
   
@@ -53,37 +58,70 @@ const Index = () => {
   const { data: products, isLoading } = useQuery({
     queryKey: ['products', activeCategory, searchTerm],
     queryFn: async () => {
-      let query = supabase.from('products').select('*');
-      
-      // Apply category filter
-      if (activeCategory !== "all") {
-        query = query.eq('category', activeCategory);
+      try {
+        let query = supabase.from('products').select('*');
+        
+        // Apply category filter
+        if (activeCategory !== "all") {
+          query = query.eq('category', activeCategory);
+        }
+        
+        // Apply search filter
+        if (searchTerm) {
+          query = query.ilike('title', `%${searchTerm}%`);
+        }
+        
+        const { data, error } = await query.order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        return data.map(item => ({
+          id: item.id,
+          title: item.title,
+          price: { min: item.price, max: item.price },
+          image: item.image || '/placeholder.svg',
+          category: item.category,
+          rating: 4.5, // Default or calculate from reviews
+          reviews: item.purchases || 0,
+          seller: {
+            name: item.seller_name,
+            verified: true,
+          },
+          inStock: item.in_stock,
+          isNew: new Date(item.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        }));
+      } catch (error) {
+        console.warn('Error fetching products, using mock data', error);
+        
+        // Filter mock data based on category and search term
+        let filteredProducts = [...mockProducts];
+        
+        if (activeCategory !== "all") {
+          filteredProducts = filteredProducts.filter(p => p.category === activeCategory);
+        }
+        
+        if (searchTerm) {
+          filteredProducts = filteredProducts.filter(p => 
+            p.title.toLowerCase().includes(searchTerm.toLowerCase())
+          );
+        }
+        
+        return filteredProducts.map(item => ({
+          id: item.id,
+          title: item.title,
+          price: { min: item.price, max: item.price },
+          image: item.image || '/placeholder.svg',
+          category: item.category,
+          rating: 4.5,
+          reviews: item.purchases || 0,
+          seller: {
+            name: item.seller_name,
+            verified: true,
+          },
+          inStock: item.in_stock,
+          isNew: new Date(item.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        }));
       }
-      
-      // Apply search filter
-      if (searchTerm) {
-        query = query.ilike('title', `%${searchTerm}%`);
-      }
-      
-      const { data, error } = await query.order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      return data.map(item => ({
-        id: item.id,
-        title: item.title,
-        price: { min: item.price, max: item.price },
-        image: item.image || '/placeholder.svg',
-        category: item.category,
-        rating: 4.5, // Default or calculate from reviews
-        reviews: item.purchases || 0,
-        seller: {
-          name: item.seller_name,
-          verified: true,
-        },
-        inStock: item.in_stock,
-        isNew: new Date(item.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-      }));
     },
   });
   
@@ -91,29 +129,50 @@ const Index = () => {
   const { data: newProducts } = useQuery({
     queryKey: ['newProducts'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
-      
-      if (error) throw error;
-      
-      return data.map(item => ({
-        id: item.id,
-        title: item.title,
-        price: { min: item.price, max: item.price },
-        image: item.image || '/placeholder.svg',
-        category: item.category,
-        rating: 4.5, // Default or calculate from reviews
-        reviews: item.purchases || 0,
-        seller: {
-          name: item.seller_name,
-          verified: true,
-        },
-        inStock: item.in_stock,
-        isNew: true,
-      }));
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(5);
+        
+        if (error) throw error;
+        
+        return data.map(item => ({
+          id: item.id,
+          title: item.title,
+          price: { min: item.price, max: item.price },
+          image: item.image || '/placeholder.svg',
+          category: item.category,
+          rating: 4.5, // Default or calculate from reviews
+          reviews: item.purchases || 0,
+          seller: {
+            name: item.seller_name,
+            verified: true,
+          },
+          inStock: item.in_stock,
+          isNew: true,
+        }));
+      } catch (error) {
+        console.warn('Error fetching new products, using mock data', error);
+        
+        // Use the first 5 mock products as "new products"
+        return mockProducts.slice(0, 5).map(item => ({
+          id: item.id,
+          title: item.title,
+          price: { min: item.price, max: item.price },
+          image: item.image || '/placeholder.svg',
+          category: item.category,
+          rating: 4.5,
+          reviews: item.purchases || 0,
+          seller: {
+            name: item.seller_name,
+            verified: true,
+          },
+          inStock: item.in_stock,
+          isNew: true,
+        }));
+      }
     },
   });
   
