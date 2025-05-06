@@ -1,0 +1,86 @@
+
+import { Link } from "react-router-dom";
+import { Search, ShoppingCart, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+
+const Navbar = () => {
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
+      <div className="container flex h-16 items-center">
+        {/* Logo */}
+        <Link to="/" className="mr-6 flex items-center">
+          <span className="text-xl font-bold text-marketplace-primary">DigitalMarket</span>
+        </Link>
+
+        {/* Navigation */}
+        <nav className="hidden md:flex flex-1 items-center space-x-4 lg:space-x-6">
+          <Link to="/products" className="text-sm font-medium transition-colors hover:text-marketplace-primary">
+            Sản phẩm
+          </Link>
+          <Link to="/services" className="text-sm font-medium transition-colors hover:text-marketplace-primary">
+            Dịch vụ
+          </Link>
+          <Link to="/categories" className="text-sm font-medium transition-colors hover:text-marketplace-primary">
+            Danh mục
+          </Link>
+          <Link to="/help" className="text-sm font-medium transition-colors hover:text-marketplace-primary">
+            Hỗ trợ
+          </Link>
+        </nav>
+
+        {/* Search */}
+        <div className="hidden w-full max-w-sm md:flex items-center space-x-2 px-4">
+          <Input 
+            type="search" 
+            placeholder="Tìm kiếm sản phẩm..." 
+            className="h-9 md:w-[200px] lg:w-[300px]"
+          />
+          <Button size="icon" variant="ghost" className="h-9 w-9 text-muted-foreground">
+            <Search className="h-4 w-4" />
+            <span className="sr-only">Tìm kiếm</span>
+          </Button>
+        </div>
+
+        {/* User menu */}
+        <div className="flex items-center space-x-4">
+          <Link to="/cart">
+            <Button variant="ghost" size="icon" className="relative">
+              <ShoppingCart className="h-5 w-5" />
+              <span className="absolute -right-1 -top-1 h-5 w-5 rounded-full bg-marketplace-primary text-xs font-medium text-white flex items-center justify-center">
+                0
+              </span>
+            </Button>
+          </Link>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <User className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link to="/login">Đăng nhập</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/register">Đăng ký</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/seller/dashboard">Kênh người bán</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </header>
+  );
+};
+
+export default Navbar;
