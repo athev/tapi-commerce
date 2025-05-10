@@ -12,6 +12,9 @@ import Register from "./pages/Register";
 import MyAccount from "./pages/MyAccount";
 import NotFound from "./pages/NotFound";
 import Payment from "./pages/Payment";
+import SellerDashboard from "./pages/SellerDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +32,21 @@ const App = () => (
             <Route path="/register" element={<Register />} />
             <Route path="/my-account" element={<MyAccount />} />
             <Route path="/payment/:orderId" element={<Payment />} />
+            
+            {/* Protected Seller Routes */}
+            <Route path="/seller/*" element={
+              <ProtectedRoute allowedRoles={['seller', 'admin']}>
+                <SellerDashboard />
+              </ProtectedRoute>
+            } />
+            
+            {/* Protected Admin Routes */}
+            <Route path="/admin/*" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            } />
+            
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
