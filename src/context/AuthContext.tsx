@@ -3,6 +3,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { Session, User } from '@supabase/supabase-js';
 import { supabase, UserProfile } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 type AuthContextType = {
   session: Session | null;
@@ -10,7 +11,7 @@ type AuthContextType = {
   profile: UserProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any, success: boolean }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 };
@@ -21,7 +22,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   signIn: async () => ({ error: null }),
-  signUp: async () => ({ error: null }),
+  signUp: async () => ({ error: null, success: false }),
   signOut: async () => {},
   refreshProfile: async () => {},
 });
@@ -33,37 +34,46 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const { toast: toastNotification } = useToast();
 
   // Fetch user profile from profiles table
   const fetchProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-    if (error) {
-      console.error('Error fetching profile:', error);
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+      
+      return data as UserProfile;
+    } catch (error) {
+      console.error('Error in fetchProfile:', error);
       return null;
     }
-    
-    return data as UserProfile;
   };
 
   // Initialize user session
   useEffect(() => {
     const initSession = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      if (currentSession?.user) {
-        const userProfile = await fetchProfile(currentSession.user.id);
-        setProfile(userProfile);
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        if (currentSession?.user) {
+          const userProfile = await fetchProfile(currentSession.user.id);
+          setProfile(userProfile);
+        }
+      } catch (error) {
+        console.error('Error initializing session:', error);
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
 
     initSession();
@@ -71,17 +81,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        
-        if (newSession?.user) {
-          const userProfile = await fetchProfile(newSession.user.id);
-          setProfile(userProfile);
-        } else {
-          setProfile(null);
+        try {
+          setSession(newSession);
+          setUser(newSession?.user ?? null);
+          
+          if (newSession?.user) {
+            const userProfile = await fetchProfile(newSession.user.id);
+            setProfile(userProfile);
+          } else {
+            setProfile(null);
+          }
+        } catch (error) {
+          console.error('Error in auth state change:', error);
+        } finally {
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
@@ -99,7 +113,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (data.user) {
         const userProfile = await fetchProfile(data.user.id);
         setProfile(userProfile);
-        toast({
+        toastNotification({
           title: "Đăng nhập thành công",
           description: "Chào mừng bạn quay trở lại!",
         });
@@ -107,9 +121,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       return { error: null };
     } catch (error) {
-      toast({
+      console.error('Sign in error:', error);
+      toastNotification({
         title: "Đăng nhập thất bại",
-        description: error.message,
+        description: error.message || "Không thể kết nối đến máy chủ. Vui lòng thử lại sau.",
         variant: "destructive",
       });
       return { error };
@@ -119,6 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Sign up with email and password
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
+      // First try to create the auth user
       const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
@@ -133,29 +149,60 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Create profile with role = end-user
       if (data.user) {
-        const { error: profileError } = await supabase.from('profiles').insert({
-          id: data.user.id,
-          email: email,
-          full_name: fullName,
-          role: 'end-user',
-        });
-        
-        if (profileError) throw profileError;
-        
-        toast({
-          title: "Đăng ký thành công",
-          description: "Vui lòng kiểm tra email để xác nhận tài khoản",
-        });
+        try {
+          const { error: profileError } = await supabase.from('profiles').insert({
+            id: data.user.id,
+            email: email,
+            full_name: fullName,
+            role: 'end-user',
+          });
+          
+          if (profileError) {
+            console.error('Profile creation error:', profileError);
+            // Even if profile creation fails, we still created the auth user
+            toast.success("Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản.");
+            return { error: null, success: true };
+          }
+          
+          toastNotification({
+            title: "Đăng ký thành công",
+            description: "Vui lòng kiểm tra email để xác nhận tài khoản",
+          });
+          
+          return { error: null, success: true };
+        } catch (profileError) {
+          console.error('Profile creation exception:', profileError);
+          // Still count as success since auth user was created
+          toast.success("Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản.");
+          return { error: null, success: true };
+        }
       }
       
-      return { error: null };
+      return { error: null, success: true };
     } catch (error) {
-      toast({
+      console.error('Sign up error:', error);
+      
+      // Provide more specific error messages based on common issues
+      let errorMessage = "Đã xảy ra lỗi trong quá trình đăng ký";
+      
+      if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        errorMessage = "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.";
+      } else if (error.message?.includes('already')) {
+        errorMessage = "Email này đã được sử dụng. Vui lòng sử dụng email khác hoặc đăng nhập.";
+      } else if (error.message?.includes('password')) {
+        errorMessage = "Mật khẩu không đạt yêu cầu. Vui lòng sử dụng mật khẩu mạnh hơn.";
+      }
+      
+      toastNotification({
         title: "Đăng ký thất bại",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
-      return { error };
+      
+      // Also use sonner toast for more visible error message
+      toast.error(errorMessage);
+      
+      return { error, success: false };
     }
   };
 
@@ -164,11 +211,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await supabase.auth.signOut();
       setProfile(null);
-      toast({
+      toastNotification({
         title: "Đã đăng xuất",
       });
     } catch (error) {
       console.error('Error signing out:', error);
+      toast.error("Có lỗi xảy ra khi đăng xuất");
     }
   };
 

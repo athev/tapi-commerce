@@ -10,6 +10,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 const Register = () => {
   const [fullName, setFullName] = useState("");
@@ -19,7 +20,7 @@ const Register = () => {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { signUp, user } = useAuth();
-  const { toast } = useToast();
+  const { toast: toastNotification } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,7 +36,7 @@ const Register = () => {
     e.preventDefault();
     
     if (password !== confirmPassword) {
-      toast({
+      toastNotification({
         title: "Lỗi",
         description: "Mật khẩu xác nhận không khớp.",
         variant: "destructive",
@@ -44,9 +45,18 @@ const Register = () => {
     }
     
     if (!acceptTerms) {
-      toast({
+      toastNotification({
         title: "Lỗi",
         description: "Vui lòng chấp nhận điều khoản sử dụng.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (password.length < 6) {
+      toastNotification({
+        title: "Lỗi",
+        description: "Mật khẩu phải có ít nhất 6 ký tự.",
         variant: "destructive",
       });
       return;
@@ -55,20 +65,20 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      const { error } = await signUp(email, password, fullName);
-      if (!error) {
-        toast({
-          title: "Đăng ký thành công",
-          description: "Vui lòng kiểm tra email để xác nhận tài khoản.",
-        });
-        navigate("/login");
+      const { error, success } = await signUp(email, password, fullName);
+      
+      if (success && !error) {
+        // Show success message with sonner toast for better visibility
+        toast.success("Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.");
+        
+        // Redirect after a short delay
+        setTimeout(() => {
+          navigate("/login");
+        }, 1500);
       }
     } catch (error) {
-      toast({
-        title: "Đăng ký thất bại",
-        description: error.message,
-        variant: "destructive",
-      });
+      console.error("Registration error:", error);
+      toast.error("Có lỗi xảy ra khi đăng ký. Vui lòng thử lại sau.");
     } finally {
       setIsLoading(false);
     }
@@ -97,6 +107,7 @@ const Register = () => {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 
@@ -109,6 +120,7 @@ const Register = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 
@@ -120,6 +132,8 @@ const Register = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    disabled={isLoading}
+                    minLength={6}
                   />
                 </div>
                 
@@ -131,6 +145,7 @@ const Register = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
+                    disabled={isLoading}
                   />
                 </div>
                 
@@ -139,7 +154,7 @@ const Register = () => {
                     id="terms" 
                     checked={acceptTerms}
                     onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
-                    required
+                    disabled={isLoading}
                   />
                   <Label htmlFor="terms" className="text-sm">
                     Tôi đồng ý với{" "}
@@ -158,7 +173,14 @@ const Register = () => {
                   className="w-full bg-marketplace-primary hover:bg-marketplace-primary/90"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Đang xử lý..." : "Đăng ký"}
+                  {isLoading ? (
+                    <>
+                      <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></span>
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    "Đăng ký"
+                  )}
                 </Button>
               </form>
               
