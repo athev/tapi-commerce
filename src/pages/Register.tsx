@@ -11,7 +11,7 @@ import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
-import { AlertCircle, Wifi, WifiOff } from "lucide-react";
+import { AlertCircle, Wifi, WifiOff, CheckCircle, RefreshCw } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Register = () => {
@@ -22,10 +22,12 @@ const Register = () => {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [networkError, setNetworkError] = useState(false);
-  const { signUp, user } = useAuth();
+  const [retryCount, setRetryCount] = useState(0);
+  const { signUp, user, isOnline } = useAuth();
   const { toast: toastNotification } = useToast();
   const navigate = useNavigate();
 
+  // Check network connection on mount and when browser reports changes
   useEffect(() => {
     document.title = "Đăng ký | DigitalMarket";
     
@@ -51,6 +53,22 @@ const Register = () => {
       window.removeEventListener('offline', checkNetwork);
     };
   }, [user, navigate]);
+
+  // Monitor isOnline from context
+  useEffect(() => {
+    setNetworkError(!isOnline);
+  }, [isOnline]);
+
+  // Handle retry attempts
+  const handleRetry = () => {
+    if (navigator.onLine) {
+      setNetworkError(false);
+      setRetryCount(prev => prev + 1);
+      toast.info("Đang thử kết nối lại...");
+    } else {
+      toast.error("Bạn đang offline. Vui lòng kết nối internet và thử lại.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +111,7 @@ const Register = () => {
     setNetworkError(false);
     
     try {
+      console.log("Starting signup attempt...");
       const { error, success } = await signUp(email, password, fullName);
       
       if (success && !error) {
@@ -104,7 +123,9 @@ const Register = () => {
           navigate("/login");
         }, 1500);
       } else if (error) {
-        if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        console.error("Signup error details:", error);
+        
+        if (error.code === "network_error" || error.message?.includes('network') || error.message?.includes('fetch')) {
           setNetworkError(true);
           toast.error("Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.");
         } else {
@@ -132,12 +153,23 @@ const Register = () => {
       <main className="flex-1 flex items-center justify-center bg-gray-50">
         <div className="container max-w-md py-12">
           {networkError && (
-            <Alert variant="destructive" className="mb-4">
+            <Alert variant="warning" className="mb-4 animate-pulse">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Lỗi kết nối</AlertTitle>
-              <AlertDescription className="flex items-center gap-2">
-                <WifiOff className="h-4 w-4" />
-                Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.
+              <AlertDescription className="flex flex-col gap-2">
+                <div className="flex items-center gap-2">
+                  <WifiOff className="h-4 w-4" /> 
+                  Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-2 w-full flex items-center justify-center gap-2"
+                  onClick={handleRetry}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Thử lại kết nối
+                </Button>
               </AlertDescription>
             </Alert>
           )}
@@ -159,7 +191,7 @@ const Register = () => {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required
-                    disabled={isLoading}
+                    disabled={isLoading || networkError}
                   />
                 </div>
                 
@@ -172,7 +204,7 @@ const Register = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    disabled={isLoading}
+                    disabled={isLoading || networkError}
                   />
                 </div>
                 
@@ -184,7 +216,7 @@ const Register = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    disabled={isLoading}
+                    disabled={isLoading || networkError}
                     minLength={6}
                   />
                 </div>
@@ -197,7 +229,7 @@ const Register = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    disabled={isLoading}
+                    disabled={isLoading || networkError}
                   />
                 </div>
                 
@@ -206,7 +238,7 @@ const Register = () => {
                     id="terms" 
                     checked={acceptTerms}
                     onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
-                    disabled={isLoading}
+                    disabled={isLoading || networkError}
                   />
                   <Label htmlFor="terms" className="text-sm">
                     Tôi đồng ý với{" "}
@@ -250,14 +282,21 @@ const Register = () => {
             </CardContent>
           </Card>
 
-          {navigator.onLine && (
-            <div className="mt-4 text-center text-sm text-gray-500">
-              <div className="flex items-center justify-center gap-1">
-                <Wifi className="h-3.5 w-3.5" /> 
-                Trạng thái kết nối: Online
-              </div>
+          <div className="mt-4 text-center text-sm text-gray-500">
+            <div className="flex items-center justify-center gap-1">
+              {navigator.onLine ? (
+                <>
+                  <Wifi className="h-3.5 w-3.5 text-green-500" /> 
+                  <span className="text-green-600">Trạng thái kết nối: Online</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="h-3.5 w-3.5 text-red-500" /> 
+                  <span className="text-red-600">Trạng thái kết nối: Offline</span>
+                </>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </main>
       
