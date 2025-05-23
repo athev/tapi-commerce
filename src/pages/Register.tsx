@@ -1,30 +1,19 @@
 
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
-import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
-import { AlertCircle, Wifi, WifiOff, CheckCircle, RefreshCw } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import RegisterForm from "@/components/auth/RegisterForm";
+import NetworkErrorAlert from "@/components/auth/NetworkErrorAlert";
+import ConnectionStatus from "@/components/auth/ConnectionStatus";
 
 const Register = () => {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [acceptTerms, setAcceptTerms] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [networkError, setNetworkError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
-  const { signUp, user, isOnline } = useAuth();
-  const { toast: toastNotification } = useToast();
+  const { user, isOnline } = useAuth();
   const navigate = useNavigate();
 
   // Check network connection on mount and when browser reports changes
@@ -70,109 +59,13 @@ const Register = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validate network connection first
-    if (!navigator.onLine) {
-      setNetworkError(true);
-      toast.error("Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.");
-      return;
-    }
-    
-    if (password !== confirmPassword) {
-      toastNotification({
-        title: "Lỗi",
-        description: "Mật khẩu xác nhận không khớp.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!acceptTerms) {
-      toastNotification({
-        title: "Lỗi",
-        description: "Vui lòng chấp nhận điều khoản sử dụng.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (password.length < 6) {
-      toastNotification({
-        title: "Lỗi",
-        description: "Mật khẩu phải có ít nhất 6 ký tự.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsLoading(true);
-    setNetworkError(false);
-    
-    try {
-      console.log("Starting signup attempt...");
-      const { error, success } = await signUp(email, password, fullName);
-      
-      if (success && !error) {
-        // Show success message with sonner toast for better visibility
-        toast.success("Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.");
-        
-        // Redirect after a short delay
-        setTimeout(() => {
-          navigate("/login");
-        }, 1500);
-      } else if (error) {
-        console.error("Signup error details:", error);
-        
-        if (error.code === "network_error" || error.message?.includes('network') || error.message?.includes('fetch')) {
-          setNetworkError(true);
-          toast.error("Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.");
-        } else {
-          toast.error(error.message || "Có lỗi xảy ra khi đăng ký. Vui lòng thử lại sau.");
-        }
-      }
-    } catch (error) {
-      console.error("Registration error:", error);
-      
-      if (error.message?.includes('fetch') || error.message?.includes('network') || !navigator.onLine) {
-        setNetworkError(true);
-        toast.error("Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.");
-      } else {
-        toast.error("Có lỗi xảy ra khi đăng ký. Vui lòng thử lại sau.");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       
       <main className="flex-1 flex items-center justify-center bg-gray-50">
         <div className="container max-w-md py-12">
-          {networkError && (
-            <Alert variant="warning" className="mb-4 animate-pulse">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Lỗi kết nối</AlertTitle>
-              <AlertDescription className="flex flex-col gap-2">
-                <div className="flex items-center gap-2">
-                  <WifiOff className="h-4 w-4" /> 
-                  Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="mt-2 w-full flex items-center justify-center gap-2"
-                  onClick={handleRetry}
-                >
-                  <RefreshCw className="h-4 w-4" />
-                  Thử lại kết nối
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
+          {networkError && <NetworkErrorAlert onRetry={handleRetry} />}
           
           <Card>
             <CardHeader className="space-y-1">
@@ -182,120 +75,12 @@ const Register = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Họ và tên</Label>
-                  <Input 
-                    id="fullName" 
-                    placeholder="Nguyễn Văn A" 
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    required
-                    disabled={isLoading || networkError}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="name@example.com" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    disabled={isLoading || networkError}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="password">Mật khẩu</Label>
-                  <Input 
-                    id="password" 
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    disabled={isLoading || networkError}
-                    minLength={6}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
-                  <Input 
-                    id="confirmPassword" 
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                    disabled={isLoading || networkError}
-                  />
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Checkbox 
-                    id="terms" 
-                    checked={acceptTerms}
-                    onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
-                    disabled={isLoading || networkError}
-                  />
-                  <Label htmlFor="terms" className="text-sm">
-                    Tôi đồng ý với{" "}
-                    <Link to="/terms" className="text-blue-600 hover:underline">
-                      điều khoản sử dụng
-                    </Link>{" "}
-                    và{" "}
-                    <Link to="/privacy" className="text-blue-600 hover:underline">
-                      chính sách bảo mật
-                    </Link>
-                  </Label>
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full bg-marketplace-primary hover:bg-marketplace-primary/90"
-                  disabled={isLoading || networkError}
-                >
-                  {isLoading ? (
-                    <>
-                      <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></span>
-                      Đang xử lý...
-                    </>
-                  ) : networkError ? (
-                    <>
-                      <WifiOff className="mr-2 h-4 w-4" />
-                      Kiểm tra kết nối
-                    </>
-                  ) : (
-                    "Đăng ký"
-                  )}
-                </Button>
-              </form>
-              
-              <div className="mt-6 text-center text-sm">
-                Đã có tài khoản?{" "}
-                <Link to="/login" className="text-blue-600 hover:underline">
-                  Đăng nhập
-                </Link>
-              </div>
+              <RegisterForm networkError={networkError} handleRetry={handleRetry} />
             </CardContent>
           </Card>
 
           <div className="mt-4 text-center text-sm text-gray-500">
-            <div className="flex items-center justify-center gap-1">
-              {navigator.onLine ? (
-                <>
-                  <Wifi className="h-3.5 w-3.5 text-green-500" /> 
-                  <span className="text-green-600">Trạng thái kết nối: Online</span>
-                </>
-              ) : (
-                <>
-                  <WifiOff className="h-3.5 w-3.5 text-red-500" /> 
-                  <span className="text-red-600">Trạng thái kết nối: Offline</span>
-                </>
-              )}
-            </div>
+            <ConnectionStatus isOnline={navigator.onLine} />
           </div>
         </div>
       </main>
