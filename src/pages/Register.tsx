@@ -11,6 +11,8 @@ import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
+import { AlertCircle, Wifi, WifiOff } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const Register = () => {
   const [fullName, setFullName] = useState("");
@@ -19,6 +21,7 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [networkError, setNetworkError] = useState(false);
   const { signUp, user } = useAuth();
   const { toast: toastNotification } = useToast();
   const navigate = useNavigate();
@@ -30,10 +33,34 @@ const Register = () => {
     if (user) {
       navigate("/");
     }
+
+    // Check network connectivity
+    const checkNetwork = () => {
+      setNetworkError(!navigator.onLine);
+    };
+
+    // Set up event listeners for online/offline status
+    window.addEventListener('online', checkNetwork);
+    window.addEventListener('offline', checkNetwork);
+    
+    // Initial check
+    checkNetwork();
+
+    return () => {
+      window.removeEventListener('online', checkNetwork);
+      window.removeEventListener('offline', checkNetwork);
+    };
   }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate network connection first
+    if (!navigator.onLine) {
+      setNetworkError(true);
+      toast.error("Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.");
+      return;
+    }
     
     if (password !== confirmPassword) {
       toastNotification({
@@ -63,6 +90,7 @@ const Register = () => {
     }
     
     setIsLoading(true);
+    setNetworkError(false);
     
     try {
       const { error, success } = await signUp(email, password, fullName);
@@ -75,10 +103,23 @@ const Register = () => {
         setTimeout(() => {
           navigate("/login");
         }, 1500);
+      } else if (error) {
+        if (error.message?.includes('network') || error.message?.includes('fetch')) {
+          setNetworkError(true);
+          toast.error("Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.");
+        } else {
+          toast.error(error.message || "Có lỗi xảy ra khi đăng ký. Vui lòng thử lại sau.");
+        }
       }
     } catch (error) {
       console.error("Registration error:", error);
-      toast.error("Có lỗi xảy ra khi đăng ký. Vui lòng thử lại sau.");
+      
+      if (error.message?.includes('fetch') || error.message?.includes('network') || !navigator.onLine) {
+        setNetworkError(true);
+        toast.error("Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.");
+      } else {
+        toast.error("Có lỗi xảy ra khi đăng ký. Vui lòng thử lại sau.");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -90,6 +131,17 @@ const Register = () => {
       
       <main className="flex-1 flex items-center justify-center bg-gray-50">
         <div className="container max-w-md py-12">
+          {networkError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Lỗi kết nối</AlertTitle>
+              <AlertDescription className="flex items-center gap-2">
+                <WifiOff className="h-4 w-4" />
+                Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <Card>
             <CardHeader className="space-y-1">
               <CardTitle className="text-2xl font-bold text-center">Đăng ký tài khoản</CardTitle>
@@ -171,12 +223,17 @@ const Register = () => {
                 <Button 
                   type="submit" 
                   className="w-full bg-marketplace-primary hover:bg-marketplace-primary/90"
-                  disabled={isLoading}
+                  disabled={isLoading || networkError}
                 >
                   {isLoading ? (
                     <>
                       <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></span>
                       Đang xử lý...
+                    </>
+                  ) : networkError ? (
+                    <>
+                      <WifiOff className="mr-2 h-4 w-4" />
+                      Kiểm tra kết nối
                     </>
                   ) : (
                     "Đăng ký"
@@ -192,6 +249,15 @@ const Register = () => {
               </div>
             </CardContent>
           </Card>
+
+          {navigator.onLine && (
+            <div className="mt-4 text-center text-sm text-gray-500">
+              <div className="flex items-center justify-center gap-1">
+                <Wifi className="h-3.5 w-3.5" /> 
+                Trạng thái kết nối: Online
+              </div>
+            </div>
+          )}
         </div>
       </main>
       

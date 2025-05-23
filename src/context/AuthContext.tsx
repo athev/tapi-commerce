@@ -14,6 +14,7 @@ type AuthContextType = {
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: any, success: boolean }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  isOnline: boolean;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -25,6 +26,7 @@ const AuthContext = createContext<AuthContextType>({
   signUp: async () => ({ error: null, success: false }),
   signOut: async () => {},
   refreshProfile: async () => {},
+  isOnline: true,
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -34,10 +36,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { toast: toastNotification } = useToast();
+
+  // Set up network status monitoring
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Fetch user profile from profiles table
   const fetchProfile = async (userId: string) => {
+    if (!navigator.onLine) {
+      console.log("Offline mode: Cannot fetch profile");
+      return null;
+    }
+
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -61,6 +83,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const initSession = async () => {
       try {
+        // Check if we're online first
+        if (!navigator.onLine) {
+          console.log("Offline mode: Using cached session if available");
+          setLoading(false);
+          return;
+        }
+
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
@@ -106,6 +135,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
+    if (!navigator.onLine) {
+      console.error('Network error: User is offline');
+      return { 
+        error: { 
+          message: "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.",
+          code: "network_error" 
+        } 
+      };
+    }
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
@@ -122,6 +161,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error: null };
     } catch (error) {
       console.error('Sign in error:', error);
+      
+      // Detect network errors specifically
+      if (error.message?.includes('fetch') || error.message?.includes('network') || !navigator.onLine) {
+        error.code = "network_error";
+        error.message = "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.";
+      }
+      
       toastNotification({
         title: "Đăng nhập thất bại",
         description: error.message || "Không thể kết nối đến máy chủ. Vui lòng thử lại sau.",
@@ -133,7 +179,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Sign up with email and password
   const signUp = async (email: string, password: string, fullName: string) => {
+    // First check if we're online
+    if (!navigator.onLine) {
+      console.error('Network error: User is offline');
+      return { 
+        error: { 
+          message: "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.",
+          code: "network_error" 
+        },
+        success: false 
+      };
+    }
+
     try {
+      console.log("Attempting to sign up user:", email);
+      
       // First try to create the auth user
       const { data, error } = await supabase.auth.signUp({ 
         email, 
@@ -145,11 +205,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Auth signup error:", error);
+        throw error;
+      }
+      
+      console.log("Auth signup successful, user data:", data.user?.id);
       
       // Create profile with role = end-user
       if (data.user) {
         try {
+          console.log("Creating user profile for:", data.user.id);
+          
           const { error: profileError } = await supabase.from('profiles').insert({
             id: data.user.id,
             email: email,
@@ -163,6 +230,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             toast.success("Đăng ký thành công. Vui lòng kiểm tra email để xác nhận tài khoản.");
             return { error: null, success: true };
           }
+          
+          console.log("Profile created successfully");
           
           toastNotification({
             title: "Đăng ký thành công",
@@ -182,16 +251,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('Sign up error:', error);
       
-      // Provide more specific error messages based on common issues
+      // Enhanced error handling for network issues
       let errorMessage = "Đã xảy ra lỗi trong quá trình đăng ký";
+      let errorCode = "unknown_error";
       
-      if (error.message?.includes('network') || error.message?.includes('fetch')) {
+      if (!navigator.onLine || error.message?.includes('fetch') || error.message?.includes('network')) {
         errorMessage = "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.";
+        errorCode = "network_error";
       } else if (error.message?.includes('already')) {
         errorMessage = "Email này đã được sử dụng. Vui lòng sử dụng email khác hoặc đăng nhập.";
+        errorCode = "email_in_use";
       } else if (error.message?.includes('password')) {
         errorMessage = "Mật khẩu không đạt yêu cầu. Vui lòng sử dụng mật khẩu mạnh hơn.";
+        errorCode = "weak_password";
       }
+      
+      // Add additional properties to the error object
+      error.code = errorCode;
+      error.message = errorMessage;
       
       toastNotification({
         title: "Đăng ký thất bại",
@@ -209,6 +286,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Sign out
   const signOut = async () => {
     try {
+      if (!navigator.onLine) {
+        toastNotification({
+          title: "Không thể đăng xuất",
+          description: "Bạn đang offline. Vui lòng kết nối internet và thử lại.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       await supabase.auth.signOut();
       setProfile(null);
       toastNotification({
@@ -222,7 +308,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Refresh profile data
   const refreshProfile = async () => {
-    if (user) {
+    if (user && navigator.onLine) {
       const userProfile = await fetchProfile(user.id);
       setProfile(userProfile);
     }
@@ -238,6 +324,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       signUp,
       signOut,
       refreshProfile,
+      isOnline,
     }}>
       {children}
     </AuthContext.Provider>
