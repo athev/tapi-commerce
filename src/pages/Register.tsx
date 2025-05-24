@@ -1,14 +1,13 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
+import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import RegisterForm from "@/components/auth/RegisterForm";
-import NetworkErrorAlert from "@/components/auth/NetworkErrorAlert";
-import ConnectionStatus from "@/components/auth/ConnectionStatus";
+import RegisterPageLayout from "@/components/auth/RegisterPageLayout";
+import RegisterPageHeader from "@/components/auth/RegisterPageHeader";
+import RegisterNetworkStatus from "@/components/auth/RegisterNetworkStatus";
 
 const Register = () => {
   const [networkError, setNetworkError] = useState(false);
@@ -60,33 +59,24 @@ const Register = () => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
+    <RegisterPageLayout>
+      <RegisterNetworkStatus 
+        networkError={networkError} 
+        onRetry={handleRetry} 
+      />
       
-      <main className="flex-1 flex items-center justify-center bg-gray-50">
-        <div className="container max-w-md py-12">
-          {networkError && <NetworkErrorAlert onRetry={handleRetry} />}
-          
-          <Card>
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-center">Đăng ký tài khoản</CardTitle>
-              <CardDescription className="text-center">
-                Nhập thông tin của bạn để tạo tài khoản mới
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <RegisterForm networkError={networkError} handleRetry={handleRetry} />
-            </CardContent>
-          </Card>
+      <Card>
+        <RegisterPageHeader />
+        <CardContent>
+          <RegisterForm networkError={networkError} handleRetry={handleRetry} />
+        </CardContent>
+      </Card>
 
-          <div className="mt-4 text-center text-sm text-gray-500">
-            <ConnectionStatus isOnline={navigator.onLine} />
-          </div>
-        </div>
-      </main>
-      
-      <Footer />
-    </div>
+      <RegisterNetworkStatus 
+        networkError={networkError} 
+        onRetry={handleRetry} 
+      />
+    </RegisterPageLayout>
   );
 };
 
