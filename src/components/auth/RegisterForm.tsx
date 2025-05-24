@@ -1,15 +1,11 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/context/AuthContext";
-import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
-import { WifiOff, RefreshCw } from "lucide-react";
+import RegisterFormFields from "@/components/auth/RegisterFormFields";
+import RegisterFormSubmit from "@/components/auth/RegisterFormSubmit";
+import { useRegisterFormValidation } from "@/components/auth/RegisterFormValidation";
 
 interface RegisterFormProps {
   networkError: boolean;
@@ -24,7 +20,7 @@ const RegisterForm = ({ networkError, handleRetry }: RegisterFormProps) => {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { signUp } = useAuth();
-  const { toast: toastNotification } = useToast();
+  const { validateForm } = useRegisterFormValidation();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,32 +32,9 @@ const RegisterForm = ({ networkError, handleRetry }: RegisterFormProps) => {
       return;
     }
     
-    if (password !== confirmPassword) {
-      toastNotification({
-        title: "Lỗi",
-        description: "Mật khẩu xác nhận không khớp.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!acceptTerms) {
-      toastNotification({
-        title: "Lỗi",
-        description: "Vui lòng chấp nhận điều khoản sử dụng.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (password.length < 6) {
-      toastNotification({
-        title: "Lỗi",
-        description: "Mật khẩu phải có ít nhất 6 ký tự.",
-        variant: "destructive",
-      });
-      return;
-    }
+    // Validate form data
+    const { isValid } = validateForm(password, confirmPassword, acceptTerms);
+    if (!isValid) return;
     
     setIsLoading(true);
     
@@ -101,101 +74,25 @@ const RegisterForm = ({ networkError, handleRetry }: RegisterFormProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="fullName">Họ và tên</Label>
-        <Input 
-          id="fullName" 
-          placeholder="Nguyễn Văn A" 
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          required
-          disabled={isLoading || networkError}
-        />
-      </div>
+      <RegisterFormFields
+        fullName={fullName}
+        setFullName={setFullName}
+        email={email}
+        setEmail={setEmail}
+        password={password}
+        setPassword={setPassword}
+        confirmPassword={confirmPassword}
+        setConfirmPassword={setConfirmPassword}
+        acceptTerms={acceptTerms}
+        setAcceptTerms={setAcceptTerms}
+        isLoading={isLoading}
+        networkError={networkError}
+      />
       
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input 
-          id="email" 
-          type="email" 
-          placeholder="name@example.com" 
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          disabled={isLoading || networkError}
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="password">Mật khẩu</Label>
-        <Input 
-          id="password" 
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          disabled={isLoading || networkError}
-          minLength={6}
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="confirmPassword">Xác nhận mật khẩu</Label>
-        <Input 
-          id="confirmPassword" 
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-          disabled={isLoading || networkError}
-        />
-      </div>
-      
-      <div className="flex items-center space-x-2">
-        <Checkbox 
-          id="terms" 
-          checked={acceptTerms}
-          onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
-          disabled={isLoading || networkError}
-        />
-        <Label htmlFor="terms" className="text-sm">
-          Tôi đồng ý với{" "}
-          <Link to="/terms" className="text-blue-600 hover:underline">
-            điều khoản sử dụng
-          </Link>{" "}
-          và{" "}
-          <Link to="/privacy" className="text-blue-600 hover:underline">
-            chính sách bảo mật
-          </Link>
-        </Label>
-      </div>
-      
-      <Button 
-        type="submit" 
-        className="w-full bg-marketplace-primary hover:bg-marketplace-primary/90"
-        disabled={isLoading || networkError}
-      >
-        {isLoading ? (
-          <>
-            <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></span>
-            Đang xử lý...
-          </>
-        ) : networkError ? (
-          <>
-            <WifiOff className="mr-2 h-4 w-4" />
-            Kiểm tra kết nối
-          </>
-        ) : (
-          "Đăng ký"
-        )}
-      </Button>
-      
-      <div className="mt-6 text-center text-sm">
-        Đã có tài khoản?{" "}
-        <Link to="/login" className="text-blue-600 hover:underline">
-          Đăng nhập
-        </Link>
-      </div>
+      <RegisterFormSubmit 
+        isLoading={isLoading}
+        networkError={networkError}
+      />
     </form>
   );
 };
