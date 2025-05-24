@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
 import { UserProfile } from '@/lib/supabase';
 import { useUserProfile } from './useUserProfile';
 import { useAuthOperations } from './useAuthOperations';
