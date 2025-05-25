@@ -43,23 +43,12 @@ export const useProductUpload = () => {
     return publicUrl;
   };
 
-  const submitProduct = async (formData: ProductFormData) => {
+  const submitProduct = async (formData: ProductFormData): Promise<boolean> => {
     console.log('Starting product submission with data:', formData);
     
     if (!user || !profile) {
       toast.error('Bạn cần đăng nhập để thêm sản phẩm');
-      return;
-    }
-    
-    // Basic validation
-    if (!formData.title || !formData.description || !formData.price || !formData.category) {
-      toast.error('Vui lòng điền đầy đủ thông tin sản phẩm');
-      return;
-    }
-
-    if (!formData.image) {
-      toast.error('Vui lòng chọn ảnh sản phẩm');
-      return;
+      return false;
     }
     
     setIsSubmitting(true);
@@ -110,12 +99,30 @@ export const useProductUpload = () => {
       }
 
       console.log('Product created successfully:', data);
-      toast.success('Sản phẩm đã được tạo thành công!');
-      navigate('/seller/products');
+      toast.success('🎉 Sản phẩm đã được tạo thành công!', {
+        description: 'Sản phẩm của bạn đã được thêm vào gian hàng',
+        duration: 4000,
+      });
+      
+      // Navigate back to products list
+      setTimeout(() => {
+        navigate('/seller/products');
+      }, 1000);
+      
+      return true;
       
     } catch (error: any) {
       console.error('Error creating product:', error);
-      toast.error(error.message || 'Có lỗi xảy ra khi tạo sản phẩm');
+      
+      if (error.message?.includes('storage')) {
+        toast.error('Lỗi upload file. Vui lòng thử lại.');
+      } else if (error.message?.includes('duplicate')) {
+        toast.error('Sản phẩm với tên này đã tồn tại.');
+      } else {
+        toast.error('Có lỗi xảy ra khi tạo sản phẩm. Vui lòng thử lại.');
+      }
+      
+      return false;
     } finally {
       setIsSubmitting(false);
     }
