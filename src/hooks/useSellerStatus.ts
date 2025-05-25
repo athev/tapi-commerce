@@ -2,18 +2,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 
-export interface SellerApplication {
-  id: string;
-  user_id: string;
-  business_name: string;
-  business_description: string;
-  phone: string;
-  address: string;
-  status: 'pending' | 'approved' | 'rejected';
-  created_at: string;
-  updated_at: string;
-}
+// Use the database type directly instead of a custom interface
+type SellerApplication = Database['public']['Tables']['seller_applications']['Row'];
 
 export const useSellerStatus = () => {
   const { user, profile } = useAuth();
@@ -65,3 +57,5 @@ export const useSellerStatus = () => {
     sellerStatus: getSellerStatus()
   };
 };
+
+export type { SellerApplication };
