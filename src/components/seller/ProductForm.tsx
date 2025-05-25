@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -28,7 +27,7 @@ const ProductForm = () => {
 
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({});
 
-  // Show loading state while auth is initializing
+  // Show loading state only while auth is actively loading
   if (loading) {
     return (
       <Card>
@@ -43,7 +42,7 @@ const ProductForm = () => {
   }
 
   // Show auth error if user is not authenticated
-  if (!user || !profile || !session) {
+  if (!user || !session) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -56,6 +55,27 @@ const ProductForm = () => {
             </p>
             <Button onClick={() => navigate('/login')}>
               Đăng nhập
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show seller registration prompt if profile is missing
+  if (!profile) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center py-8">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Bạn chưa có gian hàng
+            </h3>
+            <p className="text-gray-500 mb-4">
+              Vui lòng đăng ký làm người bán để tạo sản phẩm
+            </p>
+            <Button onClick={() => navigate('/register-seller')}>
+              Đăng ký người bán
             </Button>
           </div>
         </CardContent>
