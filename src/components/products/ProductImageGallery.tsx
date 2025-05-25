@@ -26,9 +26,9 @@ const ProductImageGallery = ({ images, title }: ProductImageGalleryProps) => {
   };
 
   return (
-    <div className="space-y-3 lg:space-y-4">
+    <div className="space-y-3">
       {/* Main Image */}
-      <Card className="relative overflow-hidden bg-gray-50">
+      <Card className="relative overflow-hidden bg-gray-50 border-2 border-gray-100">
         <div className="aspect-square relative group">
           <img 
             src={productImages[currentImage]} 
@@ -39,11 +39,18 @@ const ProductImageGallery = ({ images, title }: ProductImageGalleryProps) => {
             onClick={() => setIsZoomed(!isZoomed)}
           />
           
+          {/* Image Indicator */}
+          {productImages.length > 1 && (
+            <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded">
+              {currentImage + 1}/{productImages.length}
+            </div>
+          )}
+          
           {/* Zoom Icon - Hide on mobile */}
           {!isMobile && (
-            <div className="absolute top-3 lg:top-4 right-3 lg:right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
               <Button size="sm" variant="secondary" className="bg-white/90 hover:bg-white h-8 w-8 p-0">
-                <ZoomIn className="h-3 w-3 lg:h-4 lg:w-4" />
+                <ZoomIn className="h-4 w-4" />
               </Button>
             </div>
           )}
@@ -54,18 +61,18 @@ const ProductImageGallery = ({ images, title }: ProductImageGalleryProps) => {
               <Button
                 size="sm"
                 variant="secondary"
-                className="absolute left-2 lg:left-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 hover:bg-white h-8 w-8 p-0"
+                className="absolute left-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 hover:bg-white h-10 w-10 p-0 rounded-full shadow-lg"
                 onClick={prevImage}
               >
-                <ChevronLeft className="h-3 w-3 lg:h-4 lg:w-4" />
+                <ChevronLeft className="h-5 w-5" />
               </Button>
               <Button
                 size="sm"
                 variant="secondary"
-                className="absolute right-2 lg:right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 hover:bg-white h-8 w-8 p-0"
+                className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 hover:bg-white h-10 w-10 p-0 rounded-full shadow-lg"
                 onClick={nextImage}
               >
-                <ChevronRight className="h-3 w-3 lg:h-4 lg:w-4" />
+                <ChevronRight className="h-5 w-5" />
               </Button>
             </>
           )}
@@ -74,14 +81,14 @@ const ProductImageGallery = ({ images, title }: ProductImageGalleryProps) => {
 
       {/* Thumbnail Gallery */}
       {productImages.length > 1 && (
-        <div className="flex space-x-2 overflow-x-auto">
+        <div className="flex space-x-2 overflow-x-auto pb-2">
           {productImages.map((image, index) => (
             <button
               key={index}
               onClick={() => setCurrentImage(index)}
-              className={`flex-shrink-0 w-12 h-12 lg:w-16 lg:h-16 rounded-lg overflow-hidden border-2 transition-colors ${
+              className={`flex-shrink-0 w-16 h-16 lg:w-20 lg:h-20 rounded-lg overflow-hidden border-2 transition-all ${
                 currentImage === index 
-                  ? 'border-marketplace-primary' 
+                  ? 'border-marketplace-primary shadow-md' 
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >

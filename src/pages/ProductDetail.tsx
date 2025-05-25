@@ -16,36 +16,33 @@ import SellerInfo from "@/components/products/SellerInfo";
 import RelatedProducts from "@/components/products/RelatedProducts";
 import ProductHeader from "@/components/products/ProductHeader";
 import ProductTabs from "@/components/products/ProductTabs";
+import ProductDetailsAccordion from "@/components/products/ProductDetailsAccordion";
+import StickyBottomButton from "@/components/products/StickyBottomButton";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+
 const ProductDetail = () => {
-  const {
-    id
-  } = useParams();
-  const {
-    user,
-    isOnline
-  } = useAuth();
+  const { id } = useParams();
+  const { user, isOnline } = useAuth();
   const navigate = useNavigate();
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasPurchased, setHasPurchased] = useState(false);
-  const {
-    data: product,
-    isLoading,
-    isError
-  } = useQuery({
+
+  const { data: product, isLoading, isError } = useQuery({
     queryKey: ['product', id],
     queryFn: async () => {
       if (!isOnline) {
         throw new Error("Không có kết nối internet");
       }
-      const {
-        data,
-        error
-      } = await supabase.from('products').select('*').eq('id', id).single();
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single();
+      
       if (error) {
         console.error("Error fetching product:", error);
         throw error;
@@ -55,22 +52,22 @@ const ProductDetail = () => {
     retry: false
   });
 
-  // Check if user has already purchased this product (only for file_download type)
-  const {
-    data: existingOrder
-  } = useQuery({
+  const { data: existingOrder } = useQuery({
     queryKey: ['user-order', id, user?.id],
     queryFn: async () => {
       if (!user?.id || !id || !product) return null;
 
-      // Only check for existing orders for file_download type
       if (product.product_type !== 'file_download') {
         return null;
       }
-      const {
-        data,
-        error
-      } = await supabase.from('orders').select('*').eq('user_id', user.id).eq('product_id', id).eq('status', 'paid').single();
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('product_id', id)
+        .eq('status', 'paid')
+        .single();
+      
       if (error && error.code !== 'PGRST116') {
         throw error;
       }
@@ -78,14 +75,15 @@ const ProductDetail = () => {
     },
     enabled: !!user?.id && !!id && !!product
   });
+
   useEffect(() => {
-    // Only set hasPurchased to true for file_download products
     if (existingOrder && product?.product_type === 'file_download') {
       setHasPurchased(true);
     } else {
       setHasPurchased(false);
     }
   }, [existingOrder, product?.product_type]);
+
   const handlePurchase = async (buyerData?: any) => {
     if (!user) {
       toast({
@@ -96,41 +94,33 @@ const ProductDetail = () => {
       navigate('/login');
       return;
     }
+
     if (!product) return;
+
     setIsProcessing(true);
     try {
-      console.log('Creating order with data:', {
-        user_id: user.id,
-        product_id: product.id,
-        buyer_email: buyerData?.email || user.email,
-        buyer_data: buyerData,
-        product_info: {
-          seller_id: product.seller_id,
-          price: product.price,
-          title: product.title
-        }
-      });
-      const {
-        data: order,
-        error
-      } = await supabase.from('orders').insert([{
-        user_id: user.id,
-        product_id: product.id,
-        status: 'paid',
-        buyer_email: buyerData?.email || user.email || '',
-        buyer_data: buyerData || null,
-        delivery_status: 'pending'
-      }]).select().single();
+      const { data: order, error } = await supabase
+        .from('orders')
+        .insert([{
+          user_id: user.id,
+          product_id: product.id,
+          status: 'paid',
+          buyer_email: buyerData?.email || user.email || '',
+          buyer_data: buyerData || null,
+          delivery_status: 'pending'
+        }])
+        .select()
+        .single();
+
       if (error) {
         console.error('Error creating order:', error);
         throw error;
       }
-      console.log('Order created successfully:', order);
 
-      // Only set hasPurchased for file_download products
       if (product.product_type === 'file_download') {
         setHasPurchased(true);
       }
+
       toast({
         title: "Đặt hàng thành công!",
         description: "Cảm ơn bạn đã mua sản phẩm. Thông tin sẽ được xử lý ngay."
@@ -146,6 +136,7 @@ const ProductDetail = () => {
       setIsProcessing(false);
     }
   };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
@@ -153,6 +144,7 @@ const ProductDetail = () => {
       </div>
     );
   }
+
   if (isError) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
@@ -168,33 +160,34 @@ const ProductDetail = () => {
       </div>
     );
   }
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Navbar />
       
-      <main className="flex-1">
+      <main className="flex-1 pb-20 lg:pb-0">
         {/* Breadcrumb */}
         <div className="bg-white border-b">
-          <div className="container py-2 lg:py-3">
-            <div className="flex items-center space-x-2 text-xs lg:text-sm text-gray-600">
-              <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="p-0 h-auto text-xs lg:text-sm">
-                <ArrowLeft className="h-3 w-3 lg:h-4 lg:w-4 mr-1" />
+          <div className="container py-3">
+            <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="p-0 h-auto text-sm">
+                <ArrowLeft className="h-4 w-4 mr-1" />
                 Trang chủ
               </Button>
               <span>/</span>
               <span className="hidden sm:inline">{product?.category}</span>
               <span className="hidden sm:inline">/</span>
-              <span className="text-gray-900 font-medium truncate text-xs lg:text-sm">{product?.title}</span>
+              <span className="text-gray-900 font-medium truncate">{product?.title}</span>
             </div>
           </div>
         </div>
 
-        {/* Main Product Section - Mobile Optimized */}
-        <div className="container py-4 lg:py-6 xl:py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8 xl:gap-12">
-            {/* Left - Product Images */}
+        {/* Main Product Section */}
+        <div className="container py-4 lg:py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
+            {/* Left Column - Product Images */}
             <div className="lg:col-span-1">
-              <div className="sticky top-4 lg:top-6">
+              <div className="lg:sticky lg:top-6">
                 <ProductImageGallery 
                   images={product?.image ? [product.image] : []} 
                   title={product?.title || ''} 
@@ -202,9 +195,9 @@ const ProductDetail = () => {
               </div>
             </div>
             
-            {/* Right - Product Info and Purchase */}
+            {/* Right Column - Product Info and Purchase */}
             <div className="lg:col-span-1">
-              <div className="space-y-4 lg:space-y-6">
+              <div className="space-y-6">
                 {/* Product Information */}
                 <ProductHeader 
                   title={product?.title || ''} 
@@ -216,26 +209,48 @@ const ProductDetail = () => {
                   sellerName={product?.seller_name || ''} 
                 />
                 
-                {/* Purchase Section - Mobile Optimized */}
-                <div className="bg-white rounded-lg shadow-md lg:shadow-lg border border-gray-200 overflow-hidden">
-                  <div className="p-4 lg:p-6">
-                    <ProductTypeOrderForm 
-                      productType={product?.product_type || 'file_download'} 
-                      onPurchase={handlePurchase} 
-                      isProcessing={isProcessing} 
-                      hasPurchased={hasPurchased} 
-                      product={product} 
-                    />
-                  </div>
+                {/* Purchase Section - Desktop */}
+                <div className="hidden lg:block">
+                  <Card className="shadow-lg border-gray-200">
+                    <CardContent className="p-6">
+                      <ProductTypeOrderForm 
+                        productType={product?.product_type || 'file_download'} 
+                        onPurchase={handlePurchase} 
+                        isProcessing={isProcessing} 
+                        hasPurchased={hasPurchased} 
+                        product={product} 
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Purchase Section - Mobile */}
+                <div className="lg:hidden bg-white rounded-lg shadow-md border border-gray-200 p-4">
+                  <ProductTypeOrderForm 
+                    productType={product?.product_type || 'file_download'} 
+                    onPurchase={handlePurchase} 
+                    isProcessing={isProcessing} 
+                    hasPurchased={hasPurchased} 
+                    product={product} 
+                  />
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Product Details Tabs */}
-        <div className="bg-white border-t">
-          <div className="container py-6 lg:py-8 xl:py-12">
+        {/* Mobile Accordion */}
+        <div className="container lg:hidden py-4">
+          <ProductDetailsAccordion 
+            description={product?.description || ''} 
+            productType={product?.product_type || 'file_download'} 
+            sellerName={product?.seller_name || ''}
+          />
+        </div>
+
+        {/* Desktop Product Details Tabs */}
+        <div className="hidden lg:block bg-white border-t">
+          <div className="container py-8">
             <ProductTabs 
               description={product?.description || ''} 
               productType={product?.product_type || 'file_download'} 
@@ -243,8 +258,8 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Seller Info */}
-        <div className="container py-4 lg:py-6 xl:py-8">
+        {/* Seller Info - Desktop */}
+        <div className="hidden lg:block container py-6">
           <SellerInfo 
             sellerId={product?.seller_id || ''} 
             sellerName={product?.seller_name || ''} 
@@ -253,7 +268,7 @@ const ProductDetail = () => {
 
         {/* Reviews Section */}
         <div className="bg-white border-t">
-          <div className="container py-6 lg:py-8 xl:py-12">
+          <div className="container py-6 lg:py-8">
             <ProductReviews 
               reviews={[]} 
               averageRating={4.8} 
@@ -263,13 +278,22 @@ const ProductDetail = () => {
         </div>
 
         {/* Related Products */}
-        <div className="container py-4 lg:py-6 xl:py-8">
+        <div className="container py-6">
           <RelatedProducts 
             currentProductId={id || ''} 
             category={product?.category || ''} 
           />
         </div>
       </main>
+
+      {/* Sticky Bottom Button for Mobile */}
+      <StickyBottomButton
+        onPurchase={() => handlePurchase()}
+        isProcessing={isProcessing}
+        hasPurchased={hasPurchased}
+        productType={product?.product_type || 'file_download'}
+        price={product?.price || 0}
+      />
       
       <Footer />
     </div>
