@@ -1,9 +1,10 @@
 
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Badge } from "@/components/ui/badge";
 
 interface ProductImageGalleryProps {
   images: string[];
@@ -26,7 +27,7 @@ const ProductImageGallery = ({ images, title }: ProductImageGalleryProps) => {
   };
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {/* Main Image */}
       <Card className="relative overflow-hidden bg-gray-50 border-2 border-gray-100">
         <div className="aspect-square relative group">
@@ -39,9 +40,16 @@ const ProductImageGallery = ({ images, title }: ProductImageGalleryProps) => {
             onClick={() => setIsZoomed(!isZoomed)}
           />
           
+          {/* Quality Badge */}
+          <div className="absolute top-3 left-3">
+            <Badge className="bg-green-500 text-white text-xs">
+              HD Quality
+            </Badge>
+          </div>
+          
           {/* Image Indicator */}
           {productImages.length > 1 && (
-            <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded">
+            <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-3 py-1 rounded-full">
               {currentImage + 1}/{productImages.length}
             </div>
           )}
@@ -76,6 +84,14 @@ const ProductImageGallery = ({ images, title }: ProductImageGalleryProps) => {
               </Button>
             </>
           )}
+
+          {/* Preview Label */}
+          <div className="absolute bottom-3 left-3">
+            <Badge variant="outline" className="bg-white/90 text-gray-700 text-xs">
+              <Eye className="h-3 w-3 mr-1" />
+              Preview
+            </Badge>
+          </div>
         </div>
       </Card>
 
@@ -101,6 +117,25 @@ const ProductImageGallery = ({ images, title }: ProductImageGalleryProps) => {
           ))}
         </div>
       )}
+
+      {/* Image Features for Digital Products */}
+      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+        <h4 className="font-medium text-blue-800 mb-2">Bạn sẽ nhận được:</h4>
+        <div className="space-y-1 text-sm text-blue-700">
+          <div className="flex items-center space-x-2">
+            <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+            <span>File gốc chất lượng cao</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+            <span>Hướng dẫn sử dụng chi tiết</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-1.5 h-1.5 bg-blue-600 rounded-full"></div>
+            <span>Hỗ trợ kỹ thuật miễn phí</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
