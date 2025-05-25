@@ -84,33 +84,23 @@ const ProductTypeOrderForm = ({
     const typeInfo = {
       file_download: {
         icon: Download,
-        label: 'Tải tệp/File tải',
-        description: 'Không cần nhập gì',
-        afterPurchase: 'Hiển thị nút "Tải file"'
+        label: 'Tải tệp/File tải'
       },
       shared_account: {
         icon: Users,
-        label: 'Tài khoản dùng chung',
-        description: 'Thông báo: "Liên hệ CSKH tại Ô Chat để được hướng dẫn đăng nhập"',
-        afterPurchase: 'Không có dữ liệu trả về'
+        label: 'Tài khoản dùng chung'
       },
       upgrade_account_no_pass: {
         icon: User,
-        label: 'Nâng cấp không cần mật khẩu',
-        description: 'Hiển thị ô nhập email',
-        afterPurchase: 'Gửi email cho seller'
+        label: 'Nâng cấp không cần mật khẩu'
       },
       upgrade_account_with_pass: {
         icon: FileText,
-        label: 'Nâng cấp có mật khẩu',
-        description: 'Hiển thị ô nhập: email, user, pass',
-        afterPurchase: 'Gửi info cho seller'
+        label: 'Nâng cấp có mật khẩu'
       },
       license_key_delivery: {
         icon: Key,
-        label: 'Mã kích hoạt',
-        description: 'Không cần nhập gì',
-        afterPurchase: 'Hệ thống tự gửi mã về email + hiển thị trên UI'
+        label: 'Mã kích hoạt'
       }
     };
     
@@ -225,16 +215,12 @@ const ProductTypeOrderForm = ({
   // Before purchase UI
   return (
     <div className="space-y-4">
-      {/* Product Type Info Card */}
+      {/* Product Type Info Card - Only show label without description */}
       <Card className="bg-gray-50 border-gray-200">
         <CardContent className="p-4">
-          <div className="flex items-start space-x-3">
-            <TypeIcon className="h-5 w-5 text-gray-600 mt-0.5 flex-shrink-0" />
-            <div>
-              <h3 className="font-medium text-gray-900 mb-1">{productTypeInfo.label}</h3>
-              <p className="text-sm text-gray-700">{productTypeInfo.description}</p>
-              <p className="text-xs text-gray-600 mt-1">Sau khi thanh toán: {productTypeInfo.afterPurchase}</p>
-            </div>
+          <div className="flex items-center space-x-3">
+            <TypeIcon className="h-5 w-5 text-gray-600 flex-shrink-0" />
+            <h3 className="font-medium text-gray-900">{productTypeInfo.label}</h3>
           </div>
         </CardContent>
       </Card>
