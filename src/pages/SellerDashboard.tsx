@@ -13,6 +13,7 @@ import SellerStats from "@/components/seller/SellerStats";
 import SellerPromotions from "@/components/seller/SellerPromotions";
 import SellerReviews from "@/components/seller/SellerReviews";
 import SellerAnalytics from "@/components/seller/SellerAnalytics";
+import NotificationCenter from "@/components/seller/NotificationCenter";
 
 const SellerDashboard = () => {
   const { profile } = useAuth();
@@ -27,6 +28,7 @@ const SellerDashboard = () => {
     if (currentPath.includes('/seller/promotions')) return 'promotions';
     if (currentPath.includes('/seller/reviews')) return 'reviews';
     if (currentPath.includes('/seller/analytics')) return 'analytics';
+    if (currentPath.includes('/seller/notifications')) return 'notifications';
     return 'dashboard';
   };
 
@@ -74,17 +76,21 @@ const SellerDashboard = () => {
               case 'analytics':
                 navigate('/seller/analytics');
                 break;
+              case 'notifications':
+                navigate('/seller/notifications');
+                break;
             }
           }}
           className="mb-8"
         >
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="dashboard">Tổng quan</TabsTrigger>
             <TabsTrigger value="products">Sản phẩm</TabsTrigger>
             <TabsTrigger value="orders">Đơn hàng</TabsTrigger>
             <TabsTrigger value="promotions">Khuyến mãi</TabsTrigger>
             <TabsTrigger value="reviews">Đánh giá</TabsTrigger>
             <TabsTrigger value="analytics">Phân tích</TabsTrigger>
+            <TabsTrigger value="notifications">Thông báo</TabsTrigger>
             <TabsTrigger value="add">Thêm mới</TabsTrigger>
           </TabsList>
         </Tabs>
@@ -97,6 +103,7 @@ const SellerDashboard = () => {
           <Route path="/promotions" element={<SellerPromotions />} />
           <Route path="/reviews" element={<SellerReviews />} />
           <Route path="/analytics" element={<SellerAnalytics />} />
+          <Route path="/notifications" element={<NotificationCenter />} />
         </Routes>
       </main>
       

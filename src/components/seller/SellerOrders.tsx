@@ -1,9 +1,11 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase, Order, Product } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Eye, Download, Mail, MessageCircle } from "lucide-react";
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { 
@@ -24,6 +26,28 @@ const formatDate = (dateString: string) => {
   }).format(date);
 };
 
+const getDeliveryStatusBadge = (status: string) => {
+  switch (status) {
+    case 'delivered':
+      return <Badge className="bg-green-500">Đã giao</Badge>;
+    case 'failed':
+      return <Badge className="bg-red-500">Thất bại</Badge>;
+    default:
+      return <Badge className="bg-yellow-500">Chờ xử lý</Badge>;
+  }
+};
+
+const getProductTypeLabel = (type: string) => {
+  const types = {
+    file_download: 'Tải xuống file',
+    license_key_delivery: 'Gửi License Key',
+    shared_account: 'Tài khoản dùng chung',
+    upgrade_account_no_pass: 'Nâng cấp tài khoản',
+    upgrade_account_with_pass: 'Nâng cấp tài khoản (có pass)'
+  };
+  return types[type as keyof typeof types] || type;
+};
+
 const SellerOrders = () => {
   const { user } = useAuth();
 
@@ -35,7 +59,6 @@ const SellerOrders = () => {
         
         console.log('Fetching seller orders for user:', user.id);
         
-        // First get the seller's products
         const { data: sellerProducts, error: productsError } = await supabase
           .from('products')
           .select('id')
@@ -53,10 +76,12 @@ const SellerOrders = () => {
 
         const productIds = sellerProducts.map(p => p.id);
         
-        // Then get orders for these products
         const { data: ordersData, error: ordersError } = await supabase
           .from('orders')
-          .select('*')
+          .select(`
+            *,
+            product:products(*)
+          `)
           .in('product_id', productIds)
           .order('created_at', { ascending: false });
         
@@ -65,33 +90,8 @@ const SellerOrders = () => {
           return [];
         }
 
-        if (!ordersData || ordersData.length === 0) {
-          console.log('No orders found for seller products');
-          return [];
-        }
-
-        // Get product details for the orders
-        const { data: productsData, error: productDetailsError } = await supabase
-          .from('products')
-          .select('*')
-          .in('id', productIds);
-
-        if (productDetailsError) {
-          console.error('Error fetching product details:', productDetailsError);
-          return [];
-        }
-
-        // Combine orders with product details
-        const ordersWithProducts = ordersData.map(order => {
-          const product = productsData?.find(p => p.id === order.product_id);
-          return {
-            ...order,
-            product: product || null
-          };
-        }).filter(order => order.product !== null);
-
-        console.log('Seller orders with products:', ordersWithProducts);
-        return ordersWithProducts as (Order & { product: Product })[];
+        console.log('Seller orders with products:', ordersData);
+        return ordersData || [];
       } catch (error) {
         console.error('Error fetching seller orders:', error);
         return [];
@@ -107,35 +107,33 @@ const SellerOrders = () => {
   }
 
   return (
-    <div>
-      <h2 className="text-2xl font-semibold mb-6">Đơn hàng</h2>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-semibold">Đơn hàng</h2>
+        <div className="text-sm text-gray-600">
+          Tổng: {orders?.length || 0} đơn hàng
+        </div>
+      </div>
       
       {orders && orders.length > 0 ? (
         <div className="space-y-4">
           {orders.map((order) => (
             <Card key={order.id}>
-              <CardContent className="p-4">
-                <div className="flex flex-col md:flex-row md:items-center gap-4">
-                  <div className="h-16 w-16 bg-gray-100 rounded overflow-hidden shrink-0">
-                    <img 
-                      src={order.product.image || '/placeholder.svg'} 
-                      alt={order.product.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="font-medium">{order.product.title}</div>
-                    <div className="text-sm text-gray-500">
-                      Ngày đặt: {formatDate(order.created_at)}
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg">{order.product?.title}</CardTitle>
+                    <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+                      <span>#{order.id.slice(0, 8)}</span>
+                      <span>{formatDate(order.created_at)}</span>
+                      <Badge variant="outline">{getProductTypeLabel(order.product?.product_type || '')}</Badge>
                     </div>
                   </div>
-                  
                   <div className="text-right">
-                    <div className="font-medium text-marketplace-primary">
-                      {formatPrice(order.product.price)}
+                    <div className="font-medium text-marketplace-primary text-lg">
+                      {formatPrice(order.product?.price || 0)}
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <Badge className={
                         order.status === 'paid' ? 'bg-green-500' : 
                         order.status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'
@@ -143,9 +141,57 @@ const SellerOrders = () => {
                         {order.status === 'paid' ? 'Đã thanh toán' : 
                          order.status === 'pending' ? 'Chờ thanh toán' : 'Đã hủy'}
                       </Badge>
+                      {getDeliveryStatusBadge(order.delivery_status || 'pending')}
                     </div>
                   </div>
                 </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium mb-2">Thông tin khách hàng</h4>
+                    <div className="space-y-1 text-sm">
+                      <div>Email: {order.buyer_email || 'Chưa có'}</div>
+                      {order.buyer_data && Object.keys(order.buyer_data).length > 0 && (
+                        <div>
+                          <div className="font-medium mt-2">Thông tin bổ sung:</div>
+                          {Object.entries(order.buyer_data as Record<string, any>).map(([key, value]) => (
+                            <div key={key}>{key}: {value}</div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" size="sm">
+                      <Eye className="h-4 w-4 mr-1" />
+                      Chi tiết
+                    </Button>
+                    
+                    {order.product?.product_type === 'shared_account' && (
+                      <Button variant="outline" size="sm">
+                        <MessageCircle className="h-4 w-4 mr-1" />
+                        Liên hệ CSKH
+                      </Button>
+                    )}
+                    
+                    {(order.product?.product_type === 'upgrade_account_no_pass' || 
+                      order.product?.product_type === 'upgrade_account_with_pass') && (
+                      <Button variant="outline" size="sm">
+                        <Mail className="h-4 w-4 mr-1" />
+                        Gửi thông tin
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                
+                {order.delivery_notes && (
+                  <div className="mt-3 p-3 bg-gray-50 rounded">
+                    <div className="text-sm font-medium">Ghi chú giao hàng:</div>
+                    <div className="text-sm text-gray-600">{order.delivery_notes}</div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}

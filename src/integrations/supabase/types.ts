@@ -33,9 +33,99 @@ export type Database = {
         }
         Relationships: []
       }
+      license_keys: {
+        Row: {
+          assigned_to_order: string | null
+          created_at: string | null
+          id: string
+          is_used: boolean | null
+          license_key: string
+          product_id: string | null
+          used_at: string | null
+        }
+        Insert: {
+          assigned_to_order?: string | null
+          created_at?: string | null
+          id?: string
+          is_used?: boolean | null
+          license_key: string
+          product_id?: string | null
+          used_at?: string | null
+        }
+        Update: {
+          assigned_to_order?: string | null
+          created_at?: string | null
+          id?: string
+          is_used?: boolean | null
+          license_key?: string
+          product_id?: string | null
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_keys_assigned_to_order_fkey"
+            columns: ["assigned_to_order"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "license_keys_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          related_order_id: string | null
+          title: string
+          type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          related_order_id?: string | null
+          title: string
+          type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          related_order_id?: string | null
+          title?: string
+          type?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_related_order_id_fkey"
+            columns: ["related_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
+          buyer_data: Json | null
+          buyer_email: string | null
           created_at: string
+          delivery_notes: string | null
+          delivery_status: string | null
           id: string
           product_id: string
           status: string
@@ -43,7 +133,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          buyer_data?: Json | null
+          buyer_email?: string | null
           created_at?: string
+          delivery_notes?: string | null
+          delivery_status?: string | null
           id?: string
           product_id: string
           status?: string
@@ -51,7 +145,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          buyer_data?: Json | null
+          buyer_email?: string | null
           created_at?: string
+          delivery_notes?: string | null
+          delivery_status?: string | null
           id?: string
           product_id?: string
           status?: string
@@ -72,12 +170,14 @@ export type Database = {
         Row: {
           category: string
           created_at: string
+          delivery_data: Json | null
           description: string | null
           file_url: string | null
           id: string
           image: string | null
           in_stock: number | null
           price: number
+          product_type: string | null
           purchases: number | null
           seller_id: string
           seller_name: string
@@ -86,12 +186,14 @@ export type Database = {
         Insert: {
           category: string
           created_at?: string
+          delivery_data?: Json | null
           description?: string | null
           file_url?: string | null
           id?: string
           image?: string | null
           in_stock?: number | null
           price: number
+          product_type?: string | null
           purchases?: number | null
           seller_id: string
           seller_name: string
@@ -100,12 +202,14 @@ export type Database = {
         Update: {
           category?: string
           created_at?: string
+          delivery_data?: Json | null
           description?: string | null
           file_url?: string | null
           id?: string
           image?: string | null
           in_stock?: number | null
           price?: number
+          product_type?: string | null
           purchases?: number | null
           seller_id?: string
           seller_name?: string

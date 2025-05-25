@@ -13,6 +13,8 @@ export interface ProductFormData {
   inStock: string;
   image: File | null;
   file: File | null;
+  product_type: string;
+  delivery_data: Record<string, any>;
 }
 
 export const useProductUpload = () => {
@@ -23,7 +25,6 @@ export const useProductUpload = () => {
   const uploadFile = async (file: File, bucket: string, path: string) => {
     console.log(`Uploading file to ${bucket}/${path}:`, file.name);
     
-    // Ensure we have a valid session before uploading
     if (!session) {
       throw new Error('No valid session found');
     }
@@ -50,9 +51,6 @@ export const useProductUpload = () => {
 
   const submitProduct = async (formData: ProductFormData): Promise<boolean> => {
     console.log('Starting product submission with data:', formData);
-    console.log('Current user:', user);
-    console.log('Current profile:', profile);
-    console.log('Current session:', session);
     
     if (!user || !session) {
       console.error('Authentication check failed:', { user: !!user, session: !!session });
@@ -73,14 +71,13 @@ export const useProductUpload = () => {
         console.log('Image uploaded successfully:', imageUrl);
       }
 
-      // Upload product file if provided
-      if (formData.file) {
+      // Upload product file if provided and product type supports it
+      if (formData.file && formData.product_type === 'file_download') {
         const fileFileName = `${user.id}/${Date.now()}-${formData.file.name}`;
         fileUrl = await uploadFile(formData.file, 'product-files', fileFileName);
         console.log('Product file uploaded successfully:', fileUrl);
       }
 
-      // Use fallback values if profile is not available
       const sellerName = profile?.full_name || user.email || 'Unknown Seller';
       
       console.log('Using seller info:', {
@@ -100,7 +97,9 @@ export const useProductUpload = () => {
         image: imageUrl,
         file_url: fileUrl || null,
         in_stock: formData.inStock ? parseInt(formData.inStock) : null,
-        purchases: 0
+        purchases: 0,
+        product_type: formData.product_type,
+        delivery_data: formData.delivery_data
       };
 
       console.log('Inserting product data:', productData);
@@ -118,20 +117,11 @@ export const useProductUpload = () => {
 
       console.log('Product created successfully:', data);
       
-      // Show warning if profile was not available
-      if (!profile) {
-        toast.success('🎉 Sản phẩm đã được tạo thành công!', {
-          description: 'Lưu ý: Thông tin người bán sử dụng email đăng nhập',
-          duration: 4000,
-        });
-      } else {
-        toast.success('🎉 Sản phẩm đã được tạo thành công!', {
-          description: 'Sản phẩm của bạn đã được thêm vào gian hàng',
-          duration: 4000,
-        });
-      }
+      toast.success('🎉 Sản phẩm đã được tạo thành công!', {
+        description: 'Sản phẩm của bạn đã được thêm vào gian hàng',
+        duration: 4000,
+      });
       
-      // Navigate back to products list
       setTimeout(() => {
         navigate('/seller/products');
       }, 1000);

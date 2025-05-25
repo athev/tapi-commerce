@@ -8,6 +8,7 @@ import ProductBasicInfo from "./ProductBasicInfo";
 import ProductDescription from "./ProductDescription";
 import ProductImageUpload from "./ProductImageUpload";
 import ProductFileUpload from "./ProductFileUpload";
+import ProductTypeSelector from "./ProductTypeSelector";
 import { toast } from "sonner";
 
 const ProductFormContent = () => {
@@ -21,7 +22,9 @@ const ProductFormContent = () => {
     category: '',
     inStock: '',
     image: null,
-    file: null
+    file: null,
+    product_type: 'file_download',
+    delivery_data: {}
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({});
@@ -51,8 +54,17 @@ const ProductFormContent = () => {
       newErrors.category = "Danh mục là bắt buộc";
     }
 
+    if (!formData.product_type) {
+      newErrors.product_type = "Loại sản phẩm là bắt buộc";
+    }
+
     if (!formData.image) {
       newErrors.image = "Ảnh sản phẩm là bắt buộc";
+    }
+
+    // Validate file upload for file_download type
+    if (formData.product_type === 'file_download' && !formData.file) {
+      newErrors.file = "File sản phẩm là bắt buộc cho loại tải xuống";
     }
 
     if (formData.inStock && (isNaN(Number(formData.inStock)) || Number(formData.inStock) < 0)) {
@@ -90,6 +102,10 @@ const ProductFormContent = () => {
 
   const handleFileChange = (file: File | null) => {
     setFormData(prev => ({ ...prev, file: file }));
+    
+    if (file && errors.file) {
+      setErrors(prev => ({ ...prev, file: undefined }));
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -110,7 +126,9 @@ const ProductFormContent = () => {
         category: '',
         inStock: '',
         image: null,
-        file: null
+        file: null,
+        product_type: 'file_download',
+        delivery_data: {}
       });
       setErrors({});
     }
@@ -133,6 +151,12 @@ const ProductFormContent = () => {
             errors={errors}
           />
           
+          <ProductTypeSelector
+            value={formData.product_type}
+            onChange={(value) => handleSelectChange('product_type', value)}
+            error={errors.product_type}
+          />
+          
           <ProductDescription 
             value={formData.description}
             onChange={handleInputChange}
@@ -146,10 +170,13 @@ const ProductFormContent = () => {
               error={errors.image}
             />
             
-            <ProductFileUpload 
-              file={formData.file}
-              onFileChange={handleFileChange}
-            />
+            {formData.product_type === 'file_download' && (
+              <ProductFileUpload 
+                file={formData.file}
+                onFileChange={handleFileChange}
+                error={errors.file}
+              />
+            )}
           </div>
           
           <div className="flex justify-end space-x-2 pt-4">
