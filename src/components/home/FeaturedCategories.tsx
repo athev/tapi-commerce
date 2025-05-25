@@ -10,18 +10,38 @@ const FeaturedCategories = () => {
     queryKey: ['featured-categories'],
     queryFn: async () => {
       try {
-        console.log('Fetching categories...');
+        console.log('🔍 Fetching categories...');
+        console.log('🔍 Supabase client:', supabase);
+        
         const { data, error } = await supabase
           .from('categories')
           .select('*')
           .order('name');
         
+        console.log('📊 Supabase response:', { data, error });
+        
         if (error) {
-          console.warn('Categories fetch error:', error);
-          throw error;
+          console.error('❌ Categories fetch error:', error);
+          console.log('🔄 Falling back to mock data...');
+          return mockCategories.map(item => ({
+            id: item.id,
+            title: item.name,
+            icon: item.icon,
+            count: item.count
+          }));
         }
         
-        console.log('Categories fetched successfully:', data);
+        if (!data || data.length === 0) {
+          console.warn('⚠️ No categories found in database, using mock data');
+          return mockCategories.map(item => ({
+            id: item.id,
+            title: item.name,
+            icon: item.icon,
+            count: item.count
+          }));
+        }
+        
+        console.log('✅ Categories fetched successfully:', data);
         return data.map(item => ({
           id: item.id,
           title: item.name,
@@ -29,7 +49,8 @@ const FeaturedCategories = () => {
           count: item.count || 0
         }));
       } catch (error) {
-        console.warn('Error fetching featured categories, using mock data', error);
+        console.error('💥 Exception in fetchCategories:', error);
+        console.log('🔄 Using mock data as fallback...');
         
         return mockCategories.map(item => ({
           id: item.id,
@@ -39,11 +60,15 @@ const FeaturedCategories = () => {
         }));
       }
     },
-    retry: 2,
+    retry: 1,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 
+  console.log('🎯 FeaturedCategories render state:', { isLoading, error, categoriesCount: categories?.length });
+
   if (isLoading) {
+    console.log('⏳ Categories loading...');
     return (
       <section className="container py-12">
         <h2 className="text-2xl font-bold mb-8 text-center">Danh mục sản phẩm</h2>
@@ -57,9 +82,10 @@ const FeaturedCategories = () => {
   }
 
   if (error) {
-    console.error('Categories error:', error);
+    console.error('❌ Categories error in render:', error);
   }
 
+  // Always render categories, either from Supabase or mock data
   return (
     <section className="container py-12">
       <h2 className="text-2xl font-bold mb-8 text-center">Danh mục sản phẩm</h2>
@@ -70,6 +96,11 @@ const FeaturedCategories = () => {
           </Link>
         ))}
       </div>
+      {categories?.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-gray-500">Không có danh mục nào để hiển thị</p>
+        </div>
+      )}
     </section>
   );
 };
