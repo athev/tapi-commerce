@@ -13,12 +13,12 @@ const SellerStatusHandler = ({ children }: SellerStatusHandlerProps) => {
   const { user, refreshProfile } = useAuth();
   const { sellerStatus, sellerApplication, loading } = useSellerStatus();
 
-  // Refresh profile when component mounts to ensure we have latest data
+  // Only refresh profile once when component mounts
   useEffect(() => {
     if (user) {
       refreshProfile();
     }
-  }, [user, refreshProfile]);
+  }, [user?.id]); // Only depend on user.id, not the refreshProfile function
 
   console.log('SellerStatusHandler:', { 
     user: !!user, 

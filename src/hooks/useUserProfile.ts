@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/lib/supabase';
@@ -8,7 +8,7 @@ export const useUserProfile = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
 
   // Fetch user profile from profiles table
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = useCallback(async (userId: string) => {
     if (!navigator.onLine) {
       console.log("useUserProfile: Offline mode, cannot fetch profile");
       return null;
@@ -36,7 +36,6 @@ export const useUserProfile = () => {
       }
       
       console.log('useUserProfile: Profile fetched successfully:', data);
-      console.log('Fetched profile:', data);
       
       // Set the profile in state immediately after fetching
       const userProfile = data as UserProfile;
@@ -47,10 +46,10 @@ export const useUserProfile = () => {
       console.error('useUserProfile: Error in fetchProfile:', error);
       return null;
     }
-  };
+  }, []);
 
   // Refresh profile data
-  const refreshProfile = async (user: User | null) => {
+  const refreshProfile = useCallback(async (user: User | null) => {
     if (user && navigator.onLine) {
       console.log('useUserProfile: Refreshing profile for user:', user.id);
       const userProfile = await fetchProfile(user.id);
@@ -61,7 +60,7 @@ export const useUserProfile = () => {
     } else {
       console.log('useUserProfile: Cannot refresh profile - user or connection unavailable');
     }
-  };
+  }, [fetchProfile]);
 
   return {
     profile,

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import type { Database } from '@/integrations/supabase/types';
@@ -8,43 +8,40 @@ import type { Database } from '@/integrations/supabase/types';
 type SellerApplication = Database['public']['Tables']['seller_applications']['Row'];
 
 export const useSellerStatus = () => {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile } = useAuth();
   const [sellerApplication, setSellerApplication] = useState<SellerApplication | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchSellerApplication = useCallback(async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('seller_applications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching seller application:', error);
+      } else {
+        setSellerApplication(data);
+      }
+    } catch (error) {
+      console.error('Error in fetchSellerApplication:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.id]);
+
   useEffect(() => {
-    const fetchSellerStatus = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        // First refresh the profile to get the latest role
-        await refreshProfile();
-
-        const { data, error } = await supabase
-          .from('seller_applications')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error fetching seller application:', error);
-        } else {
-          setSellerApplication(data);
-        }
-      } catch (error) {
-        console.error('Error in fetchSellerStatus:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchSellerStatus();
-  }, [user, refreshProfile]);
+    fetchSellerApplication();
+  }, [fetchSellerApplication]);
 
   const getSellerStatus = () => {
     if (!user) return 'not_logged_in';
