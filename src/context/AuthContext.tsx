@@ -47,10 +47,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     fetchProfile
   } = useSupabaseAuth(isOnline);
 
-  // Initialize user session
+  // Initialize user session with better error handling
   useEffect(() => {
     const initSession = async () => {
       try {
+        console.log('Initializing auth session...');
+        
         // Check if we're online first
         if (!navigator.onLine) {
           console.log("Offline mode: Using cached session if available");
@@ -58,13 +60,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
 
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setLoading(false);
+          return;
+        }
+        
+        console.log('Session retrieved:', currentSession ? 'Found' : 'None');
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
         if (currentSession?.user) {
+          console.log('Fetching user profile...');
           const userProfile = await fetchProfile(currentSession.user.id);
-          setUser(currentSession.user);
+          if (userProfile) {
+            console.log('Profile fetched successfully');
+          }
         }
       } catch (error) {
         console.error('Error initializing session:', error);
@@ -75,18 +88,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     initSession();
 
-    // Listen for auth changes
+    // Listen for auth changes with better error handling
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         try {
+          console.log('Auth state changed:', event, newSession ? 'Session exists' : 'No session');
+          
           setSession(newSession);
           setUser(newSession?.user ?? null);
           
-          if (newSession?.user) {
+          if (newSession?.user && event !== 'TOKEN_REFRESHED') {
+            console.log('Fetching profile for new session...');
             const userProfile = await fetchProfile(newSession.user.id);
-            setUser(newSession.user);
-          } else {
-            setUser(null);
+            if (userProfile) {
+              console.log('Profile updated successfully');
+            }
           }
         } catch (error) {
           console.error('Error in auth state change:', error);
@@ -99,7 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchProfile, setSession, setUser, setLoading]);
 
   return (
     <AuthContext.Provider value={{

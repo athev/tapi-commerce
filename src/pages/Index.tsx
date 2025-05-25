@@ -7,7 +7,7 @@ import FeaturedCategories from "@/components/home/FeaturedCategories";
 import ProductGrid from "@/components/products/ProductGrid";
 import { ProductCardProps } from "@/components/products/ProductCard";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { mockCategories, mockProducts } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -35,30 +35,39 @@ const Index = () => {
     }
   }, [searchQuery, categoryParam]);
   
-  // Fetch categories
+  // Fetch categories with better error handling
   const { data: categories } = useQuery({
     queryKey: ['categories'],
     queryFn: async () => {
       try {
+        console.log('Fetching categories...');
         const { data, error } = await supabase
           .from('categories')
           .select('*')
           .order('name');
         
-        if (error) throw error;
+        if (error) {
+          console.warn('Categories fetch error:', error);
+          throw error;
+        }
+        console.log('Categories fetched successfully:', data);
         return data;
       } catch (error) {
-        console.warn('Error fetching categories, using mock data', error);
+        console.warn('Using mock categories due to error:', error);
         return mockCategories;
       }
     },
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
-  // Fetch products
-  const { data: products, isLoading } = useQuery({
+  // Fetch products with better error handling
+  const { data: products, isLoading, error } = useQuery({
     queryKey: ['products', activeCategory, searchTerm],
     queryFn: async () => {
       try {
+        console.log('Fetching products with filters:', { activeCategory, searchTerm });
+        
         let query = supabase.from('products').select('*');
         
         // Apply category filter
@@ -71,9 +80,16 @@ const Index = () => {
           query = query.ilike('title', `%${searchTerm}%`);
         }
         
-        const { data, error } = await query.order('created_at', { ascending: false });
+        const { data, error } = await query
+          .order('created_at', { ascending: false })
+          .limit(50); // Add limit to avoid large payloads
         
-        if (error) throw error;
+        if (error) {
+          console.warn('Products fetch error:', error);
+          throw error;
+        }
+        
+        console.log('Products fetched successfully:', data?.length, 'items');
         
         return data.map(item => ({
           id: item.id,
@@ -81,7 +97,7 @@ const Index = () => {
           price: { min: item.price, max: item.price },
           image: item.image || '/placeholder.svg',
           category: item.category,
-          rating: 4.5, // Default or calculate from reviews
+          rating: 4.5,
           reviews: item.purchases || 0,
           seller: {
             name: item.seller_name,
@@ -91,7 +107,7 @@ const Index = () => {
           isNew: new Date(item.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
         }));
       } catch (error) {
-        console.warn('Error fetching products, using mock data', error);
+        console.warn('Using mock products due to error:', error);
         
         // Filter mock data based on category and search term
         let filteredProducts = [...mockProducts];
@@ -123,20 +139,26 @@ const Index = () => {
         }));
       }
     },
+    retry: 1,
+    staleTime: 2 * 60 * 1000, // 2 minutes
   });
   
-  // Fetch new products
+  // Fetch new products with better error handling
   const { data: newProducts } = useQuery({
     queryKey: ['newProducts'],
     queryFn: async () => {
       try {
+        console.log('Fetching new products...');
         const { data, error } = await supabase
           .from('products')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(5);
         
-        if (error) throw error;
+        if (error) {
+          console.warn('New products fetch error:', error);
+          throw error;
+        }
         
         return data.map(item => ({
           id: item.id,
@@ -144,7 +166,7 @@ const Index = () => {
           price: { min: item.price, max: item.price },
           image: item.image || '/placeholder.svg',
           category: item.category,
-          rating: 4.5, // Default or calculate from reviews
+          rating: 4.5,
           reviews: item.purchases || 0,
           seller: {
             name: item.seller_name,
@@ -154,9 +176,8 @@ const Index = () => {
           isNew: true,
         }));
       } catch (error) {
-        console.warn('Error fetching new products, using mock data', error);
+        console.warn('Using mock new products due to error:', error);
         
-        // Use the first 5 mock products as "new products"
         return mockProducts.slice(0, 5).map(item => ({
           id: item.id,
           title: item.title,
@@ -174,6 +195,8 @@ const Index = () => {
         }));
       }
     },
+    retry: 1,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
   
   // Handler for category change
@@ -252,10 +275,18 @@ const Index = () => {
             </div>
           )}
           
-          {/* Products grid */}
+          {/* Products grid with error handling */}
           {isLoading ? (
             <div className="flex justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-marketplace-primary"></div>
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <h2 className="text-xl font-semibold mb-2 text-red-600">Có lỗi xảy ra khi tải sản phẩm</h2>
+              <p className="text-gray-500 mb-4">Đang sử dụng dữ liệu mẫu. Vui lòng thử lại sau.</p>
+              <Button onClick={() => window.location.reload()}>
+                Tải lại trang
+              </Button>
             </div>
           ) : products && products.length > 0 ? (
             <ProductGrid 
