@@ -5,10 +5,9 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { supabase, Order, Product } from "@/lib/supabase";
+import { mockProducts } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
 import { Check } from "lucide-react";
 
 const formatPrice = (price: number) => {
@@ -88,144 +87,69 @@ const Payment = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+  const [isPaymentComplete, setIsPaymentComplete] = useState(false);
+
+  // Mock order data for development
+  const mockOrder = {
+    id: orderId || 'order_123',
+    user_id: user?.id || 'user1',
+    product_id: '1',
+    status: 'pending' as const,
+    created_at: new Date().toISOString(),
+  };
+
+  const mockProduct = mockProducts[0]; // Use first mock product
 
   useEffect(() => {
     document.title = "Thanh toán đơn hàng | DigitalMarket";
   }, []);
 
-  // Redirect if not logged in
-  useEffect(() => {
-    if (!user && !localStorage.getItem('checking-auth')) {
-      navigate('/login');
-      return;
-    }
-  }, [user, navigate]);
-
-  // Fetch order and product details
-  const { data: orderDetails, isLoading } = useQuery({
-    queryKey: ['order', orderId],
-    queryFn: async () => {
-      if (!orderId) return null;
-
-      try {
-        console.log('Fetching order details for:', orderId);
-        
-        const { data: orderData, error: orderError } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('id', orderId)
-          .single();
-        
-        if (orderError) {
-          console.error('Order fetch error:', orderError);
-          throw orderError;
-        }
-
-        console.log('Order data:', orderData);
-
-        const { data: productData, error: productError } = await supabase
-          .from('products')
-          .select('*')
-          .eq('id', orderData.product_id)
-          .single();
-        
-        if (productError) {
-          console.error('Product fetch error:', productError);
-          throw productError;
-        }
-
-        console.log('Product data:', productData);
-
-        return {
-          order: orderData as Order,
-          product: productData as Product,
-        };
-      } catch (error) {
-        console.error('Error fetching order details:', error);
-        return null;
-      }
-    },
-    enabled: !!orderId && !!user,
-  });
-
-  // Function to check payment status
+  // Function to simulate payment completion
   const checkPaymentStatus = async () => {
     setIsCheckingPayment(true);
 
-    try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('status')
-        .eq('id', orderId)
-        .single();
-      
-      if (error) throw error;
-
-      if (data.status === 'paid') {
-        toast({
-          title: "Thanh toán thành công",
-          description: "Đơn hàng của bạn đã được thanh toán",
-        });
-        
-        // Redirect to product download page
-        navigate(`/product/${orderDetails?.product.id}`);
-      } else {
-        toast({
-          title: "Chờ xác nhận",
-          description: "Đơn hàng của bạn đang được xử lý",
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Lỗi",
-        description: "Không thể kiểm tra trạng thái thanh toán",
-        variant: "destructive",
-      });
-    } finally {
+    // Simulate payment processing
+    setTimeout(() => {
+      setIsPaymentComplete(true);
       setIsCheckingPayment(false);
-    }
+      
+      toast({
+        title: "Thanh toán thành công",
+        description: "Đơn hàng của bạn đã được thanh toán",
+      });
+    }, 2000);
   };
 
-  if (isLoading) {
+  if (isPaymentComplete) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
+        
         <main className="flex-1 container py-12">
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-marketplace-primary"></div>
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6 text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Check className="h-8 w-8 text-green-600" />
+              </div>
+              <h2 className="text-xl font-bold text-green-800 mb-2">Đơn hàng đã được thanh toán!</h2>
+              <p className="text-green-700 mb-6">Cảm ơn bạn đã mua sản phẩm của chúng tôi.</p>
+              <div className="space-y-3">
+                <Button className="bg-marketplace-primary" onClick={() => navigate(`/product/${mockProduct.id}`)}>
+                  Tải xuống sản phẩm
+                </Button>
+                <br />
+                <Button variant="outline" onClick={() => navigate('/my-purchases')}>
+                  Xem tất cả đơn hàng
+                </Button>
+              </div>
+            </div>
           </div>
         </main>
+        
         <Footer />
       </div>
     );
   }
-
-  // Ensure the order belongs to the logged-in user
-  if (orderDetails && user && orderDetails.order.user_id !== user.id) {
-    navigate('/');
-    return null;
-  }
-
-  if (!orderDetails) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex-1 container py-12">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold">Không tìm thấy đơn hàng</h2>
-            <p className="mt-2">Đơn hàng này không tồn tại hoặc đã bị xóa.</p>
-            <Button onClick={() => navigate('/')} className="mt-4">
-              Quay lại trang chủ
-            </Button>
-          </div>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  const { order, product } = orderDetails;
-  const isPaid = order.status === 'paid';
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -235,65 +159,50 @@ const Payment = () => {
         <div className="max-w-3xl mx-auto">
           <h1 className="text-3xl font-bold mb-8 text-center">Thanh toán đơn hàng</h1>
           
-          {isPaid ? (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6 text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Check className="h-8 w-8 text-green-600" />
-              </div>
-              <h2 className="text-xl font-bold text-green-800 mb-2">Đơn hàng đã được thanh toán!</h2>
-              <p className="text-green-700 mb-6">Cảm ơn bạn đã mua sản phẩm của chúng tôi.</p>
-              <Button className="bg-marketplace-primary" onClick={() => navigate(`/product/${product.id}`)}>
-                Tải xuống sản phẩm
-              </Button>
-            </div>
-          ) : (
-            <>
-              <Card className="mb-8">
-                <CardHeader>
-                  <CardTitle>Chi tiết đơn hàng #{order.id.slice(0, 8).toUpperCase()}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4 pb-4 border-b">
-                      <div className="h-16 w-16 bg-gray-100 rounded overflow-hidden">
-                        <img 
-                          src={product.image || '/placeholder.svg'} 
-                          alt={product.title}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{product.title}</h3>
-                        <p className="text-sm text-gray-500">
-                          Người bán: {product.seller_name}
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-between items-center text-lg font-bold py-2 border-t">
-                      <span>Tổng thanh toán:</span>
-                      <span className="text-marketplace-primary">{formatPrice(product.price)}</span>
-                    </div>
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Chi tiết đơn hàng #{mockOrder.id.slice(0, 8).toUpperCase()}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center gap-4 pb-4 border-b">
+                  <div className="h-16 w-16 bg-gray-100 rounded overflow-hidden">
+                    <img 
+                      src={mockProduct.image || '/placeholder.svg'} 
+                      alt={mockProduct.title}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  <Button variant="outline" onClick={() => navigate(`/product/${product.id}`)}>
-                    Quay lại
-                  </Button>
-                  <Button onClick={checkPaymentStatus} disabled={isCheckingPayment}>
-                    {isCheckingPayment ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Đang kiểm tra...
-                      </>
-                    ) : "Kiểm tra thanh toán"}
-                  </Button>
-                </CardFooter>
-              </Card>
-              
-              <PaymentInstructions />
-            </>
-          )}
+                  <div>
+                    <h3 className="font-medium">{mockProduct.title}</h3>
+                    <p className="text-sm text-gray-500">
+                      Người bán: {mockProduct.seller_name}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center text-lg font-bold py-2 border-t">
+                  <span>Tổng thanh toán:</span>
+                  <span className="text-marketplace-primary">{formatPrice(mockProduct.price)}</span>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <Button variant="outline" onClick={() => navigate(`/product/${mockProduct.id}`)}>
+                Quay lại
+              </Button>
+              <Button onClick={checkPaymentStatus} disabled={isCheckingPayment}>
+                {isCheckingPayment ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Đang xử lý thanh toán...
+                  </>
+                ) : "Xác nhận đã thanh toán"}
+              </Button>
+            </CardFooter>
+          </Card>
+          
+          <PaymentInstructions />
         </div>
       </main>
       

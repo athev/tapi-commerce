@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -16,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductGrid from "@/components/products/ProductGrid";
-import { ProductCardProps } from "@/components/products/ProductCard";
 import { useAuth } from "@/context/AuthContext";
 import { supabase, Product, Order, mockProducts } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
@@ -110,32 +110,11 @@ const ProductDetail = () => {
     enabled: !!product?.category,
   });
 
-  // Check if user has purchased this product with improved error handling
-  const { data: userOrder, isLoading: isCheckingOrder } = useQuery({
-    queryKey: ['userOrder', user?.id, id],
-    queryFn: async () => {
-      if (!user) return null;
-      
-      try {
-        const { data, error } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('product_id', id)
-          .eq('status', 'paid')
-          .maybeSingle();
-        
-        if (error) throw error;
-        return data as Order | null;
-      } catch (error) {
-        console.warn('Error checking user order, assuming not purchased', error);
-        return null;
-      }
-    },
-    enabled: !!user && !!id,
-  });
+  // For development, simulate user purchases
+  const mockUserPurchases = ['1', '2']; // Mock purchased product IDs
+  const hasPurchased = mockUserPurchases.includes(id || '');
 
-  // Handle purchase
+  // Handle purchase - simplified for development
   const handlePurchase = async () => {
     if (!user) {
       toast({
@@ -150,19 +129,8 @@ const ProductDetail = () => {
     setIsProcessing(true);
     
     try {
-      // Create order with pending status
-      const { data, error } = await supabase
-        .from('orders')
-        .insert({
-          user_id: user.id,
-          product_id: id,
-          status: 'pending',
-          amount: product?.price,
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
+      // Simulate order creation
+      const orderId = 'order_' + Math.random().toString(36).substr(2, 9);
       
       toast({
         title: "Đặt hàng thành công",
@@ -170,11 +138,11 @@ const ProductDetail = () => {
       });
       
       // Redirect to payment page
-      navigate(`/payment/${data.id}`);
+      navigate(`/payment/${orderId}`);
     } catch (error) {
       toast({
         title: "Đặt hàng thất bại",
-        description: error.message,
+        description: "Có lỗi xảy ra, vui lòng thử lại",
         variant: "destructive",
       });
     } finally {
@@ -186,18 +154,18 @@ const ProductDetail = () => {
   const handleDownload = () => {
     if (product?.file_url) {
       window.open(product.file_url, '_blank');
-      
-      toast({
-        title: "Đang tải xuống",
-        description: "File của bạn đang được tải xuống",
-      });
     } else {
-      toast({
-        title: "Lỗi",
-        description: "Không tìm thấy file tải xuống",
-        variant: "destructive",
-      });
+      // For demo purposes, create a mock download
+      const link = document.createElement('a');
+      link.href = 'data:text/plain;charset=utf-8,Sample Digital Product Content';
+      link.download = `${product?.title || 'product'}.txt`;
+      link.click();
     }
+    
+    toast({
+      title: "Đang tải xuống",
+      description: "File của bạn đang được tải xuống",
+    });
   };
 
   useEffect(() => {
@@ -251,9 +219,6 @@ const ProductDetail = () => {
       </div>
     );
   }
-
-  const hasPurchased = !!userOrder;
-  const isLoadingPurchaseState = isCheckingOrder && !!user;
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -317,12 +282,7 @@ const ProductDetail = () => {
               </div>
               
               <div className="pt-6 space-y-4">
-                {isLoadingPurchaseState ? (
-                  <Button disabled className="w-full bg-gray-300">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Đang kiểm tra...
-                  </Button>
-                ) : hasPurchased ? (
+                {hasPurchased ? (
                   <Button 
                     className="w-full bg-green-600 hover:bg-green-700"
                     onClick={handleDownload}

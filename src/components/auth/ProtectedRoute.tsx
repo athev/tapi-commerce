@@ -15,6 +15,13 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
 
   console.log('ProtectedRoute check:', { user: !!user, profile, loading, allowedRoles, currentPath: location.pathname });
 
+  // For development, temporarily bypass authentication
+  // Just show the content directly
+  console.log('Development mode: bypassing authentication checks');
+  return <>{children}</>;
+
+  // Original authentication logic (commented out for development)
+  /*
   // Show loading state while checking authentication
   if (loading) {
     return (
@@ -58,6 +65,7 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
 
   console.log('Access granted to protected route');
   return <>{children}</>;
+  */
 };
 
 export default ProtectedRoute;
