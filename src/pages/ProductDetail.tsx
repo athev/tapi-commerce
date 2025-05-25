@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -210,11 +209,11 @@ const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Main Product Section */}
+        {/* Main Product Section - 2 Columns Only */}
         <div className="container py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Left - Product Images */}
-            <div className="lg:col-span-6">
+            <div className="lg:col-span-1">
               <div className="sticky top-8">
                 <ProductImageGallery 
                   images={product?.image ? [product.image] : []} 
@@ -224,38 +223,28 @@ const ProductDetail = () => {
             </div>
             
             {/* Right - Product Info and Purchase */}
-            <div className="lg:col-span-6">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Product Header */}
-                <div className="lg:col-span-8">
-                  <ProductHeader
-                    title={product?.title || ''}
-                    price={product?.price || 0}
-                    category={product?.category || ''}
+            <div className="lg:col-span-1 space-y-6">
+              <ProductHeader
+                title={product?.title || ''}
+                price={product?.price || 0}
+                category={product?.category || ''}
+                productType={product?.product_type || 'file_download'}
+                purchases={product?.purchases || 0}
+                inStock={product?.in_stock || 0}
+                sellerName={product?.seller_name || ''}
+              />
+              
+              <Card className="shadow-lg">
+                <CardContent className="p-6">
+                  <ProductTypeOrderForm 
                     productType={product?.product_type || 'file_download'}
-                    purchases={product?.purchases || 0}
-                    inStock={product?.in_stock || 0}
-                    sellerName={product?.seller_name || ''}
+                    onPurchase={handlePurchase}
+                    isProcessing={isProcessing}
+                    hasPurchased={hasPurchased}
+                    product={product}
                   />
-                </div>
-                
-                {/* Purchase Form */}
-                <div className="lg:col-span-4">
-                  <div className="sticky top-8">
-                    <Card className="shadow-lg">
-                      <CardContent className="p-6">
-                        <ProductTypeOrderForm 
-                          productType={product?.product_type || 'file_download'}
-                          onPurchase={handlePurchase}
-                          isProcessing={isProcessing}
-                          hasPurchased={hasPurchased}
-                          product={product}
-                        />
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
