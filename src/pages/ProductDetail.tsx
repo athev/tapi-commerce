@@ -159,7 +159,7 @@ const ProductDetail = () => {
     <div className="flex flex-col min-h-screen bg-white">
       <Navbar />
       
-      <main className="flex-1 pb-28 lg:pb-0">
+      <main className="flex-1 pb-28 md:pb-0">
         {/* Breadcrumb */}
         <ProductBreadcrumb 
           category={product?.category} 

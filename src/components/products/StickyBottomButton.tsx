@@ -28,12 +28,13 @@ const StickyBottomButton = ({
 }: StickyBottomButtonProps) => {
   const isMobile = useIsMobile();
 
+  // Chỉ hiển thị trên mobile và khi chưa mua (nếu là file download)
   if (!isMobile || (hasPurchased && productType === 'file_download')) {
     return null;
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40 backdrop-blur-sm">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40 backdrop-blur-sm lg:hidden">
       <div className="container py-3 pb-6">
         <div className="flex items-center space-x-3">
           {/* Quick Actions */}
