@@ -5,7 +5,12 @@ import { mockCategories } from "@/lib/supabase";
 import CategoryCard, { CategoryCardProps } from "../products/CategoryCard";
 import { Link } from "react-router-dom";
 
-const FeaturedCategories = () => {
+interface FeaturedCategoriesProps {
+  activeCategory: string;
+  onCategoryChange: (category: string) => void;
+}
+
+const FeaturedCategories = ({ activeCategory, onCategoryChange }: FeaturedCategoriesProps) => {
   const { data: categories, isLoading, error } = useQuery({
     queryKey: ['featured-categories'],
     queryFn: async () => {
@@ -97,9 +102,13 @@ const FeaturedCategories = () => {
       <h2 className="text-2xl font-bold mb-8 text-center">Danh mục sản phẩm</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
         {categories?.map((category) => (
-          <Link to={`/?category=${encodeURIComponent(category.title)}`} key={category.id}>
+          <div 
+            key={category.id} 
+            onClick={() => onCategoryChange(category.title)}
+            className="cursor-pointer"
+          >
             <CategoryCard {...category} />
-          </Link>
+          </div>
         ))}
       </div>
       {categories?.length === 0 && (
