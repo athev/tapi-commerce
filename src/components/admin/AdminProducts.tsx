@@ -1,83 +1,64 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase, mockProducts } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Check, Trash } from "lucide-react";
+import { Check, Trash, Download } from "lucide-react";
 
 const AdminProducts = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("all");
-  const [isApproving, setIsApproving] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const { data: products, isLoading, refetch } = useQuery({
     queryKey: ['admin-products'],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        return data;
-      } catch (error) {
-        console.warn('Error fetching admin products, using mock data', error);
-        return mockProducts;
+      console.log('Fetching all products for admin');
+      
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error('Error fetching admin products:', error);
+        throw error;
       }
+      
+      console.log('Fetched admin products:', data);
+      return data;
     }
   });
 
   const filteredProducts = products?.filter(product => {
     const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase());
+                         product.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = category === "all" || product.category === category;
     return matchesSearch && matchesCategory;
   });
 
-  const handleApprove = async (productId: string) => {
-    setIsApproving(productId);
-    
-    try {
-      // In a real implementation, update the product status in Supabase
-      // const { error } = await supabase
-      //   .from('products')
-      //   .update({ approved: true })
-      //   .eq('id', productId);
-      
-      // if (error) throw error;
-      
-      toast.success('Sản phẩm đã được duyệt');
-      refetch();
-    } catch (error) {
-      toast.error('Có lỗi xảy ra khi duyệt sản phẩm');
-    } finally {
-      setIsApproving(null);
-    }
-  };
-
   const handleDelete = async (productId: string) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa sản phẩm này?')) return;
+    
     setIsDeleting(productId);
     
     try {
-      // In a real implementation, delete the product from Supabase
-      // const { error } = await supabase
-      //   .from('products')
-      //   .delete()
-      //   .eq('id', productId);
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', productId);
       
-      // if (error) throw error;
+      if (error) throw error;
       
       toast.success('Sản phẩm đã được xóa');
       refetch();
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error deleting product:', error);
       toast.error('Có lỗi xảy ra khi xóa sản phẩm');
     } finally {
       setIsDeleting(null);
@@ -138,12 +119,13 @@ const AdminProducts = () => {
                       <div>
                         <div className="text-lg font-semibold">
                           {product.title}
-                          
-                          {/* This is a placeholder for approval status */}
-                          <Badge className="ml-2 bg-green-500">Đã duyệt</Badge>
+                          <Badge className="ml-2 bg-green-500">Active</Badge>
                         </div>
                         <div className="text-sm text-gray-500">
                           Người bán: {product.seller_name} | Danh mục: {product.category}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          Tạo lúc: {new Date(product.created_at).toLocaleDateString('vi-VN')}
                         </div>
                       </div>
                       <div className="text-green-600 font-semibold">
@@ -163,15 +145,16 @@ const AdminProducts = () => {
                       </div>
                       
                       <div className="flex space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          className="border-green-500 text-green-600 hover:bg-green-50"
-                          disabled={isApproving === product.id}
-                          onClick={() => handleApprove(product.id)}
-                        >
-                          <Check className="h-4 w-4 mr-1" /> Duyệt
-                        </Button>
+                        {product.file_url && (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            className="border-blue-500 text-blue-600 hover:bg-blue-50"
+                            onClick={() => window.open(product.file_url!, '_blank')}
+                          >
+                            <Download className="h-4 w-4 mr-1" /> File
+                          </Button>
+                        )}
                         <Button 
                           variant="destructive" 
                           size="sm"

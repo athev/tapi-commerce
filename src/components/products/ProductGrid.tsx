@@ -1,120 +1,83 @@
 
-import { useState } from "react";
-import ProductCard, { ProductCardProps } from "./ProductCard";
-import { Button } from "@/components/ui/button";
-import { 
-  Select,
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Product, mockProducts } from "@/lib/supabase";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import ProductCard from "./ProductCard";
+import { mockProducts } from "@/lib/supabase";
 
 interface ProductGridProps {
-  products: Product[];
-  isLoading: boolean;
-  error: any;
+  searchTerm?: string;
+  category?: string;
 }
 
-// Helper function to transform Product to ProductCardProps
-const transformProductToCard = (product: Product): ProductCardProps => {
-  return {
-    id: product.id,
-    title: product.title,
-    price: {
-      min: product.price,
-      max: product.price
-    },
-    image: product.image || '/placeholder.svg',
-    category: product.category,
-    rating: 4.5,
-    reviews: product.purchases || 0,
-    seller: {
-      name: product.seller_name,
-      verified: true
-    },
-    inStock: product.in_stock || 0,
-    isNew: false,
-    isHot: (product.purchases || 0) > 50,
-  };
-};
+const ProductGrid = ({ searchTerm = "", category = "all" }: ProductGridProps) => {
+  const { data: products, isLoading, error } = useQuery({
+    queryKey: ['products'],
+    queryFn: async () => {
+      console.log('Fetching products from database');
+      
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching products:', error);
+          // Fallback to mock data if database fails
+          console.log('Falling back to mock data');
+          return mockProducts;
+        }
+        
+        console.log('Fetched products from database:', data);
+        return data;
+      } catch (error) {
+        console.error('Error in product fetch:', error);
+        // Fallback to mock data if request fails
+        console.log('Falling back to mock data due to error');
+        return mockProducts;
+      }
+    }
+  });
 
-const ProductGrid = ({ products, isLoading, error }: ProductGridProps) => {
-  const [sortBy, setSortBy] = useState("popular");
-  
-  // If there's an error or no products, show mock products
-  const displayProducts = products && products.length > 0 ? products : mockProducts;
-  
-  if (isLoading && (!products || products.length === 0)) {
+  const filteredProducts = products?.filter(product => {
+    const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = category === "all" || product.category === category;
+    return matchesSearch && matchesCategory;
+  });
+
+  if (isLoading) {
     return (
-      <section className="container py-12">
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-2xl font-bold">Sản phẩm nổi bật</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="animate-pulse">
+            <div className="bg-gray-200 h-48 rounded-t-lg"></div>
+            <div className="p-4">
+              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+            </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {Array.from({ length: 10 }).map((_, index) => (
-              <div key={index} className="h-64 bg-gray-200 rounded-lg animate-pulse"></div>
-            ))}
-          </div>
-        </div>
-      </section>
+        ))}
+      </div>
     );
   }
 
-  const transformedProducts = displayProducts.map(transformProductToCard);
-  
-  return (
-    <section className="container py-12">
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Sản phẩm nổi bật</h2>
-          
-          <div className="flex items-center gap-4">
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Sắp xếp theo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="popular">Phổ biến</SelectItem>
-                <SelectItem value="newest">Mới nhất</SelectItem>
-                <SelectItem value="price-asc">Giá tăng dần</SelectItem>
-                <SelectItem value="price-desc">Giá giảm dần</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        
-        {error && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-            <p className="text-yellow-800">
-              Có lỗi khi tải dữ liệu từ server. Đang hiển thị dữ liệu mẫu.
-            </p>
-          </div>
-        )}
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {transformedProducts.map((product) => (
-            <ProductCard key={product.id} {...product} />
-          ))}
-        </div>
-        
-        {transformedProducts.length > 10 && (
-          <div className="text-center mt-8">
-            <Button variant="outline">
-              Xem thêm
-            </Button>
-          </div>
-        )}
+  if (error) {
+    console.error('ProductGrid error:', error);
+  }
 
-        {transformedProducts.length === 0 && (
-          <div className="text-center py-8">
-            <p className="text-gray-500">Không có sản phẩm nào để hiển thị</p>
-          </div>
-        )}
-      </div>
-    </section>
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {filteredProducts?.map((product) => (
+        <ProductCard key={product.id} product={product} />
+      ))}
+      {filteredProducts?.length === 0 && (
+        <div className="col-span-full text-center py-12">
+          <h3 className="text-lg font-medium mb-2">Không tìm thấy sản phẩm</h3>
+          <p className="text-gray-500">Thử thay đổi từ khóa tìm kiếm hoặc danh mục</p>
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -21,6 +21,8 @@ export const useProductUpload = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const uploadFile = async (file: File, bucket: string, path: string) => {
+    console.log(`Uploading file to ${bucket}/${path}:`, file.name);
+    
     const { data, error } = await supabase.storage
       .from(bucket)
       .upload(path, file, {
@@ -37,10 +39,13 @@ export const useProductUpload = () => {
       .from(bucket)
       .getPublicUrl(path);
 
+    console.log('File uploaded successfully, public URL:', publicUrl);
     return publicUrl;
   };
 
   const submitProduct = async (formData: ProductFormData) => {
+    console.log('Starting product submission with data:', formData);
+    
     if (!user || !profile) {
       toast.error('Bạn cần đăng nhập để thêm sản phẩm');
       return;
@@ -65,33 +70,37 @@ export const useProductUpload = () => {
 
       // Upload image
       if (formData.image) {
-        const imageFileName = `${Date.now()}-${formData.image.name}`;
+        const imageFileName = `${user.id}/${Date.now()}-${formData.image.name}`;
         imageUrl = await uploadFile(formData.image, 'product-images', imageFileName);
         console.log('Image uploaded successfully:', imageUrl);
       }
 
       // Upload product file if provided
       if (formData.file) {
-        const fileFileName = `${Date.now()}-${formData.file.name}`;
+        const fileFileName = `${user.id}/${Date.now()}-${formData.file.name}`;
         fileUrl = await uploadFile(formData.file, 'product-files', fileFileName);
         console.log('Product file uploaded successfully:', fileUrl);
       }
 
       // Insert product into database
+      const productData = {
+        title: formData.title,
+        description: formData.description,
+        price: parseInt(formData.price),
+        category: formData.category,
+        seller_id: user.id,
+        seller_name: profile.full_name,
+        image: imageUrl,
+        file_url: fileUrl || null,
+        in_stock: formData.inStock ? parseInt(formData.inStock) : null,
+        purchases: 0
+      };
+
+      console.log('Inserting product data:', productData);
+
       const { data, error } = await supabase
         .from('products')
-        .insert({
-          title: formData.title,
-          description: formData.description,
-          price: parseInt(formData.price),
-          category: formData.category,
-          seller_id: user.id,
-          seller_name: profile.full_name,
-          image: imageUrl,
-          file_url: fileUrl || null,
-          in_stock: formData.inStock ? parseInt(formData.inStock) : null,
-          purchases: 0
-        })
+        .insert(productData)
         .select()
         .single();
 
