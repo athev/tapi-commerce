@@ -50,12 +50,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // Track profile fetch attempts to prevent infinite loops
   const profileFetchAttempted = useRef<Set<string>>(new Set());
   const profileFetchInProgress = useRef<string | null>(null);
+  const sessionInitialized = useRef<boolean>(false);
 
   // Initialize user session with better error handling and timeout
   useEffect(() => {
+    // Prevent multiple initializations
+    if (sessionInitialized.current) {
+      return;
+    }
+
     const initSession = async () => {
       try {
         console.log('Initializing auth session...');
+        sessionInitialized.current = true;
         
         // Check if we're online first
         if (!navigator.onLine) {
@@ -148,6 +155,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (event === 'SIGNED_OUT') {
             profileFetchAttempted.current.clear();
             profileFetchInProgress.current = null;
+            sessionInitialized.current = false; // Allow re-initialization after sign out
             console.log('Cleared profile fetch tracking on sign out');
           }
           
@@ -189,11 +197,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         } catch (error) {
           console.error('Error in auth state change:', error);
-        } finally {
-          // Ensure loading is always set to false
-          if (loading) {
-            setLoading(false);
-          }
         }
       }
     );
@@ -201,7 +204,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetchProfile, setSession, setUser, setLoading, loading]);
+  }, [fetchProfile, setSession, setUser, setLoading]); // Removed 'loading' from dependencies to prevent infinite loop
 
   return (
     <AuthContext.Provider value={{
