@@ -142,6 +142,7 @@ const SellerOrders = () => {
           throw ordersError;
         }
 
+        console.log('orders fetched:', ordersData);
         console.log('Seller orders fetched successfully:', ordersData?.length || 0, 'orders');
         
         if (ordersData && ordersData.length > 0) {
