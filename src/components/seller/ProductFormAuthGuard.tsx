@@ -12,14 +12,20 @@ interface ProductFormAuthGuardProps {
 
 const ProductFormAuthGuard = ({ children }: ProductFormAuthGuardProps) => {
   const navigate = useNavigate();
-  const { user, profile, session, loading } = useAuth();
+  const { user, profile, session, loading, profileLoading } = useAuth();
   const { isRegistering, registerAsSeller } = useSellerRegistration();
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
   useEffect(() => {
-    console.log('ProductFormAuthGuard auth state:', { user: !!user, profile: !!profile, session: !!session, loading });
+    console.log('ProductFormAuthGuard auth state:', { 
+      user: !!user, 
+      profile: !!profile, 
+      session: !!session, 
+      loading, 
+      profileLoading 
+    });
     
-    if (loading) {
+    if (loading || profileLoading) {
       const timer = setTimeout(() => {
         console.log('Loading timeout reached, forcing render');
         setLoadingTimeout(true);
@@ -29,7 +35,7 @@ const ProductFormAuthGuard = ({ children }: ProductFormAuthGuardProps) => {
     } else {
       setLoadingTimeout(false);
     }
-  }, [loading, user, profile, session]);
+  }, [loading, profileLoading, user, profile, session]);
 
   const handleSellerRegistration = async () => {
     const success = await registerAsSeller();
@@ -38,13 +44,16 @@ const ProductFormAuthGuard = ({ children }: ProductFormAuthGuardProps) => {
     }
   };
 
-  if (loading && !loadingTimeout) {
+  // Show loading while auth or profile is loading
+  if ((loading || profileLoading) && !loadingTimeout) {
     return (
       <Card>
         <CardContent className="p-6">
           <div className="flex justify-center items-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
-            <span className="ml-2">Đang tải...</span>
+            <span className="ml-2">
+              {loading ? 'Đang tải...' : 'Đang tải thông tin người dùng...'}
+            </span>
           </div>
         </CardContent>
       </Card>

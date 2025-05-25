@@ -36,7 +36,13 @@ export const useUserProfile = () => {
       }
       
       console.log('useUserProfile: Profile fetched successfully:', data);
-      return data as UserProfile;
+      console.log('Fetched profile:', data);
+      
+      // Set the profile in state immediately after fetching
+      const userProfile = data as UserProfile;
+      setProfile(userProfile);
+      
+      return userProfile;
     } catch (error) {
       console.error('useUserProfile: Error in fetchProfile:', error);
       return null;
@@ -48,7 +54,10 @@ export const useUserProfile = () => {
     if (user && navigator.onLine) {
       console.log('useUserProfile: Refreshing profile for user:', user.id);
       const userProfile = await fetchProfile(user.id);
-      setProfile(userProfile);
+      if (userProfile) {
+        setProfile(userProfile);
+        console.log('useUserProfile: Profile set in state:', userProfile);
+      }
     } else {
       console.log('useUserProfile: Cannot refresh profile - user or connection unavailable');
     }

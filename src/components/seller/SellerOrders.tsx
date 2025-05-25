@@ -8,9 +8,14 @@ import OrdersEmptyState from "./OrdersEmptyState";
 import OrdersErrorState from "./OrdersErrorState";
 
 const SellerOrders = () => {
-  const { user } = useAuth();
+  const { user, profile, profileLoading } = useAuth();
 
-  console.log('SellerOrders component - user state:', user?.id ? 'User available' : 'No user');
+  console.log('SellerOrders component - auth state:', { 
+    user: !!user, 
+    profile: !!profile, 
+    profileLoading,
+    role: profile?.role 
+  });
 
   const { data: orders, isLoading, error } = useQuery({
     queryKey: ['seller-orders', user?.id],
@@ -68,12 +73,29 @@ const SellerOrders = () => {
         throw error;
       }
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && !!profile && !profileLoading,
     retry: 2,
     retryDelay: 1000,
   });
 
   console.log('Query state:', { isLoading, hasError: !!error, ordersCount: orders?.length || 0 });
+
+  // Show loading while profile is being fetched
+  if (profileLoading) {
+    console.log('Rendering loading skeleton - profile loading');
+    return <OrdersLoadingSkeleton />;
+  }
+
+  // Block loading if no profile or not a seller
+  if (!profile || profile.role !== 'seller') {
+    console.log('User is not a seller or profile not loaded');
+    return (
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <h3 className="text-lg font-medium mb-2">Không thể tải đơn hàng</h3>
+        <p className="text-gray-500">Bạn cần phải là người bán để xem đơn hàng.</p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     console.log('Rendering loading skeleton');

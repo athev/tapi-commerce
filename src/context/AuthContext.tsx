@@ -9,6 +9,7 @@ type AuthContextType = {
   user: ReturnType<typeof useSupabaseAuth>['user'];
   profile: ReturnType<typeof useSupabaseAuth>['profile'];
   loading: boolean;
+  profileLoading: boolean;
   signIn: ReturnType<typeof useSupabaseAuth>['signIn'];
   signUp: ReturnType<typeof useSupabaseAuth>['signUp'];
   signOut: ReturnType<typeof useSupabaseAuth>['signOut'];
@@ -21,6 +22,7 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
   loading: true,
+  profileLoading: true,
   signIn: async () => ({ error: null }),
   signUp: async () => ({ error: null, success: false }),
   signOut: async () => {},
@@ -32,6 +34,8 @@ export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isOnline = useNetworkStatus();
+  const [profileLoading, setProfileLoading] = useState(true);
+  
   const {
     session,
     setSession,
@@ -69,7 +73,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (error) {
           console.error('AuthProvider: Error getting initial session:', error);
-          if (mounted) setLoading(false);
+          if (mounted) {
+            setLoading(false);
+            setProfileLoading(false);
+          }
           return;
         }
 
@@ -82,16 +89,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Fetch profile if user exists and we're online
           if (initialSession?.user && isOnline) {
             console.log('AuthProvider: Fetching profile for initial session...');
+            setProfileLoading(true);
             try {
               const userProfile = await fetchProfile(initialSession.user.id);
               if (userProfile && mounted) {
                 console.log('AuthProvider: Profile loaded successfully:', userProfile.role);
+                console.log('Fetched profile:', userProfile);
                 setProfile(userProfile);
               }
             } catch (profileError) {
               console.error('AuthProvider: Profile fetch failed:', profileError);
               // Continue without profile - don't block auth
+            } finally {
+              if (mounted) setProfileLoading(false);
             }
+          } else {
+            setProfileLoading(false);
           }
           
           setLoading(false);
@@ -101,6 +114,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error('AuthProvider: Auth initialization failed:', error);
         if (mounted) {
           setLoading(false);
+          setProfileLoading(false);
           isInitialized = true;
         }
       }
@@ -120,15 +134,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Handle different auth events
         if (event === 'SIGNED_IN' && newSession?.user && isOnline) {
           console.log('AuthProvider: User signed in, fetching profile...');
+          setProfileLoading(true);
           try {
             const userProfile = await fetchProfile(newSession.user.id);
             if (userProfile && mounted) {
               console.log('AuthProvider: Profile fetched after sign in:', userProfile.role);
+              console.log('Fetched profile:', userProfile);
               setProfile(userProfile);
             }
           } catch (profileError) {
             console.error('AuthProvider: Profile fetch failed on sign in:', profileError);
             // Don't block - user can still use the app
+          } finally {
+            if (mounted) setProfileLoading(false);
           }
         }
         
@@ -136,6 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (event === 'SIGNED_OUT') {
           console.log('AuthProvider: User signed out, clearing profile');
           setProfile(null);
+          setProfileLoading(false);
         }
         
         // Mark as no longer loading after any auth state change
@@ -162,9 +181,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       hasProfile: !!profile, 
       hasSession: !!session, 
       loading, 
+      profileLoading,
       isOnline 
     });
-  }, [user, profile, session, loading, isOnline]);
+  }, [user, profile, session, loading, profileLoading, isOnline]);
 
   return (
     <AuthContext.Provider value={{
@@ -172,6 +192,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       user,
       profile,
       loading,
+      profileLoading,
       signIn,
       signUp,
       signOut,
