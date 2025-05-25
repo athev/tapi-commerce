@@ -11,7 +11,7 @@ import SellerProductsEmptyState from "./SellerProductsEmptyState";
 import SellerProductsLoading from "./SellerProductsLoading";
 
 const SellerProducts = () => {
-  const { user, profile, profileLoading } = useAuth();
+  const { user, profile } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("all");
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -19,7 +19,6 @@ const SellerProducts = () => {
   console.log('SellerProducts: Auth state:', { 
     user: !!user, 
     profile: !!profile, 
-    profileLoading, 
     role: profile?.role 
   });
 
@@ -47,7 +46,7 @@ const SellerProducts = () => {
       console.log('Fetched seller products:', data);
       return data;
     },
-    enabled: !!user && !!profile && profile.role === 'seller' && !profileLoading
+    enabled: !!user
   });
 
   const filteredProducts = products?.filter(product => {
@@ -81,24 +80,29 @@ const SellerProducts = () => {
     }
   };
 
-  // Show loading while profile is being fetched
-  if (profileLoading) {
-    console.log('SellerProducts: Profile loading');
-    return <SellerProductsLoading />;
-  }
-
-  // Check if user is not a seller
-  if (!profile || profile.role !== 'seller') {
-    console.log('SellerProducts: User is not a seller, role:', profile?.role);
+  // Block access if not logged in
+  if (!user) {
     return (
       <div className="text-center py-12 bg-gray-50 rounded-lg">
-        <h3 className="text-lg font-medium mb-2">Không thể truy cập</h3>
+        <h3 className="text-lg font-medium mb-2">Bạn cần đăng nhập</h3>
         <p className="text-gray-500">
-          {!profile 
-            ? 'Vui lòng đăng nhập để truy cập trang này.' 
-            : 'Bạn cần phải là người bán để truy cập trang này.'
-          }
+          Vui lòng đăng nhập để truy cập trang này.
         </p>
+      </div>
+    );
+  }
+
+  // Check if user is not a seller yet
+  if (!profile || profile.role !== 'seller') {
+    return (
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <h3 className="text-lg font-medium mb-2">Bạn chưa đăng ký gian hàng</h3>
+        <p className="text-gray-500 mb-4">
+          Bấm vào đây để tạo gian hàng đầu tiên
+        </p>
+        <button className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+          Đăng ký làm người bán
+        </button>
       </div>
     );
   }

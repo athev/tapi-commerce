@@ -8,12 +8,11 @@ import OrdersEmptyState from "./OrdersEmptyState";
 import OrdersErrorState from "./OrdersErrorState";
 
 const SellerOrders = () => {
-  const { user, profile, profileLoading } = useAuth();
+  const { user, profile } = useAuth();
 
   console.log('SellerOrders component - auth state:', { 
     user: !!user, 
     profile: !!profile, 
-    profileLoading,
     role: profile?.role 
   });
 
@@ -73,31 +72,36 @@ const SellerOrders = () => {
         throw error;
       }
     },
-    enabled: !!user?.id && !!profile && profile.role === 'seller' && !profileLoading,
+    enabled: !!user?.id,
     retry: 2,
     retryDelay: 1000,
   });
 
   console.log('Query state:', { isLoading, hasError: !!error, ordersCount: orders?.length || 0 });
 
-  // Show loading while profile is being fetched
-  if (profileLoading) {
-    console.log('Rendering loading skeleton - profile loading');
-    return <OrdersLoadingSkeleton />;
-  }
-
-  // Block access if no profile or not a seller
-  if (!profile || profile.role !== 'seller') {
-    console.log('User is not a seller or profile not loaded');
+  // Block access if not logged in
+  if (!user) {
     return (
       <div className="text-center py-12 bg-gray-50 rounded-lg">
-        <h3 className="text-lg font-medium mb-2">Không thể truy cập đơn hàng</h3>
+        <h3 className="text-lg font-medium mb-2">Bạn cần đăng nhập</h3>
         <p className="text-gray-500">
-          {!profile 
-            ? 'Vui lòng đăng nhập để xem đơn hàng.' 
-            : 'Bạn cần phải là người bán để xem đơn hàng.'
-          }
+          Vui lòng đăng nhập để xem đơn hàng.
         </p>
+      </div>
+    );
+  }
+
+  // Check if user is not a seller yet
+  if (!profile || profile.role !== 'seller') {
+    return (
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <h3 className="text-lg font-medium mb-2">Bạn chưa đăng ký gian hàng</h3>
+        <p className="text-gray-500 mb-4">
+          Bấm vào đây để tạo gian hàng đầu tiên
+        </p>
+        <button className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
+          Đăng ký làm người bán
+        </button>
       </div>
     );
   }

@@ -61,8 +61,8 @@ const Navbar = () => {
             Hỗ trợ
           </Link>
           
-          {/* Seller button for authenticated sellers only */}
-          {isAuthenticated && (isSeller || isAdmin) && (
+          {/* Seller button for all authenticated users */}
+          {isAuthenticated && (
             <Link to="/seller" className="text-sm font-medium transition-colors hover:text-marketplace-primary bg-green-50 px-3 py-2 rounded-md border border-green-200 flex items-center gap-2">
               <Store className="h-4 w-4" />
               Kênh người bán
@@ -113,14 +113,12 @@ const Navbar = () => {
                   <DropdownMenuItem asChild>
                     <Link to="/my-purchases">Sản phẩm đã mua</Link>
                   </DropdownMenuItem>
-                  {(isSeller || isAdmin) && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/seller">
-                        <Store className="mr-2 h-4 w-4" />
-                        Kênh người bán
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
+                  <DropdownMenuItem asChild>
+                    <Link to="/seller">
+                      <Store className="mr-2 h-4 w-4" />
+                      Kênh người bán
+                    </Link>
+                  </DropdownMenuItem>
                   {isAdmin && (
                     <DropdownMenuItem asChild>
                       <Link to="/admin">Quản trị viên</Link>
