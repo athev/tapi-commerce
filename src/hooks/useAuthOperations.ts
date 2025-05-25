@@ -1,7 +1,6 @@
 
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
-import { toast } from 'sonner';
 
 export const useAuthOperations = (fetchProfile: (userId: string) => Promise<any>, setProfile: (profile: any) => void) => {
   const { toast: toastNotification } = useToast();
@@ -9,7 +8,7 @@ export const useAuthOperations = (fetchProfile: (userId: string) => Promise<any>
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     if (!navigator.onLine) {
-      console.error('Network error: User is offline');
+      console.error('useAuthOperations: Network error - User is offline');
       return { 
         error: { 
           message: "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.",
@@ -19,37 +18,30 @@ export const useAuthOperations = (fetchProfile: (userId: string) => Promise<any>
     }
 
     try {
-      console.log('useAuthOperations: Starting sign in...');
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      console.log('useAuthOperations: Starting sign in for:', email);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password 
+      });
       
       if (error) {
         console.error('useAuthOperations: Sign in error:', error);
         throw error;
       }
       
-      console.log('useAuthOperations: Sign in successful:', !!data.user);
+      console.log('useAuthOperations: Sign in successful for user:', data.user?.id);
       
-      if (data.user) {
-        console.log('useAuthOperations: Fetching user profile...');
-        try {
-          const userProfile = await fetchProfile(data.user.id);
-          if (userProfile) {
-            setProfile(userProfile);
-            console.log('useAuthOperations: Profile set successfully');
-          }
-        } catch (profileError) {
-          console.error('useAuthOperations: Profile fetch failed:', profileError);
-          // Don't fail the login if profile fetch fails
-        }
-        
-        toastNotification({
-          title: "Đăng nhập thành công",
-          description: "Chào mừng bạn quay trở lại!",
-        });
-      }
+      // The onAuthStateChange listener will handle profile fetching
+      // Don't fetch profile here to avoid race conditions
+      
+      toastNotification({
+        title: "Đăng nhập thành công",
+        description: "Chào mừng bạn quay trở lại!",
+      });
       
       return { error: null };
-    } catch (error) {
+    } catch (error: any) {
       console.error('useAuthOperations: Sign in error:', error);
       
       // Detect network errors specifically
@@ -81,6 +73,8 @@ export const useAuthOperations = (fetchProfile: (userId: string) => Promise<any>
       
       console.log('useAuthOperations: Signing out...');
       await supabase.auth.signOut();
+      
+      // Clear profile immediately
       setProfile(null);
       console.log('useAuthOperations: Sign out successful');
       
@@ -89,7 +83,10 @@ export const useAuthOperations = (fetchProfile: (userId: string) => Promise<any>
       });
     } catch (error) {
       console.error('useAuthOperations: Error signing out:', error);
-      toast.error("Có lỗi xảy ra khi đăng xuất");
+      toastNotification({
+        title: "Có lỗi xảy ra khi đăng xuất",
+        variant: "destructive",
+      });
     }
   };
 

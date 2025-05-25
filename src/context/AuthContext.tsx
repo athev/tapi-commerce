@@ -38,6 +38,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     user,
     setUser,
     profile,
+    setProfile,
     loading,
     setLoading,
     signIn,
@@ -52,14 +53,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.log('AuthProvider: Initializing auth session...');
     
     let mounted = true;
+    let isInitialized = false;
 
     const initializeAuth = async () => {
+      if (isInitialized) {
+        console.log('AuthProvider: Already initialized, skipping...');
+        return;
+      }
+      
       try {
+        console.log('AuthProvider: Getting initial session...');
+        
         // Get initial session
         const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Error getting initial session:', error);
+          console.error('AuthProvider: Error getting initial session:', error);
           if (mounted) setLoading(false);
           return;
         }
@@ -70,11 +79,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setSession(initialSession);
           setUser(initialSession?.user ?? null);
           
-          // Fetch profile if user exists
+          // Fetch profile if user exists and we're online
           if (initialSession?.user && isOnline) {
+            console.log('AuthProvider: Fetching profile for initial session...');
             try {
               const userProfile = await fetchProfile(initialSession.user.id);
-              console.log('AuthProvider: Profile loaded:', !!userProfile);
+              if (userProfile && mounted) {
+                console.log('AuthProvider: Profile loaded successfully:', userProfile.role);
+                setProfile(userProfile);
+              }
             } catch (profileError) {
               console.error('AuthProvider: Profile fetch failed:', profileError);
               // Continue without profile - don't block auth
@@ -82,10 +95,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
           
           setLoading(false);
+          isInitialized = true;
         }
       } catch (error) {
         console.error('AuthProvider: Auth initialization failed:', error);
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          isInitialized = true;
+        }
       }
     };
 
@@ -96,14 +113,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (!mounted) return;
 
+        // Always update session and user state
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
-        // Handle profile fetching for signed in users
-        if (newSession?.user && event === 'SIGNED_IN' && isOnline) {
+        // Handle different auth events
+        if (event === 'SIGNED_IN' && newSession?.user && isOnline) {
+          console.log('AuthProvider: User signed in, fetching profile...');
           try {
-            console.log('AuthProvider: Fetching profile for signed in user');
-            await fetchProfile(newSession.user.id);
+            const userProfile = await fetchProfile(newSession.user.id);
+            if (userProfile && mounted) {
+              console.log('AuthProvider: Profile fetched after sign in:', userProfile.role);
+              setProfile(userProfile);
+            }
           } catch (profileError) {
             console.error('AuthProvider: Profile fetch failed on sign in:', profileError);
             // Don't block - user can still use the app
@@ -112,19 +134,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         // Clear profile on sign out
         if (event === 'SIGNED_OUT') {
-          console.log('AuthProvider: Clearing profile on sign out');
+          console.log('AuthProvider: User signed out, clearing profile');
+          setProfile(null);
+        }
+        
+        // Mark as no longer loading after any auth state change
+        if (isInitialized) {
+          setLoading(false);
         }
       }
     );
 
-    // Initialize auth
+    // Initialize auth only once
     initializeAuth();
 
     return () => {
+      console.log('AuthProvider: Cleaning up...');
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [isOnline, setSession, setUser, setLoading, fetchProfile]);
+  }, [isOnline, setSession, setUser, setProfile, setLoading, fetchProfile]);
+
+  // Debug logging for auth state
+  useEffect(() => {
+    console.log('AuthProvider state:', { 
+      hasUser: !!user, 
+      hasProfile: !!profile, 
+      hasSession: !!session, 
+      loading, 
+      isOnline 
+    });
+  }, [user, profile, session, loading, isOnline]);
 
   return (
     <AuthContext.Provider value={{
