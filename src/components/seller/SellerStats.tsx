@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { TrendingUp, Package, DollarSign, Users } from "lucide-react";
 
 const SellerStats = () => {
-  const { user } = useAuth();
+  const { user, profile, profileLoading } = useAuth();
 
   const { data: stats, isLoading } = useQuery({
     queryKey: ['seller-stats', user?.id],
@@ -44,8 +44,41 @@ const SellerStats = () => {
         totalSales
       };
     },
-    enabled: !!user
+    enabled: !!user && !!profile && profile.role === 'seller' && !profileLoading
   });
+
+  // Show loading while profile is being fetched
+  if (profileLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i}>
+            <CardContent className="p-6">
+              <div className="animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-1/2 mb-2"></div>
+                <div className="h-8 bg-gray-200 rounded w-3/4"></div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  // Block access if no profile or not a seller
+  if (!profile || profile.role !== 'seller') {
+    return (
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <h3 className="text-lg font-medium mb-2">Không thể truy cập thống kê</h3>
+        <p className="text-gray-500">
+          {!profile 
+            ? 'Vui lòng đăng nhập để xem thống kê.' 
+            : 'Bạn cần phải là người bán để xem thống kê.'
+          }
+        </p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

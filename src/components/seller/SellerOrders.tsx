@@ -73,7 +73,7 @@ const SellerOrders = () => {
         throw error;
       }
     },
-    enabled: !!user?.id && !!profile && !profileLoading,
+    enabled: !!user?.id && !!profile && profile.role === 'seller' && !profileLoading,
     retry: 2,
     retryDelay: 1000,
   });
@@ -86,13 +86,18 @@ const SellerOrders = () => {
     return <OrdersLoadingSkeleton />;
   }
 
-  // Block loading if no profile or not a seller
+  // Block access if no profile or not a seller
   if (!profile || profile.role !== 'seller') {
     console.log('User is not a seller or profile not loaded');
     return (
       <div className="text-center py-12 bg-gray-50 rounded-lg">
-        <h3 className="text-lg font-medium mb-2">Không thể tải đơn hàng</h3>
-        <p className="text-gray-500">Bạn cần phải là người bán để xem đơn hàng.</p>
+        <h3 className="text-lg font-medium mb-2">Không thể truy cập đơn hàng</h3>
+        <p className="text-gray-500">
+          {!profile 
+            ? 'Vui lòng đăng nhập để xem đơn hàng.' 
+            : 'Bạn cần phải là người bán để xem đơn hàng.'
+          }
+        </p>
       </div>
     );
   }

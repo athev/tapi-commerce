@@ -19,7 +19,7 @@ const Navbar = () => {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Debug logging
-  console.log('Navbar: Auth state:', { user: !!user, profile: !!profile, session: !!session });
+  console.log('Navbar: Auth state:', { user: !!user, profile: !!profile, session: !!session, role: profile?.role });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +35,8 @@ const Navbar = () => {
 
   // Check if user is authenticated
   const isAuthenticated = !!(user && session);
+  const isSeller = profile?.role === 'seller';
+  const isAdmin = profile?.role === 'admin';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
@@ -59,8 +61,8 @@ const Navbar = () => {
             Hỗ trợ
           </Link>
           
-          {/* Seller button for authenticated sellers */}
-          {isAuthenticated && (profile?.role === 'seller' || profile?.role === 'admin') && (
+          {/* Seller button for authenticated sellers only */}
+          {isAuthenticated && (isSeller || isAdmin) && (
             <Link to="/seller" className="text-sm font-medium transition-colors hover:text-marketplace-primary bg-green-50 px-3 py-2 rounded-md border border-green-200 flex items-center gap-2">
               <Store className="h-4 w-4" />
               Kênh người bán
@@ -111,7 +113,7 @@ const Navbar = () => {
                   <DropdownMenuItem asChild>
                     <Link to="/my-purchases">Sản phẩm đã mua</Link>
                   </DropdownMenuItem>
-                  {(profile?.role === 'seller' || profile?.role === 'admin') && (
+                  {(isSeller || isAdmin) && (
                     <DropdownMenuItem asChild>
                       <Link to="/seller">
                         <Store className="mr-2 h-4 w-4" />
@@ -119,7 +121,7 @@ const Navbar = () => {
                       </Link>
                     </DropdownMenuItem>
                   )}
-                  {profile?.role === 'admin' && (
+                  {isAdmin && (
                     <DropdownMenuItem asChild>
                       <Link to="/admin">Quản trị viên</Link>
                     </DropdownMenuItem>

@@ -11,15 +11,25 @@ import SellerProductsEmptyState from "./SellerProductsEmptyState";
 import SellerProductsLoading from "./SellerProductsLoading";
 
 const SellerProducts = () => {
-  const { user } = useAuth();
+  const { user, profile, profileLoading } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("all");
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
+  console.log('SellerProducts: Auth state:', { 
+    user: !!user, 
+    profile: !!profile, 
+    profileLoading, 
+    role: profile?.role 
+  });
+
   const { data: products, isLoading, refetch } = useQuery({
     queryKey: ['seller-products', user?.id],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user) {
+        console.log('SellerProducts: No user found');
+        return [];
+      }
       
       console.log('Fetching products for seller:', user.id);
       
@@ -37,7 +47,7 @@ const SellerProducts = () => {
       console.log('Fetched seller products:', data);
       return data;
     },
-    enabled: !!user
+    enabled: !!user && !!profile && profile.role === 'seller' && !profileLoading
   });
 
   const filteredProducts = products?.filter(product => {
@@ -70,6 +80,28 @@ const SellerProducts = () => {
       setIsDeleting(null);
     }
   };
+
+  // Show loading while profile is being fetched
+  if (profileLoading) {
+    console.log('SellerProducts: Profile loading');
+    return <SellerProductsLoading />;
+  }
+
+  // Check if user is not a seller
+  if (!profile || profile.role !== 'seller') {
+    console.log('SellerProducts: User is not a seller, role:', profile?.role);
+    return (
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <h3 className="text-lg font-medium mb-2">Không thể truy cập</h3>
+        <p className="text-gray-500">
+          {!profile 
+            ? 'Vui lòng đăng nhập để truy cập trang này.' 
+            : 'Bạn cần phải là người bán để truy cập trang này.'
+          }
+        </p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return <SellerProductsLoading />;

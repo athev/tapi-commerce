@@ -53,13 +53,18 @@ export const useAuthInitialization = (
               if (userProfile && mounted) {
                 console.log('AuthProvider: Profile loaded successfully:', userProfile.role);
                 setProfile(userProfile);
+              } else {
+                console.log('AuthProvider: No profile found for user');
+                setProfile(null);
               }
             } catch (profileError) {
               console.error('AuthProvider: Profile fetch failed:', profileError);
+              setProfile(null);
             } finally {
               if (mounted) setProfileLoading(false);
             }
           } else {
+            setProfile(null);
             setProfileLoading(false);
           }
           
@@ -71,6 +76,7 @@ export const useAuthInitialization = (
         if (mounted) {
           setLoading(false);
           setProfileLoading(false);
+          setProfile(null);
           isInitialized = true;
         }
       }
@@ -110,13 +116,21 @@ export const useAuthInitialization = (
               if (userProfile && mounted) {
                 console.log('AuthProvider: Profile fetched after sign in:', userProfile.role);
                 setProfile(userProfile);
+              } else {
+                console.log('AuthProvider: No profile found after sign in');
+                setProfile(null);
               }
             } catch (profileError) {
               console.error('AuthProvider: Profile fetch failed on sign in:', profileError);
+              setProfile(null);
             } finally {
               if (mounted) setProfileLoading(false);
             }
           }, 0);
+        } else if (!newSession?.user) {
+          // Clear profile if no user session
+          setProfile(null);
+          setProfileLoading(false);
         }
         
         if (isInitialized) {
