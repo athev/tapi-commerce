@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -404,6 +403,7 @@ const ProductDetail = () => {
           {/* Similar Products */}
           {similarProducts && similarProducts.length > 0 && (
             <section className="mt-16">
+              <h2 className="text-2xl font-bold mb-6">Sản phẩm tương tự</h2>
               <ProductGrid 
                 products={similarProducts}
                 isLoading={false}

@@ -2,14 +2,23 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import ProductCard from "./ProductCard";
-import { mockProducts } from "@/lib/supabase";
+import { mockProducts, Product } from "@/lib/supabase";
 
 interface ProductGridProps {
   searchTerm?: string;
   category?: string;
+  products?: Product[];
+  isLoading?: boolean;
+  error?: Error | null;
 }
 
-const ProductGrid = ({ searchTerm = "", category = "all" }: ProductGridProps) => {
+const ProductGrid = ({ 
+  searchTerm = "", 
+  category = "all", 
+  products: externalProducts,
+  isLoading: externalIsLoading,
+  error: externalError 
+}: ProductGridProps) => {
   const { data: products, isLoading, error } = useQuery({
     queryKey: ['products'],
     queryFn: async () => {
@@ -36,17 +45,23 @@ const ProductGrid = ({ searchTerm = "", category = "all" }: ProductGridProps) =>
         console.log('Falling back to mock data due to error');
         return mockProducts;
       }
-    }
+    },
+    enabled: !externalProducts, // Only fetch if no external products provided
   });
 
-  const filteredProducts = products?.filter(product => {
+  // Use external data if provided, otherwise use internal query data
+  const finalProducts = externalProducts || products;
+  const finalIsLoading = externalIsLoading !== undefined ? externalIsLoading : isLoading;
+  const finalError = externalError !== undefined ? externalError : error;
+
+  const filteredProducts = finalProducts?.filter(product => {
     const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = category === "all" || product.category === category;
     return matchesSearch && matchesCategory;
   });
 
-  if (isLoading) {
+  if (finalIsLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {[...Array(6)].map((_, i) => (
@@ -62,14 +77,33 @@ const ProductGrid = ({ searchTerm = "", category = "all" }: ProductGridProps) =>
     );
   }
 
-  if (error) {
-    console.error('ProductGrid error:', error);
+  if (finalError) {
+    console.error('ProductGrid error:', finalError);
   }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {filteredProducts?.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard 
+          key={product.id} 
+          id={product.id}
+          title={product.title}
+          price={{
+            min: product.price,
+            max: product.price
+          }}
+          image={product.image || '/placeholder.svg'}
+          category={product.category}
+          rating={4}
+          reviews={product.purchases || 0}
+          seller={{
+            name: product.seller_name,
+            verified: true
+          }}
+          inStock={product.in_stock || 999}
+          isNew={new Date(product.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
+          isHot={product.purchases && product.purchases > 50}
+        />
       ))}
       {filteredProducts?.length === 0 && (
         <div className="col-span-full text-center py-12">
