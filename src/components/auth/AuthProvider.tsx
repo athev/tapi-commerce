@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 import { AuthProviderProps } from '@/context/types/AuthTypes';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
@@ -48,7 +48,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isOnline,
   });
 
-  const contextValue = {
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
     session,
     user,
     profile,
@@ -59,7 +60,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signOut,
     refreshProfile,
     isOnline,
-  };
+  }), [session, user, profile, loading, profileLoading, signIn, signUp, signOut, refreshProfile, isOnline]);
 
   return (
     <AuthContext.Provider value={contextValue}>

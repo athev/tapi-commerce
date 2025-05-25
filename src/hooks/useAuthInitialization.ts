@@ -1,5 +1,5 @@
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { UserProfile } from '@/lib/supabase';
 import { supabase } from '@/lib/supabase';
@@ -23,18 +23,20 @@ export const useAuthInitialization = ({
   setProfileLoading,
   fetchProfile,
 }: UseAuthInitializationProps) => {
+  const isInitialized = useRef(false);
+
   useEffect(() => {
+    // Prevent multiple initializations
+    if (isInitialized.current) {
+      console.log('AuthProvider: Already initialized, skipping...');
+      return;
+    }
+
     console.log('AuthProvider: Initializing auth session...');
     
     let mounted = true;
-    let isInitialized = false;
 
     const initializeAuth = async () => {
-      if (isInitialized) {
-        console.log('AuthProvider: Already initialized, skipping...');
-        return;
-      }
-      
       try {
         console.log('AuthProvider: Getting initial session...');
         
@@ -62,7 +64,6 @@ export const useAuthInitialization = ({
               const userProfile = await fetchProfile(initialSession.user.id);
               if (userProfile && mounted) {
                 console.log('AuthProvider: Profile loaded successfully:', userProfile.role);
-                console.log('Fetched profile:', userProfile);
                 setProfile(userProfile);
               } else {
                 console.log('AuthProvider: No profile found for user');
@@ -77,14 +78,12 @@ export const useAuthInitialization = ({
           }
           
           setLoading(false);
-          isInitialized = true;
         }
       } catch (error) {
         console.error('AuthProvider: Auth initialization failed:', error);
         if (mounted) {
           setLoading(false);
           setProfileLoading(false);
-          isInitialized = true;
         }
       }
     };
@@ -102,12 +101,12 @@ export const useAuthInitialization = ({
           console.log('AuthProvider: User signed in, fetching profile...');
           setProfileLoading(true);
           
+          // Small delay to prevent race conditions
           setTimeout(async () => {
             try {
               const userProfile = await fetchProfile(newSession.user.id);
               if (userProfile && mounted) {
                 console.log('AuthProvider: Profile fetched after sign in:', userProfile.role);
-                console.log('Fetched profile:', userProfile);
                 setProfile(userProfile);
               } else {
                 console.log('AuthProvider: No profile found after sign in');
@@ -126,18 +125,18 @@ export const useAuthInitialization = ({
           setProfileLoading(false);
         }
         
-        if (isInitialized) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     );
 
     initializeAuth();
+    isInitialized.current = true;
 
     return () => {
       console.log('AuthProvider: Cleaning up...');
       mounted = false;
       subscription.unsubscribe();
+      // Don't reset isInitialized on cleanup to prevent re-initialization
     };
-  }, [isOnline, setSession, setUser, setProfile, setLoading, setProfileLoading, fetchProfile]);
+  }, []); // Empty dependency array to run only once
 };

@@ -75,6 +75,8 @@ const SellerOrders = () => {
     retryDelay: 1000,
     // Add staleTime to prevent unnecessary refetches
     staleTime: 5 * 60 * 1000, // 5 minutes
+    // Add refetchOnWindowFocus: false to prevent refetch on window focus
+    refetchOnWindowFocus: false,
   });
 
   console.log('Query state:', { 
