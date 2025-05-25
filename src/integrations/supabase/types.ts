@@ -241,6 +241,42 @@ export type Database = {
         }
         Relationships: []
       }
+      seller_applications: {
+        Row: {
+          address: string | null
+          business_description: string
+          business_name: string
+          created_at: string
+          id: string
+          phone: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          business_description: string
+          business_name: string
+          created_at?: string
+          id?: string
+          phone: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          business_description?: string
+          business_name?: string
+          created_at?: string
+          id?: string
+          phone?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
