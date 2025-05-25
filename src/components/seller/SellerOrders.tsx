@@ -14,6 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { 
@@ -69,25 +70,57 @@ const getProductTypeLabel = (type: string) => {
   return types[type as keyof typeof types] || type;
 };
 
+const LoadingSkeleton = () => (
+  <div className="space-y-4">
+    <div className="flex justify-between items-center">
+      <Skeleton className="h-8 w-32" />
+      <Skeleton className="h-6 w-24" />
+    </div>
+    <div className="bg-white rounded-lg border p-4">
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex space-x-4">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-16" />
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
 const SellerOrders = () => {
   const { user } = useAuth();
 
   const { data: orders, isLoading, error } = useQuery({
     queryKey: ['seller-orders', user?.id],
     queryFn: async () => {
+      if (!user?.id) {
+        console.log('No user found for seller orders');
+        throw new Error('User not authenticated');
+      }
+      
+      console.log('Fetching seller orders for user:', user.id);
+      
       try {
-        if (!user) {
-          console.log('No user found for seller orders');
-          return [];
-        }
-        
-        console.log('Fetching seller orders for user:', user.id);
-        
-        // Direct query to get orders for products sold by this seller
         const { data: ordersData, error: ordersError } = await supabase
           .from('orders')
           .select(`
-            *,
+            id,
+            user_id,
+            product_id,
+            status,
+            created_at,
+            updated_at,
+            buyer_email,
+            buyer_data,
+            delivery_status,
+            delivery_notes,
             product:products!inner(
               id,
               title,
@@ -106,7 +139,10 @@ const SellerOrders = () => {
         }
 
         console.log('Seller orders fetched successfully:', ordersData?.length || 0, 'orders');
-        console.log('Sample order data:', ordersData?.[0]);
+        
+        if (ordersData && ordersData.length > 0) {
+          console.log('Sample order data:', ordersData[0]);
+        }
         
         return ordersData || [];
       } catch (error) {
@@ -114,22 +150,23 @@ const SellerOrders = () => {
         throw error;
       }
     },
-    enabled: !!user,
+    enabled: !!user?.id,
+    retry: 3,
+    retryDelay: 1000,
   });
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-marketplace-primary"></div>
-      </div>
-    );
+    return <LoadingSkeleton />;
   }
 
   if (error) {
+    console.error('SellerOrders error:', error);
     return (
       <div className="text-center py-12 bg-red-50 rounded-lg">
         <h3 className="text-lg font-medium mb-2 text-red-800">Có lỗi xảy ra</h3>
-        <p className="text-red-600">Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.</p>
+        <p className="text-red-600">
+          {error instanceof Error ? error.message : 'Không thể tải danh sách đơn hàng. Vui lòng thử lại sau.'}
+        </p>
       </div>
     );
   }
