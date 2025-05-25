@@ -74,10 +74,6 @@ export const useAuthOperations = (fetchProfile: (userId: string) => Promise<any>
         return;
       }
       
-      // Clear profile immediately before calling signOut
-      console.log('useAuthOperations: Clearing profile...');
-      setProfile(null);
-      
       console.log('useAuthOperations: Calling supabase.auth.signOut()...');
       const { error } = await supabase.auth.signOut();
       
@@ -88,10 +84,8 @@ export const useAuthOperations = (fetchProfile: (userId: string) => Promise<any>
       
       console.log('useAuthOperations: Sign out successful');
       
-      toastNotification({
-        title: "Đã đăng xuất",
-        description: "Bạn đã đăng xuất thành công",
-      });
+      // Don't show success toast here, let the auth state change handle UI updates
+      // The SIGNED_OUT event will clear all state
       
     } catch (error: any) {
       console.error('useAuthOperations: Error signing out:', error);

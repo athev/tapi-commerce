@@ -52,7 +52,6 @@ export const useAuthInitialization = (
               const userProfile = await fetchProfile(initialSession.user.id);
               if (userProfile && mounted) {
                 console.log('AuthProvider: Profile loaded successfully:', userProfile.role);
-                console.log('Fetched profile:', userProfile);
                 setProfile(userProfile);
               }
             } catch (profileError) {
@@ -83,30 +82,41 @@ export const useAuthInitialization = (
         
         if (!mounted) return;
 
+        // Handle sign out immediately
+        if (event === 'SIGNED_OUT') {
+          console.log('AuthProvider: User signed out, clearing all state');
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          setProfileLoading(false);
+          setLoading(false);
+          return;
+        }
+
+        // Handle other events
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
         if (event === 'SIGNED_IN' && newSession?.user && isOnline) {
           console.log('AuthProvider: User signed in, fetching profile...');
           setProfileLoading(true);
-          try {
-            const userProfile = await fetchProfile(newSession.user.id);
-            if (userProfile && mounted) {
-              console.log('AuthProvider: Profile fetched after sign in:', userProfile.role);
-              console.log('Fetched profile:', userProfile);
-              setProfile(userProfile);
+          
+          // Use setTimeout to avoid blocking the auth state change
+          setTimeout(async () => {
+            if (!mounted) return;
+            
+            try {
+              const userProfile = await fetchProfile(newSession.user.id);
+              if (userProfile && mounted) {
+                console.log('AuthProvider: Profile fetched after sign in:', userProfile.role);
+                setProfile(userProfile);
+              }
+            } catch (profileError) {
+              console.error('AuthProvider: Profile fetch failed on sign in:', profileError);
+            } finally {
+              if (mounted) setProfileLoading(false);
             }
-          } catch (profileError) {
-            console.error('AuthProvider: Profile fetch failed on sign in:', profileError);
-          } finally {
-            if (mounted) setProfileLoading(false);
-          }
-        }
-        
-        if (event === 'SIGNED_OUT') {
-          console.log('AuthProvider: User signed out, clearing profile');
-          setProfile(null);
-          setProfileLoading(false);
+          }, 0);
         }
         
         if (isInitialized) {
@@ -115,6 +125,7 @@ export const useAuthInitialization = (
       }
     );
 
+    // Initialize auth after setting up the listener
     initializeAuth();
 
     return () => {
