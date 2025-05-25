@@ -1,8 +1,7 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -12,6 +11,7 @@ import { Product } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import ProductTypeOrderForm from "@/components/products/ProductTypeOrderForm";
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { 
@@ -23,11 +23,11 @@ const formatPrice = (price: number) => {
 
 const getProductTypeLabel = (type: string) => {
   const types = {
-    file_download: 'Tải xuống file',
-    license_key_delivery: 'Gửi License Key',
+    file_download: 'Tải tệp/File tải',
+    license_key_delivery: 'Mã kích hoạt',
     shared_account: 'Tài khoản dùng chung',
-    upgrade_account_no_pass: 'Nâng cấp tài khoản',
-    upgrade_account_with_pass: 'Nâng cấp tài khoản (có pass)'
+    upgrade_account_no_pass: 'Nâng cấp không cần mật khẩu',
+    upgrade_account_with_pass: 'Nâng cấp có mật khẩu'
   };
   return types[type as keyof typeof types] || type;
 };
@@ -37,8 +37,8 @@ const ProductDetail = () => {
   const { user, isOnline } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [buyerData, setBuyerData] = useState<Record<string, any>>({});
   const [isProcessing, setIsProcessing] = useState(false);
+  const [hasPurchased, setHasPurchased] = useState(false);
 
   const { data: product, isLoading, isError } = useQuery({
     queryKey: ['product', id],
@@ -63,7 +63,36 @@ const ProductDetail = () => {
     retry: false,
   });
 
-  const handlePurchase = async () => {
+  // Check if user has already purchased this product
+  const { data: existingOrder } = useQuery({
+    queryKey: ['user-order', id, user?.id],
+    queryFn: async () => {
+      if (!user?.id || !id) return null;
+      
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('product_id', id)
+        .eq('status', 'paid')
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        throw error;
+      }
+      
+      return data;
+    },
+    enabled: !!user?.id && !!id,
+  });
+
+  useEffect(() => {
+    if (existingOrder) {
+      setHasPurchased(true);
+    }
+  }, [existingOrder]);
+
+  const handlePurchase = async (buyerData?: any) => {
     if (!user) {
       toast({
         title: "Vui lòng đăng nhập",
@@ -76,24 +105,13 @@ const ProductDetail = () => {
 
     if (!product) return;
 
-    // Validate required buyer data based on product type
-    const isValid = validateBuyerData(product.product_type, buyerData);
-    if (!isValid) {
-      toast({
-        title: "Thông tin không đầy đủ",
-        description: "Vui lòng điền đầy đủ thông tin bắt buộc",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsProcessing(true);
 
     try {
       console.log('Creating order with data:', {
         user_id: user.id,
         product_id: product.id,
-        buyer_email: buyerData.email || user.email,
+        buyer_email: buyerData?.email || user.email,
         buyer_data: buyerData,
         product_info: {
           seller_id: product.seller_id,
@@ -108,9 +126,9 @@ const ProductDetail = () => {
           {
             user_id: user.id,
             product_id: product.id,
-            status: 'paid', // Simulate successful payment
-            buyer_email: buyerData.email || user.email || '',
-            buyer_data: Object.keys(buyerData).length > 0 ? buyerData : null,
+            status: 'paid',
+            buyer_email: buyerData?.email || user.email || '',
+            buyer_data: buyerData || null,
             delivery_status: 'pending'
           }
         ])
@@ -123,14 +141,13 @@ const ProductDetail = () => {
       }
 
       console.log('Order created successfully:', order);
+      setHasPurchased(true);
 
       toast({
-        title: "Đơn hàng thành công!",
-        description: "Cảm ơn bạn đã mua sản phẩm. Thông tin sẽ được gửi qua email.",
+        title: "Đặt hàng thành công!",
+        description: "Cảm ơn bạn đã mua sản phẩm. Thông tin sẽ được xử lý ngay.",
       });
 
-      // Navigate to purchase success or show purchase details
-      navigate('/my-purchases');
     } catch (error) {
       console.error('Purchase error:', error);
       toast({
@@ -140,19 +157,6 @@ const ProductDetail = () => {
       });
     } finally {
       setIsProcessing(false);
-    }
-  };
-
-  const validateBuyerData = (productType: string | undefined, data: Record<string, any>): boolean => {
-    if (!productType) return true;
-
-    switch (productType) {
-      case 'upgrade_account_no_pass':
-        return !!data.email;
-      case 'upgrade_account_with_pass':
-        return !!data.email && !!data.username && !!data.password;
-      default:
-        return true;
     }
   };
 
@@ -223,21 +227,14 @@ const ProductDetail = () => {
               </p>
             </div>
 
-            {/* Product Type Specific Order Form */}
+            {/* Enhanced Product Type Order Form */}
             <ProductTypeOrderForm 
-              productType={product.product_type}
-              buyerData={buyerData}
-              onBuyerDataChange={setBuyerData}
+              productType={product.product_type || 'file_download'}
+              onPurchase={handlePurchase}
+              isProcessing={isProcessing}
+              hasPurchased={hasPurchased}
+              product={product}
             />
-
-            <Button 
-              onClick={handlePurchase} 
-              className="w-full bg-marketplace-primary hover:bg-marketplace-primary/90"
-              size="lg"
-              disabled={isProcessing}
-            >
-              {isProcessing ? "Đang xử lý..." : "Mua ngay"}
-            </Button>
           </div>
         </div>
       </main>
@@ -245,73 +242,6 @@ const ProductDetail = () => {
       <Footer />
     </div>
   );
-};
-
-type ProductTypeOrderFormProps = {
-  productType?: string;
-  buyerData: Record<string, any>;
-  onBuyerDataChange: (data: Record<string, any>) => void;
-};
-
-const ProductTypeOrderForm: React.FC<ProductTypeOrderFormProps> = ({ productType, buyerData, onBuyerDataChange }) => {
-  const handleChange = (key: string, value: any) => {
-    onBuyerDataChange({ ...buyerData, [key]: value });
-  };
-
-  switch (productType) {
-    case 'upgrade_account_no_pass':
-      return (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email tài khoản</Label>
-            <Input
-              type="email"
-              id="email"
-              placeholder="Nhập email của bạn"
-              value={buyerData.email || ''}
-              onChange={(e) => handleChange('email', e.target.value)}
-            />
-          </div>
-        </div>
-      );
-    case 'upgrade_account_with_pass':
-      return (
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email tài khoản</Label>
-            <Input
-              type="email"
-              id="email"
-              placeholder="Nhập email của bạn"
-              value={buyerData.email || ''}
-              onChange={(e) => handleChange('email', e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="username">Tên đăng nhập</Label>
-            <Input
-              type="text"
-              id="username"
-              placeholder="Nhập tên đăng nhập"
-              value={buyerData.username || ''}
-              onChange={(e) => handleChange('username', e.target.value)}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Mật khẩu</Label>
-            <Input
-              type="password"
-              id="password"
-              placeholder="Nhập mật khẩu"
-              value={buyerData.password || ''}
-              onChange={(e) => handleChange('password', e.target.value)}
-            />
-          </div>
-        </div>
-      );
-    default:
-      return null;
-  }
 };
 
 export default ProductDetail;

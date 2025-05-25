@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, Mail, User, Key, Users, Info } from "lucide-react";
+import { ShoppingCart, Mail, User, Key, Users, Info, Download, FileText } from "lucide-react";
 
 interface ProductTypeOrderFormProps {
   productType: string;
@@ -79,27 +79,81 @@ const ProductTypeOrderForm = ({
     }
   };
 
+  // Get product type info
+  const getProductTypeInfo = (type: string) => {
+    const typeInfo = {
+      file_download: {
+        icon: Download,
+        label: 'Tải tệp/File tải',
+        description: 'Không cần nhập gì',
+        afterPurchase: 'Hiển thị nút "Tải file"'
+      },
+      shared_account: {
+        icon: Users,
+        label: 'Tài khoản dùng chung',
+        description: 'Thông báo: "Liên hệ CSKH tại Ô Chat để được hướng dẫn đăng nhập"',
+        afterPurchase: 'Không có dữ liệu trả về'
+      },
+      upgrade_account_no_pass: {
+        icon: User,
+        label: 'Nâng cấp không cần mật khẩu',
+        description: 'Hiển thị ô nhập email',
+        afterPurchase: 'Gửi email cho seller'
+      },
+      upgrade_account_with_pass: {
+        icon: FileText,
+        label: 'Nâng cấp có mật khẩu',
+        description: 'Hiển thị ô nhập: email, user, pass',
+        afterPurchase: 'Gửi info cho seller'
+      },
+      license_key_delivery: {
+        icon: Key,
+        label: 'Mã kích hoạt',
+        description: 'Không cần nhập gì',
+        afterPurchase: 'Hệ thống tự gửi mã về email + hiển thị trên UI'
+      }
+    };
+    
+    return typeInfo[type as keyof typeof typeInfo] || typeInfo.file_download;
+  };
+
+  const productTypeInfo = getProductTypeInfo(productType);
+  const TypeIcon = productTypeInfo.icon;
+
   // After purchase UI based on product type
   if (hasPurchased) {
     switch (productType) {
       case 'file_download':
         return (
-          <Button 
-            className="w-full bg-green-600 hover:bg-green-700"
-            onClick={() => {
-              if (product?.file_url) {
-                window.open(product.file_url, '_blank');
-              } else {
-                // Demo download
-                const link = document.createElement('a');
-                link.href = 'data:text/plain;charset=utf-8,Sample Digital Product Content';
-                link.download = `${product?.title || 'product'}.txt`;
-                link.click();
-              }
-            }}
-          >
-            <Key className="h-5 w-5 mr-2" /> Tải xuống
-          </Button>
+          <div className="space-y-4">
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="p-4">
+                <div className="flex items-center space-x-3 mb-3">
+                  <Download className="h-5 w-5 text-green-600" />
+                  <h3 className="font-medium text-green-900">Sản phẩm đã mua</h3>
+                </div>
+                <p className="text-sm text-green-800 mb-3">
+                  Bạn có thể tải xuống file ngay bây giờ.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Button 
+              className="w-full bg-green-600 hover:bg-green-700"
+              onClick={() => {
+                if (product?.file_url) {
+                  window.open(product.file_url, '_blank');
+                } else {
+                  const link = document.createElement('a');
+                  link.href = 'data:text/plain;charset=utf-8,Sample Digital Product Content';
+                  link.download = `${product?.title || 'product'}.txt`;
+                  link.click();
+                }
+              }}
+            >
+              <Download className="h-5 w-5 mr-2" /> Tải xuống file
+            </Button>
+          </div>
         );
 
       case 'shared_account':
@@ -107,11 +161,11 @@ const ProductTypeOrderForm = ({
           <Card className="bg-blue-50 border-blue-200">
             <CardContent className="p-4">
               <div className="flex items-start space-x-3">
-                <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <Users className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
                 <div>
                   <h3 className="font-medium text-blue-900 mb-1">Liên hệ hỗ trợ</h3>
                   <p className="text-sm text-blue-800">
-                    Vui lòng liên hệ CSKH qua chat để nhận thông tin đăng nhập tài khoản.
+                    Vui lòng liên hệ CSKH tại Ô Chat để được hướng dẫn đăng nhập tài khoản.
                   </p>
                 </div>
               </div>
@@ -126,12 +180,12 @@ const ProductTypeOrderForm = ({
               <div className="flex items-start space-x-3">
                 <Key className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="font-medium text-green-900 mb-1">License Key đã được gửi</h3>
+                  <h3 className="font-medium text-green-900 mb-1">Mã kích hoạt đã được gửi</h3>
                   <p className="text-sm text-green-800 mb-2">
-                    License Key đã được gửi tới email của bạn.
+                    Mã kích hoạt đã được gửi tới email của bạn và hiển thị dưới đây:
                   </p>
-                  <div className="bg-white p-2 rounded border font-mono text-sm">
-                    DEMO-LICENSE-KEY-12345
+                  <div className="bg-white p-3 rounded border font-mono text-sm">
+                    DEMO-LICENSE-KEY-{Math.random().toString(36).substr(2, 9).toUpperCase()}
                   </div>
                 </div>
               </div>
@@ -147,9 +201,9 @@ const ProductTypeOrderForm = ({
               <div className="flex items-start space-x-3">
                 <User className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <div>
-                  <h3 className="font-medium text-green-900 mb-1">Đơn hàng đã được xử lý</h3>
+                  <h3 className="font-medium text-green-900 mb-1">Thông tin đã được gửi</h3>
                   <p className="text-sm text-green-800">
-                    Thông tin tài khoản của bạn đã được gửi tới người bán để nâng cấp.
+                    Thông tin tài khoản của bạn đã được gửi tới người bán để thực hiện nâng cấp.
                   </p>
                 </div>
               </div>
@@ -171,6 +225,20 @@ const ProductTypeOrderForm = ({
   // Before purchase UI
   return (
     <div className="space-y-4">
+      {/* Product Type Info Card */}
+      <Card className="bg-gray-50 border-gray-200">
+        <CardContent className="p-4">
+          <div className="flex items-start space-x-3">
+            <TypeIcon className="h-5 w-5 text-gray-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="font-medium text-gray-900 mb-1">{productTypeInfo.label}</h3>
+              <p className="text-sm text-gray-700">{productTypeInfo.description}</p>
+              <p className="text-xs text-gray-600 mt-1">Sau khi thanh toán: {productTypeInfo.afterPurchase}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Input fields for upgrade account types */}
       {productType === 'upgrade_account_no_pass' && (
         <div className="space-y-2">
@@ -235,46 +303,6 @@ const ProductTypeOrderForm = ({
             )}
           </div>
         </div>
-      )}
-
-      {/* Info cards for different product types */}
-      {productType === 'shared_account' && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardContent className="p-3">
-            <div className="flex items-center space-x-2">
-              <Users className="h-4 w-4 text-blue-600" />
-              <p className="text-sm text-blue-800">
-                Sau khi thanh toán, CSKH sẽ liên hệ cung cấp thông tin đăng nhập
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {productType === 'license_key_delivery' && (
-        <Card className="bg-green-50 border-green-200">
-          <CardContent className="p-3">
-            <div className="flex items-center space-x-2">
-              <Key className="h-4 w-4 text-green-600" />
-              <p className="text-sm text-green-800">
-                License Key sẽ được gửi tự động qua email sau khi thanh toán
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {productType === 'file_download' && (
-        <Card className="bg-gray-50 border-gray-200">
-          <CardContent className="p-3">
-            <div className="flex items-center space-x-2">
-              <Key className="h-4 w-4 text-gray-600" />
-              <p className="text-sm text-gray-700">
-                File sẽ có thể tải xuống ngay sau khi thanh toán
-              </p>
-            </div>
-          </CardContent>
-        </Card>
       )}
 
       {/* Purchase button */}
