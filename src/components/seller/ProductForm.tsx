@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ const ProductForm = () => {
   const navigate = useNavigate();
   const { user, profile, session, loading } = useAuth();
   const { isSubmitting, submitProduct } = useProductUpload();
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
   
   const [formData, setFormData] = useState<ProductFormData>({
     title: '',
@@ -27,8 +28,24 @@ const ProductForm = () => {
 
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({});
 
-  // Show loading state only while auth is actively loading
-  if (loading) {
+  // Add timeout for loading state to prevent infinite loading
+  useEffect(() => {
+    console.log('ProductForm auth state:', { user: !!user, profile: !!profile, session: !!session, loading });
+    
+    if (loading) {
+      const timer = setTimeout(() => {
+        console.log('Loading timeout reached, forcing render');
+        setLoadingTimeout(true);
+      }, 5000); // 5 second timeout
+      
+      return () => clearTimeout(timer);
+    } else {
+      setLoadingTimeout(false);
+    }
+  }, [loading, user, profile, session]);
+
+  // Show loading state only while auth is actively loading (with timeout)
+  if (loading && !loadingTimeout) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -43,6 +60,7 @@ const ProductForm = () => {
 
   // Show auth error if user is not authenticated
   if (!user || !session) {
+    console.log('User not authenticated, redirecting to login');
     return (
       <Card>
         <CardContent className="p-6">
@@ -62,26 +80,39 @@ const ProductForm = () => {
     );
   }
 
-  // Show seller registration prompt if profile is missing
-  if (!profile) {
+  // Show seller registration prompt if profile is missing or loading timed out
+  if (!profile || loadingTimeout) {
+    console.log('Profile missing or loading timed out:', { profile: !!profile, loadingTimeout });
     return (
       <Card>
         <CardContent className="p-6">
           <div className="text-center py-8">
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Bạn chưa có gian hàng
+              {loadingTimeout ? 'Không thể tải thông tin người bán' : 'Bạn chưa có gian hàng'}
             </h3>
             <p className="text-gray-500 mb-4">
-              Vui lòng đăng ký làm người bán để tạo sản phẩm
+              {loadingTimeout 
+                ? 'Có lỗi xảy ra khi tải thông tin. Vui lòng thử lại hoặc đăng ký làm người bán.'
+                : 'Vui lòng đăng ký làm người bán để tạo sản phẩm'
+              }
             </p>
-            <Button onClick={() => navigate('/register-seller')}>
-              Đăng ký người bán
-            </Button>
+            <div className="space-x-2">
+              <Button onClick={() => navigate('/register-seller')}>
+                Đăng ký người bán
+              </Button>
+              {loadingTimeout && (
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                  Tải lại trang
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
     );
   }
+
+  console.log('ProductForm rendering with valid auth state');
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof ProductFormData, string>> = {};

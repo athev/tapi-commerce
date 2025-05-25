@@ -47,7 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     fetchProfile
   } = useSupabaseAuth(isOnline);
 
-  // Initialize user session with better error handling
+  // Initialize user session with better error handling and timeout
   useEffect(() => {
     const initSession = async () => {
       try {
@@ -60,7 +60,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           return;
         }
 
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        // Add timeout to prevent infinite loading
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error('Session initialization timeout')), 10000);
+        });
+
+        const sessionPromise = supabase.auth.getSession();
+        
+        const { data: { session: currentSession }, error } = await Promise.race([
+          sessionPromise,
+          timeoutPromise
+        ]) as any;
         
         if (error) {
           console.error('Error getting session:', error);
@@ -74,9 +84,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (currentSession?.user) {
           console.log('Fetching user profile...');
-          const userProfile = await fetchProfile(currentSession.user.id);
-          if (userProfile) {
-            console.log('Profile fetched successfully');
+          try {
+            // Add timeout for profile fetch as well
+            const profileTimeoutPromise = new Promise((_, reject) => {
+              setTimeout(() => reject(new Error('Profile fetch timeout')), 5000);
+            });
+            
+            const profilePromise = fetchProfile(currentSession.user.id);
+            const userProfile = await Promise.race([profilePromise, profileTimeoutPromise]);
+            
+            if (userProfile) {
+              console.log('Profile fetched successfully');
+            } else {
+              console.log('No profile found for user');
+            }
+          } catch (profileError) {
+            console.error('Profile fetch failed or timed out:', profileError);
+            // Don't block loading for profile fetch failures
           }
         }
       } catch (error) {
@@ -99,15 +123,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           
           if (newSession?.user && event !== 'TOKEN_REFRESHED') {
             console.log('Fetching profile for new session...');
-            const userProfile = await fetchProfile(newSession.user.id);
-            if (userProfile) {
-              console.log('Profile updated successfully');
+            try {
+              // Add timeout for profile fetch
+              const profileTimeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Profile fetch timeout')), 5000);
+              });
+              
+              const profilePromise = fetchProfile(newSession.user.id);
+              const userProfile = await Promise.race([profilePromise, profileTimeoutPromise]);
+              
+              if (userProfile) {
+                console.log('Profile updated successfully');
+              }
+            } catch (profileError) {
+              console.error('Profile fetch failed or timed out:', profileError);
             }
           }
         } catch (error) {
           console.error('Error in auth state change:', error);
         } finally {
-          setLoading(false);
+          // Ensure loading is always set to false
+          if (loading) {
+            setLoading(false);
+          }
         }
       }
     );
@@ -115,7 +153,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetchProfile, setSession, setUser, setLoading]);
+  }, [fetchProfile, setSession, setUser, setLoading, loading]);
 
   return (
     <AuthContext.Provider value={{
