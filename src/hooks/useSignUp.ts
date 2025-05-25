@@ -10,7 +10,8 @@ export const useSignUp = () => {
         error: { 
           message: "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.",
           code: "network_error" 
-        } 
+        },
+        success: false
       };
     }
 
@@ -80,7 +81,7 @@ export const useSignUp = () => {
       }
 
       toast.success("Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.");
-      return { error: null };
+      return { error: null, success: true };
       
     } catch (error: any) {
       console.error('Signup error:', error);
@@ -96,7 +97,7 @@ export const useSignUp = () => {
       }
       
       toast.error(error.message);
-      return { error };
+      return { error, success: false };
     }
   };
 

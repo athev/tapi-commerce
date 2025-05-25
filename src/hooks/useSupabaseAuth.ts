@@ -21,7 +21,13 @@ export const useSupabaseAuth = (isOnline: boolean) => {
   const { signIn, signOut } = useAuthOperations(fetchProfile, setProfile);
 
   // Use the sign up hook
-  const { signUp } = useSignUp();
+  const { signUp: signUpHook } = useSignUp();
+
+  // Wrapper to maintain compatibility with existing code
+  const signUp = async (email: string, password: string, fullName: string) => {
+    const result = await signUpHook(email, password, fullName);
+    return result;
+  };
 
   return {
     session,
