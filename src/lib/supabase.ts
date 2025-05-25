@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 // Use the actual Supabase configuration
@@ -28,6 +29,7 @@ export type Product = {
   in_stock: number;
   purchases: number;
   created_at: string;
+  product_type?: string;
 };
 
 export type Order = {
@@ -60,7 +62,8 @@ export const mockProducts: Product[] = [
     seller_name: 'Financial Expert',
     in_stock: 999,
     purchases: 124,
-    created_at: '2025-04-01T08:30:00Z'
+    created_at: '2025-04-01T08:30:00Z',
+    product_type: 'file_download'
   },
   {
     id: '2',
@@ -73,7 +76,8 @@ export const mockProducts: Product[] = [
     seller_name: 'DesignMaster',
     in_stock: 999,
     purchases: 89,
-    created_at: '2025-04-10T10:15:00Z'
+    created_at: '2025-04-10T10:15:00Z',
+    product_type: 'license_key_delivery'
   },
   {
     id: '3',
@@ -86,7 +90,8 @@ export const mockProducts: Product[] = [
     seller_name: 'SocialTech',
     in_stock: 50,
     purchases: 37,
-    created_at: '2025-04-15T14:20:00Z'
+    created_at: '2025-04-15T14:20:00Z',
+    product_type: 'shared_account'
   },
   {
     id: '4',
@@ -99,7 +104,8 @@ export const mockProducts: Product[] = [
     seller_name: 'ResumeDesigner',
     in_stock: 999,
     purchases: 215,
-    created_at: '2025-04-20T09:45:00Z'
+    created_at: '2025-04-20T09:45:00Z',
+    product_type: 'upgrade_account_no_pass'
   },
   {
     id: '5',
@@ -112,7 +118,8 @@ export const mockProducts: Product[] = [
     seller_name: 'AudioProduction',
     in_stock: 999,
     purchases: 76,
-    created_at: '2025-04-25T11:30:00Z'
+    created_at: '2025-04-25T11:30:00Z',
+    product_type: 'upgrade_account_with_pass'
   },
   {
     id: '6',
@@ -125,6 +132,7 @@ export const mockProducts: Product[] = [
     seller_name: 'BrandExpert',
     in_stock: 999,
     purchases: 103,
-    created_at: '2025-05-01T13:15:00Z'
+    created_at: '2025-05-01T13:15:00Z',
+    product_type: 'file_download'
   }
 ];
