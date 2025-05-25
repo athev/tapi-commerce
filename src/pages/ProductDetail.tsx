@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,7 @@ import RelatedProducts from "@/components/products/RelatedProducts";
 import ProductHeader from "@/components/products/ProductHeader";
 import ProductTabs from "@/components/products/ProductTabs";
 import ProductDetailsAccordion from "@/components/products/ProductDetailsAccordion";
+import ProductHighlights from "@/components/products/ProductHighlights";
 import StickyBottomButton from "@/components/products/StickyBottomButton";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft } from "lucide-react";
@@ -162,43 +164,63 @@ const ProductDetail = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-white">
       <Navbar />
       
       <main className="flex-1 pb-20 lg:pb-0">
         {/* Breadcrumb */}
-        <div className="bg-white border-b">
-          <div className="container py-3">
+        <div className="bg-gray-50 border-b">
+          <div className="container py-2">
             <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="p-0 h-auto text-sm">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="p-0 h-auto text-sm hover:text-marketplace-primary">
                 <ArrowLeft className="h-4 w-4 mr-1" />
                 Trang chủ
               </Button>
               <span>/</span>
-              <span className="hidden sm:inline">{product?.category}</span>
+              <span className="hidden sm:inline text-gray-500">{product?.category}</span>
               <span className="hidden sm:inline">/</span>
               <span className="text-gray-900 font-medium truncate">{product?.title}</span>
             </div>
           </div>
         </div>
 
-        {/* Main Product Section */}
+        {/* Main Product Section - Desktop 2 Column Layout */}
         <div className="container py-4 lg:py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
-            {/* Left Column - Product Images */}
-            <div className="lg:col-span-1">
-              <div className="lg:sticky lg:top-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+            {/* Left Column - Images & Details (Desktop: 7 cols, Mobile: full width) */}
+            <div className="lg:col-span-7">
+              {/* Product Images */}
+              <div className="sticky top-4 mb-6">
                 <ProductImageGallery 
                   images={product?.image ? [product.image] : []} 
                   title={product?.title || ''} 
                 />
               </div>
+
+              {/* Desktop Product Details */}
+              <div className="hidden lg:block space-y-6">
+                <ProductHighlights productType={product?.product_type || 'file_download'} />
+                
+                <Separator />
+                
+                <ProductTabs 
+                  description={product?.description || ''} 
+                  productType={product?.product_type || 'file_download'} 
+                />
+                
+                <Separator />
+                
+                <SellerInfo 
+                  sellerId={product?.seller_id || ''} 
+                  sellerName={product?.seller_name || ''} 
+                />
+              </div>
             </div>
             
-            {/* Right Column - Product Info and Purchase */}
-            <div className="lg:col-span-1">
-              <div className="space-y-6">
-                {/* Product Information */}
+            {/* Right Column - Product Info & Purchase (Desktop: 5 cols) */}
+            <div className="lg:col-span-5">
+              <div className="lg:sticky lg:top-4 space-y-6">
+                {/* Product Header */}
                 <ProductHeader 
                   title={product?.title || ''} 
                   price={product?.price || 0} 
@@ -209,30 +231,39 @@ const ProductDetail = () => {
                   sellerName={product?.seller_name || ''} 
                 />
                 
-                {/* Purchase Section - Desktop */}
+                {/* Purchase Section */}
+                <Card className="shadow-lg border-2 border-gray-100 bg-white">
+                  <CardContent className="p-4 lg:p-6">
+                    <ProductTypeOrderForm 
+                      productType={product?.product_type || 'file_download'} 
+                      onPurchase={handlePurchase} 
+                      isProcessing={isProcessing} 
+                      hasPurchased={hasPurchased} 
+                      product={product} 
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Trust Signals - Desktop */}
                 <div className="hidden lg:block">
-                  <Card className="shadow-lg border-gray-200">
-                    <CardContent className="p-6">
-                      <ProductTypeOrderForm 
-                        productType={product?.product_type || 'file_download'} 
-                        onPurchase={handlePurchase} 
-                        isProcessing={isProcessing} 
-                        hasPurchased={hasPurchased} 
-                        product={product} 
-                      />
+                  <Card className="bg-green-50 border-green-200">
+                    <CardContent className="p-4">
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center text-green-700">
+                          <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                          <span>Tải về ngay sau khi thanh toán</span>
+                        </div>
+                        <div className="flex items-center text-green-700">
+                          <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                          <span>Bảo mật thanh toán SSL 256-bit</span>
+                        </div>
+                        <div className="flex items-center text-green-700">
+                          <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                          <span>Hoàn tiền 100% nếu không hài lòng</span>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
-                </div>
-
-                {/* Purchase Section - Mobile */}
-                <div className="lg:hidden bg-white rounded-lg shadow-md border border-gray-200 p-4">
-                  <ProductTypeOrderForm 
-                    productType={product?.product_type || 'file_download'} 
-                    onPurchase={handlePurchase} 
-                    isProcessing={isProcessing} 
-                    hasPurchased={hasPurchased} 
-                    product={product} 
-                  />
                 </div>
               </div>
             </div>
@@ -240,7 +271,9 @@ const ProductDetail = () => {
         </div>
 
         {/* Mobile Accordion */}
-        <div className="container lg:hidden py-4">
+        <div className="lg:hidden container py-4 space-y-4">
+          <ProductHighlights productType={product?.product_type || 'file_download'} />
+          
           <ProductDetailsAccordion 
             description={product?.description || ''} 
             productType={product?.product_type || 'file_download'} 
@@ -248,26 +281,8 @@ const ProductDetail = () => {
           />
         </div>
 
-        {/* Desktop Product Details Tabs */}
-        <div className="hidden lg:block bg-white border-t">
-          <div className="container py-8">
-            <ProductTabs 
-              description={product?.description || ''} 
-              productType={product?.product_type || 'file_download'} 
-            />
-          </div>
-        </div>
-
-        {/* Seller Info - Desktop */}
-        <div className="hidden lg:block container py-6">
-          <SellerInfo 
-            sellerId={product?.seller_id || ''} 
-            sellerName={product?.seller_name || ''} 
-          />
-        </div>
-
         {/* Reviews Section */}
-        <div className="bg-white border-t">
+        <div className="bg-gray-50 border-t">
           <div className="container py-6 lg:py-8">
             <ProductReviews 
               reviews={[]} 
