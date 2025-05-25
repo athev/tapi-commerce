@@ -29,6 +29,13 @@ export const useSupabaseAuth = (isOnline: boolean) => {
     return result;
   };
 
+  // Memoized refresh function to prevent infinite loops
+  const memoizedRefreshProfile = () => {
+    if (user && isOnline) {
+      refreshProfile(user);
+    }
+  };
+
   return {
     session,
     setSession,
@@ -41,7 +48,7 @@ export const useSupabaseAuth = (isOnline: boolean) => {
     signIn,
     signUp,
     signOut,
-    refreshProfile: () => refreshProfile(user),
+    refreshProfile: memoizedRefreshProfile,
     fetchProfile
   };
 };

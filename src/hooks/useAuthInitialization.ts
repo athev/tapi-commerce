@@ -103,30 +103,26 @@ export const useAuthInitialization = (
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
+        // Only fetch profile on sign in, not on every auth state change
         if (event === 'SIGNED_IN' && newSession?.user && isOnline) {
           console.log('AuthProvider: User signed in, fetching profile...');
           setProfileLoading(true);
           
-          // Use setTimeout to avoid blocking the auth state change
-          setTimeout(async () => {
-            if (!mounted) return;
-            
-            try {
-              const userProfile = await fetchProfile(newSession.user.id);
-              if (userProfile && mounted) {
-                console.log('AuthProvider: Profile fetched after sign in:', userProfile.role);
-                setProfile(userProfile);
-              } else {
-                console.log('AuthProvider: No profile found after sign in');
-                setProfile(null);
-              }
-            } catch (profileError) {
-              console.error('AuthProvider: Profile fetch failed on sign in:', profileError);
+          try {
+            const userProfile = await fetchProfile(newSession.user.id);
+            if (userProfile && mounted) {
+              console.log('AuthProvider: Profile fetched after sign in:', userProfile.role);
+              setProfile(userProfile);
+            } else {
+              console.log('AuthProvider: No profile found after sign in');
               setProfile(null);
-            } finally {
-              if (mounted) setProfileLoading(false);
             }
-          }, 0);
+          } catch (profileError) {
+            console.error('AuthProvider: Profile fetch failed on sign in:', profileError);
+            setProfile(null);
+          } finally {
+            if (mounted) setProfileLoading(false);
+          }
         } else if (!newSession?.user) {
           // Clear profile if no user session
           setProfile(null);
@@ -147,7 +143,7 @@ export const useAuthInitialization = (
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [isOnline, setSession, setUser, setProfile, setLoading, fetchProfile]);
+  }, [isOnline]); // Only depend on isOnline, remove function dependencies
 
   return { profileLoading };
 };

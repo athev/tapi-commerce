@@ -10,16 +10,10 @@ interface SellerStatusHandlerProps {
 }
 
 const SellerStatusHandler = ({ children }: SellerStatusHandlerProps) => {
-  const { user, refreshProfile } = useAuth();
+  const { user } = useAuth();
   const { sellerStatus, sellerApplication, loading } = useSellerStatus();
 
-  // Only refresh profile once when component mounts
-  useEffect(() => {
-    if (user) {
-      refreshProfile();
-    }
-  }, [user?.id]); // Only depend on user.id, not the refreshProfile function
-
+  // Remove the refreshProfile call - let the auth system handle it automatically
   console.log('SellerStatusHandler:', { 
     user: !!user, 
     sellerStatus, 
