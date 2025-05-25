@@ -97,9 +97,13 @@ const LoadingSkeleton = () => (
 const SellerOrders = () => {
   const { user } = useAuth();
 
+  console.log('SellerOrders component - user state:', user?.id ? 'User available' : 'No user');
+
   const { data: orders, isLoading, error } = useQuery({
     queryKey: ['seller-orders', user?.id],
     queryFn: async () => {
+      console.log("fetchOrders running");
+      
       if (!user?.id) {
         console.log('No user found for seller orders');
         throw new Error('User not authenticated');
@@ -151,11 +155,14 @@ const SellerOrders = () => {
       }
     },
     enabled: !!user?.id,
-    retry: 3,
+    retry: 2,
     retryDelay: 1000,
   });
 
+  console.log('Query state:', { isLoading, hasError: !!error, ordersCount: orders?.length || 0 });
+
   if (isLoading) {
+    console.log('Rendering loading skeleton');
     return <LoadingSkeleton />;
   }
 
@@ -170,6 +177,8 @@ const SellerOrders = () => {
       </div>
     );
   }
+
+  console.log('Rendering orders:', orders?.length || 0);
 
   return (
     <div className="space-y-6">
