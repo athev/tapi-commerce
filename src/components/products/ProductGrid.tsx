@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import ProductCard from "./ProductCard";
 import { mockProducts, Product } from "@/lib/supabase";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProductGridProps {
   searchTerm?: string;
@@ -32,7 +33,6 @@ const ProductGrid = ({
         
         if (error) {
           console.error('Error fetching products:', error);
-          // Fallback to mock data if database fails
           console.log('Falling back to mock data');
           return mockProducts;
         }
@@ -41,12 +41,11 @@ const ProductGrid = ({
         return data;
       } catch (error) {
         console.error('Error in product fetch:', error);
-        // Fallback to mock data if request fails
         console.log('Falling back to mock data due to error');
         return mockProducts;
       }
     },
-    enabled: !externalProducts, // Only fetch if no external products provided
+    enabled: !externalProducts,
   });
 
   // Use external data if provided, otherwise use internal query data
@@ -63,13 +62,17 @@ const ProductGrid = ({
 
   if (finalIsLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="animate-pulse">
-            <div className="bg-gray-200 h-48 rounded-t-lg"></div>
-            <div className="p-4">
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="bg-white rounded-lg border shadow-sm overflow-hidden">
+            <Skeleton className="h-48 w-full" />
+            <div className="p-4 space-y-3">
+              <Skeleton className="h-4 w-3/4" />
+              <Skeleton className="h-3 w-1/2" />
+              <div className="flex justify-between items-center">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-6 w-20" />
+              </div>
             </div>
           </div>
         ))}
@@ -81,36 +84,66 @@ const ProductGrid = ({
     console.error('ProductGrid error:', finalError);
   }
 
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {filteredProducts?.map((product) => (
-        <ProductCard 
-          key={product.id} 
-          id={product.id}
-          title={product.title}
-          price={{
-            min: product.price,
-            max: product.price
-          }}
-          image={product.image || '/placeholder.svg'}
-          category={product.category}
-          rating={4}
-          reviews={product.purchases || 0}
-          seller={{
-            name: product.seller_name,
-            verified: true
-          }}
-          inStock={product.in_stock || 999}
-          isNew={new Date(product.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
-          isHot={product.purchases && product.purchases > 50}
-        />
-      ))}
-      {filteredProducts?.length === 0 && (
-        <div className="col-span-full text-center py-12">
-          <h3 className="text-lg font-medium mb-2">Không tìm thấy sản phẩm</h3>
-          <p className="text-gray-500">Thử thay đổi từ khóa tìm kiếm hoặc danh mục</p>
+  if (!filteredProducts || filteredProducts.length === 0) {
+    return (
+      <div className="text-center py-16">
+        <div className="max-w-md mx-auto">
+          <div className="w-24 h-24 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+            <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Không tìm thấy sản phẩm</h3>
+          <p className="text-gray-600 mb-6">
+            Thử thay đổi từ khóa tìm kiếm hoặc chọn danh mục khác
+          </p>
+          {(searchTerm || category !== "all") && (
+            <button 
+              onClick={() => window.location.href = '/'}
+              className="inline-flex items-center px-4 py-2 bg-marketplace-primary text-white rounded-lg hover:bg-marketplace-primary/90 transition-colors"
+            >
+              Xem tất cả sản phẩm
+            </button>
+          )}
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <p className="text-sm text-gray-600">
+          Hiển thị {filteredProducts.length} sản phẩm
+          {searchTerm && ` cho "${searchTerm}"`}
+          {category !== "all" && ` trong danh mục "${category}"`}
+        </p>
+      </div>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {filteredProducts.map((product) => (
+          <ProductCard 
+            key={product.id} 
+            id={product.id}
+            title={product.title}
+            price={{
+              min: product.price,
+              max: product.price
+            }}
+            image={product.image || '/placeholder.svg'}
+            category={product.category}
+            rating={4}
+            reviews={product.purchases || 0}
+            seller={{
+              name: product.seller_name,
+              verified: true
+            }}
+            inStock={product.in_stock || 999}
+            isNew={new Date(product.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
+            isHot={product.purchases && product.purchases > 50}
+          />
+        ))}
+      </div>
     </div>
   );
 };
