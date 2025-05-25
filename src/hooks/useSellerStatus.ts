@@ -52,11 +52,11 @@ export const useSellerStatus = () => {
     // Check profile role - seller has full access
     if (profile.role === 'seller') return 'approved_seller';
     
-    // For buyers, check if they have submitted applications
-    if (profile.role === 'buyer' || profile.role === 'end-user') {
+    // For end-users, check if they have submitted applications
+    if (profile.role === 'end-user') {
       if (sellerApplication?.status === 'pending') return 'pending_approval';
       if (sellerApplication?.status === 'rejected') return 'rejected';
-      return 'buyer'; // Default for buyers without applications
+      return 'buyer'; // Default for end-users without applications
     }
     
     return 'buyer'; // Fallback
