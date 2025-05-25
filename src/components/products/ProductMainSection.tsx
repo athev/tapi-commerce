@@ -26,16 +26,16 @@ const ProductMainSection = ({
     <div className="container py-4 lg:py-8">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
         {/* Left Column - Images & Details (Desktop: 7 cols, Mobile: full width) */}
-        <div className="lg:col-span-7">
+        <div className="lg:col-span-7 space-y-6">
           {/* Product Images */}
-          <div className="sticky top-4 mb-6">
+          <div className="lg:sticky lg:top-4">
             <ProductImageGallery 
               images={product?.image ? [product.image] : []} 
               title={product?.title || ''} 
             />
           </div>
 
-          {/* Desktop Product Details */}
+          {/* Desktop Product Details - No sticky positioning */}
           <div className="hidden lg:block space-y-6">
             <ProductHighlights productType={product?.product_type || 'file_download'} />
             
