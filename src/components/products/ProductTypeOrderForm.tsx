@@ -119,109 +119,42 @@ const ProductTypeOrderForm = ({
   const productTypeInfo = getProductTypeInfo(productType);
   const TypeIcon = productTypeInfo.icon;
 
-  // After purchase UI based on product type
-  if (hasPurchased) {
-    switch (productType) {
-      case 'file_download':
-        return (
-          <div className="space-y-4">
-            <Card className="bg-green-50 border-green-200">
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-3 mb-3">
-                  <Download className="h-5 w-5 text-green-600" />
-                  <h3 className="font-medium text-green-900">Sản phẩm đã mua</h3>
-                </div>
-                <p className="text-sm text-green-800 mb-3">
-                  Bạn có thể tải xuống file ngay bây giờ.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <Button 
-              className="w-full bg-green-600 hover:bg-green-700"
-              onClick={() => {
-                if (product?.file_url) {
-                  window.open(product.file_url, '_blank');
-                } else {
-                  const link = document.createElement('a');
-                  link.href = 'data:text/plain;charset=utf-8,Sample Digital Product Content';
-                  link.download = `${product?.title || 'product'}.txt`;
-                  link.click();
-                }
-              }}
-            >
-              <Download className="h-5 w-5 mr-2" /> Tải xuống file
-            </Button>
-          </div>
-        );
-
-      case 'shared_account':
-        return (
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4">
-              <div className="flex items-start space-x-3">
-                <Users className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="font-medium text-blue-900 mb-1">Liên hệ hỗ trợ</h3>
-                  <p className="text-sm text-blue-800">
-                    Vui lòng liên hệ CSKH tại Ô Chat để được hướng dẫn đăng nhập tài khoản.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-
-      case 'license_key_delivery':
-        return (
-          <Card className="bg-green-50 border-green-200">
-            <CardContent className="p-4">
-              <div className="flex items-start space-x-3">
-                <Key className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="font-medium text-green-900 mb-1">Mã kích hoạt đã được gửi</h3>
-                  <p className="text-sm text-green-800 mb-2">
-                    Mã kích hoạt đã được gửi tới email của bạn và hiển thị dưới đây:
-                  </p>
-                  <div className="bg-white p-3 rounded border font-mono text-sm">
-                    DEMO-LICENSE-KEY-{Math.random().toString(36).substr(2, 9).toUpperCase()}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-
-      case 'upgrade_account_no_pass':
-      case 'upgrade_account_with_pass':
-        return (
-          <Card className="bg-green-50 border-green-200">
-            <CardContent className="p-4">
-              <div className="flex items-start space-x-3">
-                <User className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <h3 className="font-medium text-green-900 mb-1">Thông tin đã được gửi</h3>
-                  <p className="text-sm text-green-800">
-                    Thông tin tài khoản của bạn đã được gửi tới người bán để thực hiện nâng cấp.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
-
-      default:
-        return (
-          <Card className="bg-green-50 border-green-200">
-            <CardContent className="p-4">
-              <p className="text-green-800">Cảm ơn bạn đã mua hàng!</p>
-            </CardContent>
-          </Card>
-        );
-    }
+  // After purchase UI - only show for file_download type
+  if (hasPurchased && productType === 'file_download') {
+    return (
+      <div className="space-y-4">
+        <Card className="bg-green-50 border-green-200">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3 mb-3">
+              <Download className="h-5 w-5 text-green-600" />
+              <h3 className="font-medium text-green-900">Sản phẩm đã mua</h3>
+            </div>
+            <p className="text-sm text-green-800 mb-3">
+              Bạn có thể tải xuống file ngay bây giờ.
+            </p>
+          </CardContent>
+        </Card>
+        
+        <Button 
+          className="w-full bg-green-600 hover:bg-green-700"
+          onClick={() => {
+            if (product?.file_url) {
+              window.open(product.file_url, '_blank');
+            } else {
+              const link = document.createElement('a');
+              link.href = 'data:text/plain;charset=utf-8,Sample Digital Product Content';
+              link.download = `${product?.title || 'product'}.txt`;
+              link.click();
+            }
+          }}
+        >
+          <Download className="h-5 w-5 mr-2" /> Tải xuống file
+        </Button>
+      </div>
+    );
   }
 
-  // Before purchase UI
+  // Before purchase UI (for all product types, or after purchase for non-file-download types)
   return (
     <>
       <div className="space-y-4">
@@ -234,6 +167,23 @@ const ProductTypeOrderForm = ({
             </div>
           </CardContent>
         </Card>
+
+        {/* Show success message for non-file-download products after purchase */}
+        {hasPurchased && productType !== 'file_download' && (
+          <Card className="bg-blue-50 border-blue-200 mb-4">
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <Info className="h-5 w-5 text-blue-600" />
+                <div>
+                  <h3 className="font-medium text-blue-900">Đơn hàng đã được tạo</h3>
+                  <p className="text-sm text-blue-800">
+                    Đơn hàng của bạn đã được tạo thành công. Bạn có thể mua thêm nếu cần.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Input fields for upgrade account types */}
         {productType === 'upgrade_account_no_pass' && (
@@ -301,7 +251,7 @@ const ProductTypeOrderForm = ({
           </div>
         )}
 
-        {/* Purchase button */}
+        {/* Purchase button - always show except for purchased file_download products */}
         <Button 
           className="w-full bg-marketplace-primary hover:bg-marketplace-primary/90"
           onClick={handlePurchaseClick}

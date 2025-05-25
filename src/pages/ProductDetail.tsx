@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -63,11 +62,16 @@ const ProductDetail = () => {
     retry: false,
   });
 
-  // Check if user has already purchased this product
+  // Check if user has already purchased this product (only for file_download type)
   const { data: existingOrder } = useQuery({
     queryKey: ['user-order', id, user?.id],
     queryFn: async () => {
-      if (!user?.id || !id) return null;
+      if (!user?.id || !id || !product) return null;
+      
+      // Only check for existing orders for file_download type
+      if (product.product_type !== 'file_download') {
+        return null;
+      }
       
       const { data, error } = await supabase
         .from('orders')
@@ -83,14 +87,17 @@ const ProductDetail = () => {
       
       return data;
     },
-    enabled: !!user?.id && !!id,
+    enabled: !!user?.id && !!id && !!product,
   });
 
   useEffect(() => {
-    if (existingOrder) {
+    // Only set hasPurchased to true for file_download products
+    if (existingOrder && product?.product_type === 'file_download') {
       setHasPurchased(true);
+    } else {
+      setHasPurchased(false);
     }
-  }, [existingOrder]);
+  }, [existingOrder, product?.product_type]);
 
   const handlePurchase = async (buyerData?: any) => {
     if (!user) {
@@ -141,7 +148,11 @@ const ProductDetail = () => {
       }
 
       console.log('Order created successfully:', order);
-      setHasPurchased(true);
+      
+      // Only set hasPurchased for file_download products
+      if (product.product_type === 'file_download') {
+        setHasPurchased(true);
+      }
 
       toast({
         title: "Đặt hàng thành công!",
