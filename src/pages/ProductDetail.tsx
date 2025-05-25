@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,33 +10,15 @@ import { useToast } from "@/hooks/use-toast";
 import { Product } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Badge } from "@/components/ui/badge";
 import ProductTypeOrderForm from "@/components/products/ProductTypeOrderForm";
 import ProductImageGallery from "@/components/products/ProductImageGallery";
 import ProductReviews from "@/components/products/ProductReviews";
 import SellerInfo from "@/components/products/SellerInfo";
 import RelatedProducts from "@/components/products/RelatedProducts";
+import ProductHeader from "@/components/products/ProductHeader";
+import ProductTabs from "@/components/products/ProductTabs";
 import { Separator } from "@/components/ui/separator";
-import { Heart, Share2, Flag, ArrowLeft, Star, Shield, Truck, RotateCcw } from "lucide-react";
-
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('vi-VN', { 
-    style: 'currency', 
-    currency: 'VND',
-    maximumFractionDigits: 0 
-  }).format(price);
-};
-
-const getProductTypeLabel = (type: string) => {
-  const types = {
-    file_download: 'Tải tệp/File tải',
-    license_key_delivery: 'Mã kích hoạt',
-    shared_account: 'Tài khoản dùng chung',
-    upgrade_account_no_pass: 'Nâng cấp không cần mật khẩu',
-    upgrade_account_with_pass: 'Nâng cấp có mật khẩu'
-  };
-  return types[type as keyof typeof types] || type;
-};
+import { ArrowLeft } from "lucide-react";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -44,7 +27,6 @@ const ProductDetail = () => {
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasPurchased, setHasPurchased] = useState(false);
-  const [isFavorited, setIsFavorited] = useState(false);
 
   const { data: product, isLoading, isError } = useQuery({
     queryKey: ['product', id],
@@ -178,22 +160,6 @@ const ProductDetail = () => {
     }
   };
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: product?.title,
-        text: product?.description,
-        url: window.location.href,
-      });
-    } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast({
-        title: "Đã sao chép liên kết",
-        description: "Liên kết sản phẩm đã được sao chép vào clipboard",
-      });
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
@@ -239,160 +205,96 @@ const ProductDetail = () => {
               <span>/</span>
               <span>{product?.category}</span>
               <span>/</span>
-              <span className="text-gray-900 font-medium">{product?.title}</span>
+              <span className="text-gray-900 font-medium truncate">{product?.title}</span>
             </div>
           </div>
         </div>
 
-        {/* Main Content */}
+        {/* Main Product Section */}
         <div className="container py-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Left Column - Images */}
-            <div className="lg:col-span-5">
-              <ProductImageGallery 
-                images={product?.image ? [product.image] : []} 
-                title={product?.title || ''} 
-              />
-            </div>
-            
-            {/* Middle Column - Product Info */}
-            <div className="lg:col-span-4 space-y-6">
-              {/* Product Basic Info */}
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <div className="space-y-4">
-                  <div>
-                    {product?.product_type && (
-                      <Badge variant="outline" className="mb-2">
-                        {getProductTypeLabel(product.product_type)}
-                      </Badge>
-                    )}
-                    <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 leading-tight">
-                      {product?.title}
-                    </h1>
-                  </div>
-
-                  {/* Rating and Stats */}
-                  <div className="flex items-center space-x-4 text-sm">
-                    <div className="flex items-center space-x-1">
-                      <div className="flex">
-                        {Array(5).fill(0).map((_, i) => (
-                          <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                        ))}
-                      </div>
-                      <span className="font-medium">4.8</span>
-                      <span className="text-gray-500">(156 đánh giá)</span>
-                    </div>
-                    <span className="text-gray-300">|</span>
-                    <span className="text-gray-600">Đã bán: {product?.purchases}</span>
-                  </div>
-
-                  {/* Price */}
-                  <div className="py-4">
-                    <div className="text-3xl font-bold text-marketplace-primary">
-                      {product && formatPrice(product.price)}
-                    </div>
-                    <div className="text-sm text-gray-500 mt-1">
-                      Giá đã bao gồm VAT
-                    </div>
-                  </div>
-
-                  {/* Stock and Actions */}
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm">
-                      <span className="text-gray-600">Còn lại: </span>
-                      <span className="font-medium text-green-600">{product?.in_stock}</span>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setIsFavorited(!isFavorited)}
-                        className={isFavorited ? "text-red-500" : "text-gray-500"}
-                      >
-                        <Heart className={`h-5 w-5 ${isFavorited ? "fill-current" : ""}`} />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={handleShare}>
-                        <Share2 className="h-5 w-5" />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Flag className="h-5 w-5" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Guarantees */}
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <h3 className="font-semibold mb-4">Cam kết của chúng tôi</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-3 text-sm">
-                    <Shield className="h-5 w-5 text-green-600" />
-                    <span>Bảo mật thông tin 100%</span>
-                  </div>
-                  <div className="flex items-center space-x-3 text-sm">
-                    <Truck className="h-5 w-5 text-blue-600" />
-                    <span>Giao hàng ngay lập tức</span>
-                  </div>
-                  <div className="flex items-center space-x-3 text-sm">
-                    <RotateCcw className="h-5 w-5 text-orange-600" />
-                    <span>Hoàn tiền nếu không hài lòng</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Product Description */}
-              <div className="bg-white rounded-lg p-6 shadow-sm">
-                <h3 className="text-lg font-semibold mb-4">Mô tả sản phẩm</h3>
-                <div className="prose prose-sm max-w-none">
-                  <p className="text-gray-700 leading-relaxed whitespace-pre-line">
-                    {product?.description}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column - Purchase Form */}
-            <div className="lg:col-span-3">
-              <div className="sticky top-8 space-y-6">
-                <div className="bg-white rounded-lg p-6 shadow-sm">
-                  <ProductTypeOrderForm 
-                    productType={product?.product_type || 'file_download'}
-                    onPurchase={handlePurchase}
-                    isProcessing={isProcessing}
-                    hasPurchased={hasPurchased}
-                    product={product}
-                  />
-                </div>
-
-                <SellerInfo 
-                  sellerId={product?.seller_id || ''} 
-                  sellerName={product?.seller_name || ''}
+            {/* Left - Product Images */}
+            <div className="lg:col-span-6">
+              <div className="sticky top-8">
+                <ProductImageGallery 
+                  images={product?.image ? [product.image] : []} 
+                  title={product?.title || ''} 
                 />
               </div>
             </div>
-          </div>
-
-          {/* Bottom Section */}
-          <div className="mt-12 space-y-8">
-            <Separator />
             
-            {/* Reviews Section */}
+            {/* Right - Product Info and Purchase */}
+            <div className="lg:col-span-6">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Product Header */}
+                <div className="lg:col-span-8">
+                  <ProductHeader
+                    title={product?.title || ''}
+                    price={product?.price || 0}
+                    category={product?.category || ''}
+                    productType={product?.product_type || 'file_download'}
+                    purchases={product?.purchases || 0}
+                    inStock={product?.in_stock || 0}
+                    sellerName={product?.seller_name || ''}
+                  />
+                </div>
+                
+                {/* Purchase Form */}
+                <div className="lg:col-span-4">
+                  <div className="sticky top-8">
+                    <Card className="shadow-lg">
+                      <CardContent className="p-6">
+                        <ProductTypeOrderForm 
+                          productType={product?.product_type || 'file_download'}
+                          onPurchase={handlePurchase}
+                          isProcessing={isProcessing}
+                          hasPurchased={hasPurchased}
+                          product={product}
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Product Details Tabs */}
+        <div className="bg-white">
+          <div className="container py-12">
+            <ProductTabs 
+              description={product?.description || ''} 
+              productType={product?.product_type || 'file_download'}
+            />
+          </div>
+        </div>
+
+        {/* Seller Info */}
+        <div className="container py-8">
+          <SellerInfo 
+            sellerId={product?.seller_id || ''} 
+            sellerName={product?.seller_name || ''}
+          />
+        </div>
+
+        {/* Reviews Section */}
+        <div className="bg-white">
+          <div className="container py-12">
             <ProductReviews 
               reviews={[]}
               averageRating={4.8}
               totalReviews={156}
             />
-
-            <Separator />
-            
-            {/* Related Products */}
-            <RelatedProducts 
-              currentProductId={id || ''}
-              category={product?.category || ''}
-            />
           </div>
+        </div>
+
+        {/* Related Products */}
+        <div className="container py-8">
+          <RelatedProducts 
+            currentProductId={id || ''}
+            category={product?.category || ''}
+          />
         </div>
       </main>
       
