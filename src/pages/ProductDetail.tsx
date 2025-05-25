@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
@@ -92,20 +91,7 @@ const ProductDetail = () => {
         
         if (error) throw error;
         
-        return data.map(item => ({
-          id: item.id,
-          title: item.title,
-          price: { min: item.price, max: item.price },
-          image: item.image || '/placeholder.svg',
-          category: item.category,
-          rating: 4.5,
-          reviews: 10,
-          seller: {
-            name: item.seller_name,
-            verified: true,
-          },
-          inStock: item.in_stock,
-        }));
+        return data as Product[];
       } catch (error) {
         console.warn('Error fetching similar products, using mock data', error);
         
@@ -118,20 +104,7 @@ const ProductDetail = () => {
           ? sameCategoryProducts 
           : mockProducts.filter(p => p.id !== id).slice(0, 5);
         
-        return mockSimilarProducts.map(item => ({
-          id: item.id,
-          title: item.title,
-          price: { min: item.price, max: item.price },
-          image: item.image || '/placeholder.svg',
-          category: item.category,
-          rating: 4.5,
-          reviews: 10,
-          seller: {
-            name: item.seller_name,
-            verified: true,
-          },
-          inStock: item.in_stock,
-        })) as ProductCardProps[];
+        return mockSimilarProducts;
       }
     },
     enabled: !!product?.category,
@@ -472,8 +445,9 @@ const ProductDetail = () => {
           {similarProducts && similarProducts.length > 0 && (
             <section className="mt-16">
               <ProductGrid 
-                title="Sản phẩm tương tự" 
                 products={similarProducts}
+                isLoading={false}
+                error={null}
               />
             </section>
           )}
