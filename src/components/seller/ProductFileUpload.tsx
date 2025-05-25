@@ -7,9 +7,10 @@ import { Upload, X } from "lucide-react";
 interface ProductFileUploadProps {
   file: File | null;
   onFileChange: (file: File | null) => void;
+  error?: string;
 }
 
-const ProductFileUpload = ({ file, onFileChange }: ProductFileUploadProps) => {
+const ProductFileUpload = ({ file, onFileChange, error }: ProductFileUploadProps) => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       onFileChange(e.target.files[0]);
@@ -36,7 +37,7 @@ const ProductFileUpload = ({ file, onFileChange }: ProductFileUploadProps) => {
           </Button>
         </div>
       ) : (
-        <div className="border-2 border-dashed border-gray-300 rounded-md p-6 text-center hover:border-gray-400 transition-colors">
+        <div className={`border-2 border-dashed rounded-md p-6 text-center hover:border-gray-400 transition-colors ${error ? 'border-red-300' : 'border-gray-300'}`}>
           <Upload className="mx-auto h-8 w-8 text-gray-400 mb-2" />
           <Label htmlFor="file" className="cursor-pointer">
             <span className="text-sm text-gray-600">Nhấn để chọn file</span>
@@ -48,6 +49,9 @@ const ProductFileUpload = ({ file, onFileChange }: ProductFileUploadProps) => {
             />
           </Label>
         </div>
+      )}
+      {error && (
+        <p className="text-sm text-red-500">{error}</p>
       )}
       <p className="text-xs text-gray-500">
         Upload file sản phẩm để khách hàng tải xuống sau khi mua (tùy chọn)
