@@ -62,7 +62,10 @@ export const useAuthOperations = (fetchProfile: (userId: string) => Promise<any>
   // Sign out
   const signOut = async () => {
     try {
+      console.log('useAuthOperations: Starting sign out process...');
+      
       if (!navigator.onLine) {
+        console.log('useAuthOperations: User is offline, cannot sign out');
         toastNotification({
           title: "Không thể đăng xuất",
           description: "Bạn đang offline. Vui lòng kết nối internet và thử lại.",
@@ -71,20 +74,34 @@ export const useAuthOperations = (fetchProfile: (userId: string) => Promise<any>
         return;
       }
       
-      console.log('useAuthOperations: Signing out...');
-      await supabase.auth.signOut();
-      
-      // Clear profile immediately
+      // Clear profile immediately before calling signOut
+      console.log('useAuthOperations: Clearing profile...');
       setProfile(null);
+      
+      console.log('useAuthOperations: Calling supabase.auth.signOut()...');
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error('useAuthOperations: Sign out error:', error);
+        throw error;
+      }
+      
       console.log('useAuthOperations: Sign out successful');
       
       toastNotification({
         title: "Đã đăng xuất",
+        description: "Bạn đã đăng xuất thành công",
       });
-    } catch (error) {
+      
+    } catch (error: any) {
       console.error('useAuthOperations: Error signing out:', error);
+      
+      // Even if there's an error, try to clear local state
+      setProfile(null);
+      
       toastNotification({
         title: "Có lỗi xảy ra khi đăng xuất",
+        description: error.message || "Đã xảy ra lỗi không xác định",
         variant: "destructive",
       });
     }
