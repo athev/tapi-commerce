@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         // Add timeout to prevent infinite loading
         const timeoutPromise = new Promise((_, reject) => {
-          setTimeout(() => reject(new Error('Session initialization timeout')), 10000);
+          setTimeout(() => reject(new Error('Session initialization timeout')), 8000);
         });
 
         const sessionPromise = supabase.auth.getSession();
@@ -85,9 +85,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (currentSession?.user) {
           console.log('Fetching user profile...');
           try {
-            // Add timeout for profile fetch as well
+            // Add timeout for profile fetch and better error handling
             const profileTimeoutPromise = new Promise((_, reject) => {
-              setTimeout(() => reject(new Error('Profile fetch timeout')), 5000);
+              setTimeout(() => reject(new Error('Profile fetch timeout')), 3000);
             });
             
             const profilePromise = fetchProfile(currentSession.user.id);
@@ -96,11 +96,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (userProfile) {
               console.log('Profile fetched successfully');
             } else {
-              console.log('No profile found for user');
+              console.log('No profile found for user - will use email fallback');
             }
-          } catch (profileError) {
+          } catch (profileError: any) {
             console.error('Profile fetch failed or timed out:', profileError);
-            // Don't block loading for profile fetch failures
+            
+            // Log specific error types for debugging
+            if (profileError.message?.includes('INSUFFICIENT_RESOURCES')) {
+              console.error('Supabase rate limit or resource issue detected');
+            }
+            
+            // Don't block loading for profile fetch failures - user can still use the app
           }
         }
       } catch (error) {
@@ -121,12 +127,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setSession(newSession);
           setUser(newSession?.user ?? null);
           
-          if (newSession?.user && event !== 'TOKEN_REFRESHED') {
-            console.log('Fetching profile for new session...');
+          // Only fetch profile for specific events to reduce API calls
+          if (newSession?.user && (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
+            console.log('Fetching profile for auth event:', event);
             try {
-              // Add timeout for profile fetch
+              // Add timeout and better error handling
               const profileTimeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Profile fetch timeout')), 5000);
+                setTimeout(() => reject(new Error('Profile fetch timeout')), 3000);
               });
               
               const profilePromise = fetchProfile(newSession.user.id);
@@ -135,8 +142,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               if (userProfile) {
                 console.log('Profile updated successfully');
               }
-            } catch (profileError) {
+            } catch (profileError: any) {
               console.error('Profile fetch failed or timed out:', profileError);
+              
+              if (profileError.message?.includes('INSUFFICIENT_RESOURCES')) {
+                console.error('Supabase rate limit detected - profile will use fallback');
+              }
             }
           }
         } catch (error) {

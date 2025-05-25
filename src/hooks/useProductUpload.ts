@@ -54,8 +54,8 @@ export const useProductUpload = () => {
     console.log('Current profile:', profile);
     console.log('Current session:', session);
     
-    if (!user || !profile || !session) {
-      console.error('Authentication check failed:', { user: !!user, profile: !!profile, session: !!session });
+    if (!user || !session) {
+      console.error('Authentication check failed:', { user: !!user, session: !!session });
       toast.error('Bạn cần đăng nhập để thêm sản phẩm');
       return false;
     }
@@ -80,6 +80,15 @@ export const useProductUpload = () => {
         console.log('Product file uploaded successfully:', fileUrl);
       }
 
+      // Use fallback values if profile is not available
+      const sellerName = profile?.full_name || user.email || 'Unknown Seller';
+      
+      console.log('Using seller info:', {
+        sellerId: user.id,
+        sellerName: sellerName,
+        profileAvailable: !!profile
+      });
+
       // Insert product into database
       const productData = {
         title: formData.title,
@@ -87,7 +96,7 @@ export const useProductUpload = () => {
         price: parseInt(formData.price),
         category: formData.category,
         seller_id: user.id,
-        seller_name: profile.full_name,
+        seller_name: sellerName,
         image: imageUrl,
         file_url: fileUrl || null,
         in_stock: formData.inStock ? parseInt(formData.inStock) : null,
@@ -108,10 +117,19 @@ export const useProductUpload = () => {
       }
 
       console.log('Product created successfully:', data);
-      toast.success('🎉 Sản phẩm đã được tạo thành công!', {
-        description: 'Sản phẩm của bạn đã được thêm vào gian hàng',
-        duration: 4000,
-      });
+      
+      // Show warning if profile was not available
+      if (!profile) {
+        toast.success('🎉 Sản phẩm đã được tạo thành công!', {
+          description: 'Lưu ý: Thông tin người bán sử dụng email đăng nhập',
+          duration: 4000,
+        });
+      } else {
+        toast.success('🎉 Sản phẩm đã được tạo thành công!', {
+          description: 'Sản phẩm của bạn đã được thêm vào gian hàng',
+          duration: 4000,
+        });
+      }
       
       // Navigate back to products list
       setTimeout(() => {
@@ -129,6 +147,8 @@ export const useProductUpload = () => {
         toast.error('Sản phẩm với tên này đã tồn tại.');
       } else if (error.message?.includes('session') || error.message?.includes('authentication')) {
         toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+      } else if (error.message?.includes('fetch') || error.message?.includes('network') || error.message?.includes('INSUFFICIENT_RESOURCES')) {
+        toast.error('Lỗi kết nối Supabase. Vui lòng thử lại sau.');
       } else {
         toast.error('Có lỗi xảy ra khi tạo sản phẩm. Vui lòng thử lại.');
       }
