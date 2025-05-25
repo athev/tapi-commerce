@@ -14,9 +14,12 @@ import {
 import { useAuth } from "@/context/AuthContext";
 
 const Navbar = () => {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, session, signOut } = useAuth();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Debug logging
+  console.log('Navbar: Auth state:', { user: !!user, profile: !!profile, session: !!session });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,6 +27,14 @@ const Navbar = () => {
       navigate(`/?search=${encodeURIComponent(searchTerm)}`);
     }
   };
+
+  const handleSignOut = async () => {
+    console.log('Navbar: Signing out user');
+    await signOut();
+  };
+
+  // Check if user is authenticated
+  const isAuthenticated = !!(user && session);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
@@ -49,7 +60,7 @@ const Navbar = () => {
           </Link>
           
           {/* Seller button for authenticated sellers */}
-          {user && (profile?.role === 'seller' || profile?.role === 'admin') && (
+          {isAuthenticated && (profile?.role === 'seller' || profile?.role === 'admin') && (
             <Link to="/seller" className="text-sm font-medium transition-colors hover:text-marketplace-primary bg-green-50 px-3 py-2 rounded-md border border-green-200 flex items-center gap-2">
               <Store className="h-4 w-4" />
               Kênh người bán
@@ -74,7 +85,7 @@ const Navbar = () => {
 
         {/* User menu */}
         <div className="flex items-center space-x-4">
-          {user && (
+          {isAuthenticated && (
             <Link to="/cart">
               <Button variant="ghost" size="icon" className="relative">
                 <ShoppingCart className="h-5 w-5" />
@@ -92,7 +103,7 @@ const Navbar = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              {user ? (
+              {isAuthenticated ? (
                 <>
                   <DropdownMenuItem asChild>
                     <Link to="/my-account">Tài khoản của tôi</Link>
@@ -114,7 +125,7 @@ const Navbar = () => {
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut()}>
+                  <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Đăng xuất</span>
                   </DropdownMenuItem>

@@ -19,12 +19,29 @@ export const useAuthOperations = (fetchProfile: (userId: string) => Promise<any>
     }
 
     try {
+      console.log('useAuthOperations: Starting sign in...');
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
+      
+      if (error) {
+        console.error('useAuthOperations: Sign in error:', error);
+        throw error;
+      }
+      
+      console.log('useAuthOperations: Sign in successful:', !!data.user);
       
       if (data.user) {
-        const userProfile = await fetchProfile(data.user.id);
-        setProfile(userProfile);
+        console.log('useAuthOperations: Fetching user profile...');
+        try {
+          const userProfile = await fetchProfile(data.user.id);
+          if (userProfile) {
+            setProfile(userProfile);
+            console.log('useAuthOperations: Profile set successfully');
+          }
+        } catch (profileError) {
+          console.error('useAuthOperations: Profile fetch failed:', profileError);
+          // Don't fail the login if profile fetch fails
+        }
+        
         toastNotification({
           title: "Đăng nhập thành công",
           description: "Chào mừng bạn quay trở lại!",
@@ -33,7 +50,7 @@ export const useAuthOperations = (fetchProfile: (userId: string) => Promise<any>
       
       return { error: null };
     } catch (error) {
-      console.error('Sign in error:', error);
+      console.error('useAuthOperations: Sign in error:', error);
       
       // Detect network errors specifically
       if (error.message?.includes('fetch') || error.message?.includes('network') || !navigator.onLine) {
@@ -62,13 +79,16 @@ export const useAuthOperations = (fetchProfile: (userId: string) => Promise<any>
         return;
       }
       
+      console.log('useAuthOperations: Signing out...');
       await supabase.auth.signOut();
       setProfile(null);
+      console.log('useAuthOperations: Sign out successful');
+      
       toastNotification({
         title: "Đã đăng xuất",
       });
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.error('useAuthOperations: Error signing out:', error);
       toast.error("Có lỗi xảy ra khi đăng xuất");
     }
   };

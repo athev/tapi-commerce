@@ -16,32 +16,47 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, user } = useAuth();
+  const { signIn, user, session } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     document.title = "Đăng nhập | DigitalMarket";
-    
-    // Redirect if user is already logged in
-    if (user) {
-      navigate("/");
+  }, []);
+
+  // Redirect if user is already logged in
+  useEffect(() => {
+    console.log('Login page: Auth state check:', { user: !!user, session: !!session });
+    if (user && session) {
+      console.log('Login page: User already authenticated, redirecting to home');
+      navigate("/", { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, session, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     try {
+      console.log('Login page: Starting sign in process');
       const { error } = await signIn(email, password);
-      if (!error) {
-        navigate("/");
+      
+      if (error) {
+        console.error('Login page: Sign in error:', error);
+        toast({
+          title: "Đăng nhập thất bại",
+          description: error.message || "Vui lòng kiểm tra lại email và mật khẩu",
+          variant: "destructive",
+        });
+      } else {
+        console.log('Login page: Sign in successful, will redirect via useEffect');
+        // Don't navigate here - let the useEffect handle it when user/session updates
       }
     } catch (error) {
+      console.error('Login page: Unexpected error:', error);
       toast({
         title: "Đăng nhập thất bại",
-        description: "Vui lòng kiểm tra lại email và mật khẩu",
+        description: "Có lỗi xảy ra. Vui lòng thử lại sau.",
         variant: "destructive",
       });
     } finally {
