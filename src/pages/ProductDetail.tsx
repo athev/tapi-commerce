@@ -210,11 +210,11 @@ const ProductDetail = () => {
         </div>
 
         {/* Main Product Section - 2 Columns Only */}
-        <div className="container py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="container py-6 lg:py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
             {/* Left - Product Images */}
             <div className="lg:col-span-1">
-              <div className="sticky top-8">
+              <div className="sticky top-6">
                 <ProductImageGallery 
                   images={product?.image ? [product.image] : []} 
                   title={product?.title || ''} 
@@ -223,35 +223,43 @@ const ProductDetail = () => {
             </div>
             
             {/* Right - Product Info and Purchase */}
-            <div className="lg:col-span-1 space-y-6">
-              <ProductHeader
-                title={product?.title || ''}
-                price={product?.price || 0}
-                category={product?.category || ''}
-                productType={product?.product_type || 'file_download'}
-                purchases={product?.purchases || 0}
-                inStock={product?.in_stock || 0}
-                sellerName={product?.seller_name || ''}
-              />
-              
-              <Card className="shadow-lg">
-                <CardContent className="p-6">
-                  <ProductTypeOrderForm 
-                    productType={product?.product_type || 'file_download'}
-                    onPurchase={handlePurchase}
-                    isProcessing={isProcessing}
-                    hasPurchased={hasPurchased}
-                    product={product}
-                  />
-                </CardContent>
-              </Card>
+            <div className="lg:col-span-1">
+              <div className="space-y-6">
+                {/* Product Information */}
+                <ProductHeader
+                  title={product?.title || ''}
+                  price={product?.price || 0}
+                  category={product?.category || ''}
+                  productType={product?.product_type || 'file_download'}
+                  purchases={product?.purchases || 0}
+                  inStock={product?.in_stock || 0}
+                  sellerName={product?.seller_name || ''}
+                />
+                
+                {/* Purchase Section - Separated with clear visual distinction */}
+                <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+                  <div className="bg-gradient-to-r from-marketplace-primary/5 to-marketplace-primary/10 px-6 py-4 border-b">
+                    <h3 className="font-semibold text-lg text-gray-900">Mua ngay</h3>
+                    <p className="text-sm text-gray-600 mt-1">Thanh toán an toàn, giao hàng tức thì</p>
+                  </div>
+                  <div className="p-6">
+                    <ProductTypeOrderForm 
+                      productType={product?.product_type || 'file_download'}
+                      onPurchase={handlePurchase}
+                      isProcessing={isProcessing}
+                      hasPurchased={hasPurchased}
+                      product={product}
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Product Details Tabs */}
-        <div className="bg-white">
-          <div className="container py-12">
+        <div className="bg-white border-t">
+          <div className="container py-8 lg:py-12">
             <ProductTabs 
               description={product?.description || ''} 
               productType={product?.product_type || 'file_download'}
@@ -260,7 +268,7 @@ const ProductDetail = () => {
         </div>
 
         {/* Seller Info */}
-        <div className="container py-8">
+        <div className="container py-6 lg:py-8">
           <SellerInfo 
             sellerId={product?.seller_id || ''} 
             sellerName={product?.seller_name || ''}
@@ -268,8 +276,8 @@ const ProductDetail = () => {
         </div>
 
         {/* Reviews Section */}
-        <div className="bg-white">
-          <div className="container py-12">
+        <div className="bg-white border-t">
+          <div className="container py-8 lg:py-12">
             <ProductReviews 
               reviews={[]}
               averageRating={4.8}
@@ -279,7 +287,7 @@ const ProductDetail = () => {
         </div>
 
         {/* Related Products */}
-        <div className="container py-8">
+        <div className="container py-6 lg:py-8">
           <RelatedProducts 
             currentProductId={id || ''}
             category={product?.category || ''}
