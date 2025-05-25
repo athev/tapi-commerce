@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { mockCategories } from "@/lib/supabase";
 import CategoryCard, { CategoryCardProps } from "../products/CategoryCard";
 import { Link } from "react-router-dom";
