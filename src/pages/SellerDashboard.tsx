@@ -9,12 +9,26 @@ import { Button } from "@/components/ui/button";
 import SellerProducts from "@/components/seller/SellerProducts";
 import SellerOrders from "@/components/seller/SellerOrders";
 import SellerAddProduct from "@/components/seller/SellerAddProduct";
+import SellerStats from "@/components/seller/SellerStats";
+import SellerPromotions from "@/components/seller/SellerPromotions";
+import SellerReviews from "@/components/seller/SellerReviews";
+import SellerAnalytics from "@/components/seller/SellerAnalytics";
 
 const SellerDashboard = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const currentPath = location.pathname;
+
+  const getActiveTab = () => {
+    if (currentPath.includes('/seller/orders')) return 'orders';
+    if (currentPath.includes('/seller/products/add')) return 'add';
+    if (currentPath.includes('/seller/products')) return 'products';
+    if (currentPath.includes('/seller/promotions')) return 'promotions';
+    if (currentPath.includes('/seller/reviews')) return 'reviews';
+    if (currentPath.includes('/seller/analytics')) return 'analytics';
+    return 'dashboard';
+  };
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -31,34 +45,58 @@ const SellerDashboard = () => {
             onClick={() => navigate('/seller/products/add')}
             className="bg-green-600 hover:bg-green-700"
           >
-            Tạo sản phẩm mới
+            Thêm mới
           </Button>
         </div>
         
         <Tabs 
-          value={
-            currentPath.includes('/seller/orders') ? 'orders' : 
-            currentPath.includes('/seller/products/add') ? 'add' : 'products'
-          }
+          value={getActiveTab()}
           onValueChange={(value) => {
-            if (value === 'orders') navigate('/seller/orders');
-            else if (value === 'products') navigate('/seller/products');
-            else if (value === 'add') navigate('/seller/products/add');
+            switch(value) {
+              case 'dashboard':
+                navigate('/seller');
+                break;
+              case 'products':
+                navigate('/seller/products');
+                break;
+              case 'orders':
+                navigate('/seller/orders');
+                break;
+              case 'add':
+                navigate('/seller/products/add');
+                break;
+              case 'promotions':
+                navigate('/seller/promotions');
+                break;
+              case 'reviews':
+                navigate('/seller/reviews');
+                break;
+              case 'analytics':
+                navigate('/seller/analytics');
+                break;
+            }
           }}
           className="mb-8"
         >
-          <TabsList>
-            <TabsTrigger value="products">Sản phẩm của tôi</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="dashboard">Tổng quan</TabsTrigger>
+            <TabsTrigger value="products">Sản phẩm</TabsTrigger>
             <TabsTrigger value="orders">Đơn hàng</TabsTrigger>
-            <TabsTrigger value="add">Thêm sản phẩm</TabsTrigger>
+            <TabsTrigger value="promotions">Khuyến mãi</TabsTrigger>
+            <TabsTrigger value="reviews">Đánh giá</TabsTrigger>
+            <TabsTrigger value="analytics">Phân tích</TabsTrigger>
+            <TabsTrigger value="add">Thêm mới</TabsTrigger>
           </TabsList>
         </Tabs>
         
         <Routes>
-          <Route index element={<SellerProducts />} />
+          <Route index element={<SellerStats />} />
           <Route path="/products" element={<SellerProducts />} />
           <Route path="/products/add" element={<SellerAddProduct />} />
           <Route path="/orders" element={<SellerOrders />} />
+          <Route path="/promotions" element={<SellerPromotions />} />
+          <Route path="/reviews" element={<SellerReviews />} />
+          <Route path="/analytics" element={<SellerAnalytics />} />
         </Routes>
       </main>
       
