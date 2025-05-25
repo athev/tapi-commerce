@@ -33,15 +33,15 @@ const StickyBottomButton = ({
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-100 shadow-lg z-50">
-      <div className="container py-3 safe-area-pb">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40 backdrop-blur-sm">
+      <div className="container py-3 pb-6">
         <div className="flex items-center space-x-3">
           {/* Quick Actions */}
           <div className="flex space-x-2">
             <Button 
               variant="outline" 
               size="sm" 
-              className="h-12 w-12 p-0 border-gray-300 bg-white"
+              className="h-12 w-12 p-0 border-gray-300 bg-white hover:bg-gray-50"
             >
               <Heart className="h-5 w-5 text-gray-600" />
             </Button>
@@ -49,7 +49,7 @@ const StickyBottomButton = ({
             <Button 
               variant="outline" 
               size="sm" 
-              className="h-12 w-12 p-0 border-gray-300 bg-white"
+              className="h-12 w-12 p-0 border-gray-300 bg-white hover:bg-gray-50"
             >
               <MessageCircle className="h-5 w-5 text-gray-600" />
             </Button>
