@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProductUpload, ProductFormData } from "@/hooks/useProductUpload";
+import { useAuth } from "@/context/AuthContext";
 import ProductBasicInfo from "./ProductBasicInfo";
 import ProductDescription from "./ProductDescription";
 import ProductImageUpload from "./ProductImageUpload";
@@ -12,6 +13,7 @@ import { toast } from "sonner";
 
 const ProductForm = () => {
   const navigate = useNavigate();
+  const { user, profile, session, loading } = useAuth();
   const { isSubmitting, submitProduct } = useProductUpload();
   
   const [formData, setFormData] = useState<ProductFormData>({
@@ -25,6 +27,41 @@ const ProductForm = () => {
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({});
+
+  // Show loading state while auth is initializing
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+            <span className="ml-2">Đang tải...</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show auth error if user is not authenticated
+  if (!user || !profile || !session) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center py-8">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Bạn cần đăng nhập
+            </h3>
+            <p className="text-gray-500 mb-4">
+              Vui lòng đăng nhập để tạo sản phẩm mới
+            </p>
+            <Button onClick={() => navigate('/login')}>
+              Đăng nhập
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof ProductFormData, string>> = {};

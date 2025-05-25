@@ -16,12 +16,17 @@ export interface ProductFormData {
 }
 
 export const useProductUpload = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, session } = useAuth();
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const uploadFile = async (file: File, bucket: string, path: string) => {
     console.log(`Uploading file to ${bucket}/${path}:`, file.name);
+    
+    // Ensure we have a valid session before uploading
+    if (!session) {
+      throw new Error('No valid session found');
+    }
     
     const { data, error } = await supabase.storage
       .from(bucket)
@@ -45,8 +50,12 @@ export const useProductUpload = () => {
 
   const submitProduct = async (formData: ProductFormData): Promise<boolean> => {
     console.log('Starting product submission with data:', formData);
+    console.log('Current user:', user);
+    console.log('Current profile:', profile);
+    console.log('Current session:', session);
     
-    if (!user || !profile) {
+    if (!user || !profile || !session) {
+      console.error('Authentication check failed:', { user: !!user, profile: !!profile, session: !!session });
       toast.error('Bạn cần đăng nhập để thêm sản phẩm');
       return false;
     }
@@ -118,6 +127,8 @@ export const useProductUpload = () => {
         toast.error('Lỗi upload file. Vui lòng thử lại.');
       } else if (error.message?.includes('duplicate')) {
         toast.error('Sản phẩm với tên này đã tồn tại.');
+      } else if (error.message?.includes('session') || error.message?.includes('authentication')) {
+        toast.error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
       } else {
         toast.error('Có lỗi xảy ra khi tạo sản phẩm. Vui lòng thử lại.');
       }
