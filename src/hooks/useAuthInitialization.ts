@@ -24,6 +24,7 @@ export const useAuthInitialization = ({
   fetchProfile,
 }: UseAuthInitializationProps) => {
   const isInitialized = useRef(false);
+  const subscriptionRef = useRef<any>(null);
 
   useEffect(() => {
     // Prevent multiple initializations
@@ -88,12 +89,14 @@ export const useAuthInitialization = ({
       }
     };
 
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         console.log('AuthProvider: Auth state changed:', event, newSession ? 'Session exists' : 'No session');
         
         if (!mounted) return;
 
+        // Only update session state, don't refetch profile on every change
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
@@ -103,6 +106,8 @@ export const useAuthInitialization = ({
           
           // Small delay to prevent race conditions
           setTimeout(async () => {
+            if (!mounted) return;
+            
             try {
               const userProfile = await fetchProfile(newSession.user.id);
               if (userProfile && mounted) {
@@ -129,13 +134,17 @@ export const useAuthInitialization = ({
       }
     );
 
+    subscriptionRef.current = subscription;
     initializeAuth();
     isInitialized.current = true;
 
     return () => {
       console.log('AuthProvider: Cleaning up...');
       mounted = false;
-      subscription.unsubscribe();
+      if (subscriptionRef.current) {
+        subscriptionRef.current.unsubscribe();
+        subscriptionRef.current = null;
+      }
       // Don't reset isInitialized on cleanup to prevent re-initialization
     };
   }, []); // Empty dependency array to run only once

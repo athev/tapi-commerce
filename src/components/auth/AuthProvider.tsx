@@ -1,5 +1,5 @@
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 import { AuthProviderProps } from '@/context/types/AuthTypes';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
@@ -27,15 +27,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     fetchProfile
   } = useSupabaseAuth(isOnline);
 
+  // Memoize the callbacks to prevent unnecessary re-renders
+  const memoizedSetSession = useCallback(setSession, [setSession]);
+  const memoizedSetUser = useCallback(setUser, [setUser]);
+  const memoizedSetProfile = useCallback(setProfile, [setProfile]);
+  const memoizedSetLoading = useCallback(setLoading, [setLoading]);
+  const memoizedSetProfileLoading = useCallback(setProfileLoading, []);
+  const memoizedFetchProfile = useCallback(fetchProfile, [fetchProfile]);
+
   // Initialize auth session and set up listeners - this should only run once
   useAuthInitialization({
     isOnline,
-    setSession,
-    setUser,
-    setProfile,
-    setLoading,
-    setProfileLoading,
-    fetchProfile,
+    setSession: memoizedSetSession,
+    setUser: memoizedSetUser,
+    setProfile: memoizedSetProfile,
+    setLoading: memoizedSetLoading,
+    setProfileLoading: memoizedSetProfileLoading,
+    fetchProfile: memoizedFetchProfile,
   });
 
   // Debug logging for auth state - throttle this to prevent spam
