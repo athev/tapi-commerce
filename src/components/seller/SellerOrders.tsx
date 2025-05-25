@@ -38,7 +38,7 @@ const SellerOrders = () => {
             buyer_data,
             delivery_status,
             delivery_notes,
-            product:products!inner(
+            products!inner(
               id,
               title,
               price,
@@ -47,7 +47,7 @@ const SellerOrders = () => {
               seller_name
             )
           `)
-          .eq('product.seller_id', user.id)
+          .eq('products.seller_id', user.id)
           .order('created_at', { ascending: false });
         
         if (ordersError) {
@@ -55,7 +55,7 @@ const SellerOrders = () => {
           throw ordersError;
         }
 
-        console.log('orders fetched:', ordersData);
+        console.log('Fetched orders:', ordersData);
         console.log('Seller orders fetched successfully:', ordersData?.length || 0, 'orders');
         
         if (ordersData && ordersData.length > 0) {
@@ -85,6 +85,7 @@ const SellerOrders = () => {
     return <OrdersErrorState error={error} />;
   }
 
+  console.log('Fetched orders:', orders);
   console.log('Rendering orders:', orders?.length || 0);
 
   return (

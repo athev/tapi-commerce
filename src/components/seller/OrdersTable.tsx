@@ -20,7 +20,7 @@ interface Order {
   buyer_email: string | null;
   buyer_data: any;
   delivery_status: string | null;
-  product: {
+  products: {
     id: string;
     title: string;
     price: number;
@@ -53,9 +53,9 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
               <TableCell>
                 <div className="space-y-1">
                   <div className="font-mono text-sm">#{order.id.slice(0, 8)}</div>
-                  {order.product?.product_type && (
+                  {order.products?.product_type && (
                     <Badge variant="outline" className="text-xs">
-                      {getProductTypeLabel(order.product.product_type)}
+                      {getProductTypeLabel(order.products.product_type)}
                     </Badge>
                   )}
                 </div>
@@ -63,8 +63,8 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
               
               <TableCell>
                 <div className="max-w-xs">
-                  <div className="font-medium truncate">{order.product?.title}</div>
-                  <div className="text-sm text-gray-500">ID: {order.product?.id?.slice(0, 8)}</div>
+                  <div className="font-medium truncate">{order.products?.title}</div>
+                  <div className="text-sm text-gray-500">ID: {order.products?.id?.slice(0, 8)}</div>
                 </div>
               </TableCell>
               
@@ -81,7 +81,7 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
               
               <TableCell>
                 <div className="font-medium text-marketplace-primary">
-                  {formatPrice(order.product?.price || 0)}
+                  {formatPrice(order.products?.price || 0)}
                 </div>
               </TableCell>
               
@@ -103,15 +103,15 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
                     Chi tiết
                   </Button>
                   
-                  {order.product?.product_type === 'shared_account' && (
+                  {order.products?.product_type === 'shared_account' && (
                     <Button variant="outline" size="sm">
                       <MessageCircle className="h-4 w-4 mr-1" />
                       CSKH
                     </Button>
                   )}
                   
-                  {(order.product?.product_type === 'upgrade_account_no_pass' || 
-                    order.product?.product_type === 'upgrade_account_with_pass') && (
+                  {(order.products?.product_type === 'upgrade_account_no_pass' || 
+                    order.products?.product_type === 'upgrade_account_with_pass') && (
                     <Button variant="outline" size="sm">
                       <Mail className="h-4 w-4 mr-1" />
                       Gửi
