@@ -1,27 +1,18 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { 
-  Heart,
-  Star, 
-  Check, 
-  ShieldCheck, 
-  Clock,
-  Info
-} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ProductGrid from "@/components/products/ProductGrid";
-import ProductTypeOrderForm from "@/components/products/ProductTypeOrderForm";
 import { useAuth } from "@/context/AuthContext";
-import { supabase, Product, mockProducts } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { Product } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
 
-// Format price function
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { 
     style: 'currency', 
@@ -30,91 +21,49 @@ const formatPrice = (price: number) => {
   }).format(price);
 };
 
+const getProductTypeLabel = (type: string) => {
+  const types = {
+    file_download: 'Tải xuống file',
+    license_key_delivery: 'Gửi License Key',
+    shared_account: 'Tài khoản dùng chung',
+    upgrade_account_no_pass: 'Nâng cấp tài khoản',
+    upgrade_account_with_pass: 'Nâng cấp tài khoản (có pass)'
+  };
+  return types[type as keyof typeof types] || type;
+};
+
 const ProductDetail = () => {
   const { id } = useParams();
-  const { user } = useAuth();
-  const { toast } = useToast();
+  const { user, isOnline } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [buyerData, setBuyerData] = useState<Record<string, any>>({});
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Fetch product details with improved error handling
-  const { data: product, isLoading: isLoadingProduct } = useQuery({
+  const { data: product, isLoading, isError } = useQuery({
     queryKey: ['product', id],
     queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('id', id)
-          .single();
-        
-        if (error) throw error;
-        return data as Product;
-      } catch (error) {
-        console.warn('Error fetching product details, using mock data', error);
-        
-        // Find the product in mock data or create a fallback
-        const mockProduct = mockProducts.find(p => p.id === id) || {
-          id: id || '1',
-          title: 'Ebook: Hướng dẫn đầu tư chứng khoán cho người mới bắt đầu',
-          description: 'Cuốn sách điện tử giúp bạn bắt đầu hành trình đầu tư chứng khoán một cách an toàn và hiệu quả.',
-          price: 99000,
-          image: '/placeholder.svg',
-          category: 'Ebook',
-          seller_id: 'seller1',
-          seller_name: 'Financial Expert',
-          file_url: 'https://example.com/sample.pdf',
-          in_stock: 999,
-          purchases: 124,
-          created_at: '2025-04-01T08:30:00Z',
-          product_type: 'file_download'
-        };
-        
-        return mockProduct;
+      if (!isOnline) {
+        throw new Error("Không có kết nối internet");
       }
+
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching product:", error);
+        throw error;
+      }
+      
+      return data as Product;
     },
-    enabled: !!id,
+    retry: false,
   });
 
-  // Fetch similar products with improved error handling
-  const { data: similarProducts } = useQuery({
-    queryKey: ['similarProducts', product?.category],
-    queryFn: async () => {
-      try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .eq('category', product?.category)
-          .neq('id', id)
-          .limit(5);
-        
-        if (error) throw error;
-        
-        return data as Product[];
-      } catch (error) {
-        console.warn('Error fetching similar products, using mock data', error);
-        
-        // Get similar mock products in same category or fallback to first 5 mock products
-        const sameCategoryProducts = mockProducts
-          .filter(p => p.category === product?.category && p.id !== id)
-          .slice(0, 5);
-        
-        const mockSimilarProducts = sameCategoryProducts.length > 0 
-          ? sameCategoryProducts 
-          : mockProducts.filter(p => p.id !== id).slice(0, 5);
-        
-        return mockSimilarProducts;
-      }
-    },
-    enabled: !!product?.category,
-  });
-
-  // For development, simulate user purchases
-  const mockUserPurchases = ['1', '2']; // Mock purchased product IDs
-  const hasPurchased = mockUserPurchases.includes(id || '');
-
-  // Handle purchase with buyer data
-  const handlePurchase = async (buyerData?: any) => {
+  const handlePurchase = async () => {
     if (!user) {
       toast({
         title: "Vui lòng đăng nhập",
@@ -125,33 +74,68 @@ const ProductDetail = () => {
       return;
     }
 
-    setIsProcessing(true);
-    
-    try {
-      // Simulate order creation with buyer data
-      const orderId = 'order_' + Math.random().toString(36).substr(2, 9);
-      
-      console.log('Creating order with buyer data:', buyerData);
-      
-      // Here you would normally save the buyer data to the order
-      // await supabase.from('orders').insert({
-      //   user_id: user.id,
-      //   product_id: id,
-      //   buyer_data: buyerData,
-      //   status: 'pending'
-      // });
-      
+    if (!product) return;
+
+    // Validate required buyer data based on product type
+    const isValid = validateBuyerData(product.product_type, buyerData);
+    if (!isValid) {
       toast({
-        title: "Đặt hàng thành công",
-        description: "Vui lòng hoàn tất thanh toán",
+        title: "Thông tin không đầy đủ",
+        description: "Vui lòng điền đầy đủ thông tin bắt buộc",
+        variant: "destructive",
       });
-      
-      // Redirect to payment page
-      navigate(`/payment/${orderId}`);
-    } catch (error) {
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      console.log('Creating order with data:', {
+        user_id: user.id,
+        product_id: product.id,
+        buyer_email: buyerData.email || user.email,
+        buyer_data: buyerData,
+        product_info: {
+          seller_id: product.seller_id,
+          price: product.price,
+          title: product.title
+        }
+      });
+
+      const { data: order, error } = await supabase
+        .from('orders')
+        .insert([
+          {
+            user_id: user.id,
+            product_id: product.id,
+            status: 'paid', // Simulate successful payment
+            buyer_email: buyerData.email || user.email || '',
+            buyer_data: Object.keys(buyerData).length > 0 ? buyerData : null,
+            delivery_status: 'pending'
+          }
+        ])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating order:', error);
+        throw error;
+      }
+
+      console.log('Order created successfully:', order);
+
       toast({
-        title: "Đặt hàng thất bại",
-        description: "Có lỗi xảy ra, vui lòng thử lại",
+        title: "Đơn hàng thành công!",
+        description: "Cảm ơn bạn đã mua sản phẩm. Thông tin sẽ được gửi qua email.",
+      });
+
+      // Navigate to purchase success or show purchase details
+      navigate('/my-purchases');
+    } catch (error) {
+      console.error('Purchase error:', error);
+      toast({
+        title: "Lỗi thanh toán",
+        description: "Có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại.",
         variant: "destructive",
       });
     } finally {
@@ -159,54 +143,39 @@ const ProductDetail = () => {
     }
   };
 
-  useEffect(() => {
-    if (product?.title) {
-      document.title = product.title + " | DigitalMarket";
-    }
-  }, [product?.title]);
+  const validateBuyerData = (productType: string | undefined, data: Record<string, any>): boolean => {
+    if (!productType) return true;
 
-  if (isLoadingProduct) {
+    switch (productType) {
+      case 'upgrade_account_no_pass':
+        return !!data.email;
+      case 'upgrade_account_with_pass':
+        return !!data.email && !!data.username && !!data.password;
+      default:
+        return true;
+    }
+  };
+
+  if (isLoading) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex-1 container py-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-            <Skeleton className="aspect-square rounded-lg" />
-            <div className="space-y-6">
-              <Skeleton className="h-10 w-3/4" />
-              <Skeleton className="h-5 w-1/3" />
-              <Skeleton className="h-10 w-1/4" />
-              <Skeleton className="h-5 w-1/2" />
-              <div className="pt-4 border-t">
-                <Skeleton className="h-8 w-1/3" />
-                <Skeleton className="h-8 w-2/3 mt-2" />
-              </div>
-              <div className="pt-6 space-y-4">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-            </div>
-          </div>
-        </main>
-        <Footer />
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-marketplace-primary"></div>
       </div>
     );
   }
 
-  if (!product) {
+  if (isError) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex-1 container py-12">
-          <div className="text-center">
-            <h2 className="text-2xl font-bold">Không tìm thấy sản phẩm</h2>
-            <p className="mt-2">Sản phẩm này không tồn tại hoặc đã bị xóa.</p>
-            <Button onClick={() => navigate('/')} className="mt-4">
-              Quay lại trang chủ
-            </Button>
-          </div>
-        </main>
-        <Footer />
+      <div className="flex justify-center items-center h-screen">
+        <Card>
+          <CardHeader>
+            <CardTitle>Lỗi</CardTitle>
+            <CardDescription>Không thể tải sản phẩm. Vui lòng thử lại sau.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => navigate('/')}>Về trang chủ</Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -215,182 +184,134 @@ const ProductDetail = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       
-      <main className="flex-1">
-        <div className="container py-8">
-          {/* Breadcrumb */}
-          <div className="text-sm text-gray-500 mb-6">
-            Trang chủ &gt; {product?.category} &gt; {product?.title}
+      <main className="flex-1 container py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+          <div className="space-y-4">
+            <img 
+              src={product.image || "/placeholder.svg"} 
+              alt={product.title}
+              className="w-full aspect-square object-cover rounded-lg"
+            />
           </div>
           
-          {/* Product Info */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-            {/* Product Image */}
+          <div className="space-y-6">
             <div>
-              <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                <img 
-                  src={product?.image || '/placeholder.svg'} 
-                  alt={product?.title}
-                  className="w-full h-full object-contain"
-                />
+              <h1 className="text-3xl font-bold mb-2">{product.title}</h1>
+              <p className="text-2xl font-bold text-marketplace-primary mb-4">
+                {formatPrice(product.price)}
+              </p>
+              
+              <div className="flex items-center space-x-4 text-sm text-gray-600 mb-4">
+                <span>Người bán: {product.seller_name}</span>
+                <span>•</span>
+                <span>Đã bán: {product.purchases}</span>
+                <span>•</span>
+                <span>Còn lại: {product.in_stock}</span>
               </div>
+              
+              {product.product_type && (
+                <Badge variant="outline" className="mb-4">
+                  {getProductTypeLabel(product.product_type)}
+                </Badge>
+              )}
             </div>
-            
-            {/* Product Details */}
-            <div className="space-y-6">
-              <h1 className="text-3xl font-bold">{product?.title}</h1>
-              
-              <div className="flex items-center gap-2">
-                <div className="flex">
-                  {Array(5).fill(0).map((_, i) => (
-                    <Star 
-                      key={i}
-                      className={`h-5 w-5 ${i < 4 ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-                    />
-                  ))}
-                </div>
-                <span className="text-gray-500">({product?.purchases || 0} lượt mua)</span>
-              </div>
-              
-              <div className="flex items-end gap-4">
-                <div className="text-3xl font-bold text-marketplace-primary">
-                  {product?.price ? formatPrice(product.price) : '0 ₫'}
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2 text-gray-500">
-                <Info className="h-4 w-4" />
-                <span>Còn lại: {product?.in_stock}</span>
-              </div>
-              
-              <div className="pt-4 border-t">
-                <h3 className="font-medium mb-2">Người bán:</h3>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold">{product?.seller_name}</span>
-                  <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-200">
-                    <Check className="h-3 w-3 mr-1" /> Đã xác thực
-                  </Badge>
-                </div>
-              </div>
-              
-              <div className="pt-6 space-y-4">
-                <ProductTypeOrderForm
-                  productType={product?.product_type || 'file_download'}
-                  onPurchase={handlePurchase}
-                  isProcessing={isProcessing}
-                  hasPurchased={hasPurchased}
-                  product={product}
-                />
-                
-                <Button variant="outline" className="w-full">
-                  <Heart className="h-5 w-5 mr-2" /> Thêm vào yêu thích
-                </Button>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-5 w-5 text-marketplace-primary" />
-                  <div>
-                    <div className="font-medium">Bảo hành</div>
-                    <div className="text-sm text-gray-500">30 ngày hoàn tiền nếu không hài lòng</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="h-5 w-5 text-marketplace-primary" />
-                  <div>
-                    <div className="font-medium">Giao hàng</div>
-                    <div className="text-sm text-gray-500">Truy cập ngay sau khi thanh toán</div>
-                  </div>
-                </div>
-              </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Mô tả sản phẩm</h3>
+              <p className="text-gray-700 leading-relaxed">
+                {product.description}
+              </p>
             </div>
+
+            {/* Product Type Specific Order Form */}
+            <ProductTypeOrderForm 
+              productType={product.product_type}
+              buyerData={buyerData}
+              onBuyerDataChange={setBuyerData}
+            />
+
+            <Button 
+              onClick={handlePurchase} 
+              className="w-full bg-marketplace-primary hover:bg-marketplace-primary/90"
+              size="lg"
+              disabled={isProcessing}
+            >
+              {isProcessing ? "Đang xử lý..." : "Mua ngay"}
+            </Button>
           </div>
-          
-          {/* Tabs for description, features, reviews */}
-          <Tabs defaultValue="description">
-            <TabsList className="w-full justify-start border-b rounded-none p-0 h-12">
-              <TabsTrigger 
-                value="description"
-                className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-marketplace-primary data-[state=active]:shadow-none h-12"
-              >
-                Mô tả
-              </TabsTrigger>
-              <TabsTrigger 
-                value="reviews" 
-                className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-marketplace-primary data-[state=active]:shadow-none h-12"
-              >
-                Đánh giá
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="description" className="mt-6">
-              <div className="prose max-w-none">
-                <p>{product?.description}</p>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="reviews" className="mt-6">
-              <div className="space-y-6">
-                <h3 className="text-xl font-semibold">Đánh giá từ người mua</h3>
-                
-                <div className="bg-gray-50 p-6 rounded-lg">
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex-1">
-                      <div className="text-3xl font-bold">4/5</div>
-                      <div className="flex">
-                        {Array(5).fill(0).map((_, i) => (
-                          <Star 
-                            key={i}
-                            className={`h-5 w-5 ${i < 4 ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-                          />
-                        ))}
-                      </div>
-                      <div className="text-sm text-gray-500 mt-1">{product?.purchases || 0} đánh giá</div>
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="space-y-2">
-                        {[5, 4, 3, 2, 1].map((star) => (
-                          <div key={star} className="flex items-center gap-2">
-                            <div className="w-8 text-sm text-gray-500">{star} sao</div>
-                            <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                              <div 
-                                className="h-full bg-yellow-400" 
-                                style={{ 
-                                  width: star === 5 ? "30%" : 
-                                         star === 4 ? "60%" : 
-                                         star === 3 ? "10%" : "5%" 
-                                }}
-                              ></div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <Button variant="outline">Xem tất cả đánh giá</Button>
-                </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-          
-          {/* Similar Products */}
-          {similarProducts && similarProducts.length > 0 && (
-            <section className="mt-16">
-              <h2 className="text-2xl font-bold mb-6">Sản phẩm tương tự</h2>
-              <ProductGrid 
-                products={similarProducts}
-                isLoading={false}
-                error={null}
-              />
-            </section>
-          )}
         </div>
       </main>
       
       <Footer />
     </div>
   );
+};
+
+type ProductTypeOrderFormProps = {
+  productType?: string;
+  buyerData: Record<string, any>;
+  onBuyerDataChange: (data: Record<string, any>) => void;
+};
+
+const ProductTypeOrderForm: React.FC<ProductTypeOrderFormProps> = ({ productType, buyerData, onBuyerDataChange }) => {
+  const handleChange = (key: string, value: any) => {
+    onBuyerDataChange({ ...buyerData, [key]: value });
+  };
+
+  switch (productType) {
+    case 'upgrade_account_no_pass':
+      return (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email tài khoản</Label>
+            <Input
+              type="email"
+              id="email"
+              placeholder="Nhập email của bạn"
+              value={buyerData.email || ''}
+              onChange={(e) => handleChange('email', e.target.value)}
+            />
+          </div>
+        </div>
+      );
+    case 'upgrade_account_with_pass':
+      return (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email tài khoản</Label>
+            <Input
+              type="email"
+              id="email"
+              placeholder="Nhập email của bạn"
+              value={buyerData.email || ''}
+              onChange={(e) => handleChange('email', e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="username">Tên đăng nhập</Label>
+            <Input
+              type="text"
+              id="username"
+              placeholder="Nhập tên đăng nhập"
+              value={buyerData.username || ''}
+              onChange={(e) => handleChange('username', e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Mật khẩu</Label>
+            <Input
+              type="password"
+              id="password"
+              placeholder="Nhập mật khẩu"
+              value={buyerData.password || ''}
+              onChange={(e) => handleChange('password', e.target.value)}
+            />
+          </div>
+        </div>
+      );
+    default:
+      return null;
+  }
 };
 
 export default ProductDetail;
