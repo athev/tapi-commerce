@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Mail, User, Key, Users, Info, Download, FileText } from "lucide-react";
+import PurchaseConfirmationModal from "./PurchaseConfirmationModal";
 
 interface ProductTypeOrderFormProps {
   productType: string;
@@ -27,6 +28,7 @@ const ProductTypeOrderForm = ({
     password: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   const validateInputs = () => {
     const newErrors: Record<string, string> = {};
@@ -61,11 +63,18 @@ const ProductTypeOrderForm = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handlePurchase = () => {
+  const handlePurchaseClick = () => {
     if (['upgrade_account_no_pass', 'upgrade_account_with_pass'].includes(productType)) {
       if (!validateInputs()) {
         return;
       }
+    }
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmPurchase = () => {
+    setShowConfirmModal(false);
+    if (['upgrade_account_no_pass', 'upgrade_account_with_pass'].includes(productType)) {
       onPurchase(buyerData);
     } else {
       onPurchase();
@@ -214,101 +223,113 @@ const ProductTypeOrderForm = ({
 
   // Before purchase UI
   return (
-    <div className="space-y-4">
-      {/* Product Type Info Card - Only show label without description */}
-      <Card className="bg-gray-50 border-gray-200">
-        <CardContent className="p-4">
-          <div className="flex items-center space-x-3">
-            <TypeIcon className="h-5 w-5 text-gray-600 flex-shrink-0" />
-            <h3 className="font-medium text-gray-900">{productTypeInfo.label}</h3>
-          </div>
-        </CardContent>
-      </Card>
+    <>
+      <div className="space-y-4">
+        {/* Product Type Info Card - Only show label without description */}
+        <Card className="bg-gray-50 border-gray-200">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <TypeIcon className="h-5 w-5 text-gray-600 flex-shrink-0" />
+              <h3 className="font-medium text-gray-900">{productTypeInfo.label}</h3>
+            </div>
+          </CardContent>
+        </Card>
 
-      {/* Input fields for upgrade account types */}
-      {productType === 'upgrade_account_no_pass' && (
-        <div className="space-y-2">
-          <Label htmlFor="buyer-email">Email cần nâng cấp *</Label>
-          <Input
-            id="buyer-email"
-            type="email"
-            value={buyerData.email}
-            onChange={(e) => handleInputChange('email', e.target.value)}
-            className={errors.email ? "border-red-500" : ""}
-            placeholder="Nhập email cần nâng cấp"
-          />
-          {errors.email && (
-            <p className="text-sm text-red-500">{errors.email}</p>
-          )}
-        </div>
-      )}
-
-      {productType === 'upgrade_account_with_pass' && (
-        <div className="space-y-4">
+        {/* Input fields for upgrade account types */}
+        {productType === 'upgrade_account_no_pass' && (
           <div className="space-y-2">
-            <Label htmlFor="buyer-email">Email *</Label>
+            <Label htmlFor="buyer-email">Email cần nâng cấp *</Label>
             <Input
               id="buyer-email"
               type="email"
               value={buyerData.email}
               onChange={(e) => handleInputChange('email', e.target.value)}
               className={errors.email ? "border-red-500" : ""}
-              placeholder="Nhập email"
+              placeholder="Nhập email cần nâng cấp"
             />
             {errors.email && (
               <p className="text-sm text-red-500">{errors.email}</p>
             )}
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="buyer-username">Tên đăng nhập *</Label>
-            <Input
-              id="buyer-username"
-              value={buyerData.username}
-              onChange={(e) => handleInputChange('username', e.target.value)}
-              className={errors.username ? "border-red-500" : ""}
-              placeholder="Nhập tên đăng nhập"
-            />
-            {errors.username && (
-              <p className="text-sm text-red-500">{errors.username}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="buyer-password">Mật khẩu *</Label>
-            <Input
-              id="buyer-password"
-              type="password"
-              value={buyerData.password}
-              onChange={(e) => handleInputChange('password', e.target.value)}
-              className={errors.password ? "border-red-500" : ""}
-              placeholder="Nhập mật khẩu"
-            />
-            {errors.password && (
-              <p className="text-sm text-red-500">{errors.password}</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Purchase button */}
-      <Button 
-        className="w-full bg-marketplace-primary hover:bg-marketplace-primary/90"
-        onClick={handlePurchase}
-        disabled={isProcessing}
-      >
-        {isProcessing ? (
-          <>
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-            Đang xử lý...
-          </>
-        ) : (
-          <>
-            <ShoppingCart className="h-5 w-5 mr-2" /> Mua ngay
-          </>
         )}
-      </Button>
-    </div>
+
+        {productType === 'upgrade_account_with_pass' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="buyer-email">Email *</Label>
+              <Input
+                id="buyer-email"
+                type="email"
+                value={buyerData.email}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                className={errors.email ? "border-red-500" : ""}
+                placeholder="Nhập email"
+              />
+              {errors.email && (
+                <p className="text-sm text-red-500">{errors.email}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="buyer-username">Tên đăng nhập *</Label>
+              <Input
+                id="buyer-username"
+                value={buyerData.username}
+                onChange={(e) => handleInputChange('username', e.target.value)}
+                className={errors.username ? "border-red-500" : ""}
+                placeholder="Nhập tên đăng nhập"
+              />
+              {errors.username && (
+                <p className="text-sm text-red-500">{errors.username}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="buyer-password">Mật khẩu *</Label>
+              <Input
+                id="buyer-password"
+                type="password"
+                value={buyerData.password}
+                onChange={(e) => handleInputChange('password', e.target.value)}
+                className={errors.password ? "border-red-500" : ""}
+                placeholder="Nhập mật khẩu"
+              />
+              {errors.password && (
+                <p className="text-sm text-red-500">{errors.password}</p>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Purchase button */}
+        <Button 
+          className="w-full bg-marketplace-primary hover:bg-marketplace-primary/90"
+          onClick={handlePurchaseClick}
+          disabled={isProcessing}
+        >
+          {isProcessing ? (
+            <>
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+              Đang xử lý...
+            </>
+          ) : (
+            <>
+              <ShoppingCart className="h-5 w-5 mr-2" /> Mua ngay
+            </>
+          )}
+        </Button>
+      </div>
+
+      {/* Confirmation Modal */}
+      <PurchaseConfirmationModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleConfirmPurchase}
+        isProcessing={isProcessing}
+        product={product}
+        buyerData={buyerData}
+      />
+    </>
   );
 };
 
