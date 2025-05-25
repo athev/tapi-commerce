@@ -59,7 +59,7 @@ export const useUserProfile = () => {
           return null;
         }
         
-        throw error;
+        return null; // Don't throw error, just return null
       }
       
       console.log('useUserProfile: Profile fetched successfully:', data);

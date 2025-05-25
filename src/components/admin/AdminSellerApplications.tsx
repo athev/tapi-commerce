@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,6 +54,8 @@ const AdminSellerApplications = () => {
     setProcessingId(applicationId);
     
     try {
+      console.log('Updating application status:', { applicationId, newStatus });
+      
       // First, update the application status
       const { error: applicationError } = await supabase
         .from('seller_applications')
@@ -62,9 +65,12 @@ const AdminSellerApplications = () => {
         })
         .eq('id', applicationId);
       
-      if (applicationError) throw applicationError;
+      if (applicationError) {
+        console.error('Error updating application:', applicationError);
+        throw applicationError;
+      }
 
-      // If approved, update user role from buyer to seller
+      // If approved, update user role from end-user to seller
       if (newStatus === 'approved') {
         const application = applications?.find(app => app.id === applicationId);
         if (application) {
