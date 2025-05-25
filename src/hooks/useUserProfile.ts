@@ -26,9 +26,36 @@ export const useUserProfile = () => {
       if (error) {
         console.error('useUserProfile: Error fetching profile:', error);
         
-        // If profile doesn't exist, it might be a new user
+        // If profile doesn't exist, it might be a new user - try to create with buyer role
         if (error.code === 'PGRST116') {
-          console.log('useUserProfile: Profile not found, might be new user');
+          console.log('useUserProfile: Profile not found, creating new buyer profile');
+          try {
+            const { data: userData } = await supabase.auth.getUser();
+            if (userData.user) {
+              const { data: newProfile, error: createError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: userId,
+                  email: userData.user.email || '',
+                  full_name: userData.user.user_metadata?.full_name || userData.user.email || '',
+                  role: 'buyer'
+                })
+                .select()
+                .single();
+                
+              if (createError) {
+                console.error('Error creating new profile:', createError);
+                return null;
+              }
+              
+              console.log('Successfully created new buyer profile:', newProfile);
+              const userProfile = newProfile as UserProfile;
+              setProfile(userProfile);
+              return userProfile;
+            }
+          } catch (createError) {
+            console.error('Error creating profile for new user:', createError);
+          }
           return null;
         }
         

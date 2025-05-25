@@ -31,19 +31,13 @@ export const useSellerStatus = () => {
         console.error('Error fetching seller application:', error);
       } else {
         setSellerApplication(data);
-        
-        // If application is approved but profile role is not seller, refresh profile
-        if (data?.status === 'approved' && profile?.role !== 'seller') {
-          console.log('Application approved but profile role not updated, refreshing profile...');
-          await refreshProfile();
-        }
       }
     } catch (error) {
       console.error('Error in fetchSellerApplication:', error);
     } finally {
       setLoading(false);
     }
-  }, [user?.id, profile?.role, refreshProfile]);
+  }, [user?.id]);
 
   useEffect(() => {
     fetchSellerApplication();
@@ -52,12 +46,20 @@ export const useSellerStatus = () => {
   const getSellerStatus = () => {
     if (!user) return 'not_logged_in';
     
-    // Check both profile role and application status for accurate determination
-    if (profile?.role === 'seller') return 'approved_seller';
-    if (sellerApplication?.status === 'approved') return 'approved_seller';
-    if (sellerApplication?.status === 'pending') return 'pending_approval';
-    if (sellerApplication?.status === 'rejected') return 'rejected';
-    return 'buyer'; // Default role
+    // If no profile yet, default to buyer
+    if (!profile) return 'buyer';
+    
+    // Check profile role - seller has full access
+    if (profile.role === 'seller') return 'approved_seller';
+    
+    // For buyers, check if they have submitted applications
+    if (profile.role === 'buyer' || profile.role === 'end-user') {
+      if (sellerApplication?.status === 'pending') return 'pending_approval';
+      if (sellerApplication?.status === 'rejected') return 'rejected';
+      return 'buyer'; // Default for buyers without applications
+    }
+    
+    return 'buyer'; // Fallback
   };
 
   return {
