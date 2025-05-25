@@ -8,7 +8,7 @@ import type { Database } from '@/integrations/supabase/types';
 type SellerApplication = Database['public']['Tables']['seller_applications']['Row'];
 
 export const useSellerStatus = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [sellerApplication, setSellerApplication] = useState<SellerApplication | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -31,13 +31,19 @@ export const useSellerStatus = () => {
         console.error('Error fetching seller application:', error);
       } else {
         setSellerApplication(data);
+        
+        // If application is approved but profile role is not seller, refresh profile
+        if (data?.status === 'approved' && profile?.role !== 'seller') {
+          console.log('Application approved but profile role not updated, refreshing profile...');
+          await refreshProfile();
+        }
       }
     } catch (error) {
       console.error('Error in fetchSellerApplication:', error);
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [user?.id, profile?.role, refreshProfile]);
 
   useEffect(() => {
     fetchSellerApplication();
@@ -45,7 +51,10 @@ export const useSellerStatus = () => {
 
   const getSellerStatus = () => {
     if (!user) return 'not_logged_in';
+    
+    // Check both profile role and application status for accurate determination
     if (profile?.role === 'seller') return 'approved_seller';
+    if (sellerApplication?.status === 'approved') return 'approved_seller';
     if (sellerApplication?.status === 'pending') return 'pending_approval';
     if (sellerApplication?.status === 'rejected') return 'rejected';
     return 'buyer'; // Default role

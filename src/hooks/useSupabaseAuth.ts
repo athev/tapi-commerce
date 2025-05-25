@@ -29,10 +29,15 @@ export const useSupabaseAuth = (isOnline: boolean) => {
     return result;
   };
 
-  // Memoized refresh function to prevent infinite loops
-  const memoizedRefreshProfile = () => {
+  // Enhanced refresh function that ensures profile is updated
+  const enhancedRefreshProfile = async () => {
     if (user && isOnline) {
-      refreshProfile(user);
+      console.log('Refreshing profile for user:', user.id);
+      const updatedProfile = await fetchProfile(user.id);
+      if (updatedProfile) {
+        setProfile(updatedProfile);
+        console.log('Profile refreshed successfully:', updatedProfile.role);
+      }
     }
   };
 
@@ -48,7 +53,7 @@ export const useSupabaseAuth = (isOnline: boolean) => {
     signIn,
     signUp,
     signOut,
-    refreshProfile: memoizedRefreshProfile,
+    refreshProfile: enhancedRefreshProfile,
     fetchProfile
   };
 };
