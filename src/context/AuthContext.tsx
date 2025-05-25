@@ -96,6 +96,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 console.log('AuthProvider: Profile loaded successfully:', userProfile.role);
                 console.log('Fetched profile:', userProfile);
                 setProfile(userProfile);
+              } else {
+                console.log('AuthProvider: No profile found for user');
               }
             } catch (profileError) {
               console.error('AuthProvider: Profile fetch failed:', profileError);
@@ -135,19 +137,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (event === 'SIGNED_IN' && newSession?.user && isOnline) {
           console.log('AuthProvider: User signed in, fetching profile...');
           setProfileLoading(true);
-          try {
-            const userProfile = await fetchProfile(newSession.user.id);
-            if (userProfile && mounted) {
-              console.log('AuthProvider: Profile fetched after sign in:', userProfile.role);
-              console.log('Fetched profile:', userProfile);
-              setProfile(userProfile);
+          
+          // Use setTimeout to avoid potential race conditions
+          setTimeout(async () => {
+            try {
+              const userProfile = await fetchProfile(newSession.user.id);
+              if (userProfile && mounted) {
+                console.log('AuthProvider: Profile fetched after sign in:', userProfile.role);
+                console.log('Fetched profile:', userProfile);
+                setProfile(userProfile);
+              } else {
+                console.log('AuthProvider: No profile found after sign in');
+              }
+            } catch (profileError) {
+              console.error('AuthProvider: Profile fetch failed on sign in:', profileError);
+              // Don't block - user can still use the app
+            } finally {
+              if (mounted) setProfileLoading(false);
             }
-          } catch (profileError) {
-            console.error('AuthProvider: Profile fetch failed on sign in:', profileError);
-            // Don't block - user can still use the app
-          } finally {
-            if (mounted) setProfileLoading(false);
-          }
+          }, 100);
         }
         
         // Clear profile on sign out
@@ -182,7 +190,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       hasSession: !!session, 
       loading, 
       profileLoading,
-      isOnline 
+      isOnline,
+      profileRole: profile?.role 
     });
   }, [user, profile, session, loading, profileLoading, isOnline]);
 
