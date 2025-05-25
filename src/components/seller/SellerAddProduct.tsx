@@ -69,6 +69,7 @@ const SellerAddProduct = () => {
       });
 
     if (error) {
+      console.error('Upload error:', error);
       throw error;
     }
 
@@ -108,12 +109,14 @@ const SellerAddProduct = () => {
       if (formData.image) {
         const imageFileName = `${Date.now()}-${formData.image.name}`;
         imageUrl = await uploadFile(formData.image, 'product-images', imageFileName);
+        console.log('Image uploaded successfully:', imageUrl);
       }
 
       // Upload product file if provided
       if (formData.file) {
         const fileFileName = `${Date.now()}-${formData.file.name}`;
         fileUrl = await uploadFile(formData.file, 'product-files', fileFileName);
+        console.log('Product file uploaded successfully:', fileUrl);
       }
 
       // Insert product into database
@@ -135,9 +138,11 @@ const SellerAddProduct = () => {
         .single();
 
       if (error) {
+        console.error('Database insert error:', error);
         throw error;
       }
 
+      console.log('Product created successfully:', data);
       toast.success('Sản phẩm đã được tạo thành công!');
       navigate('/seller/products');
       
