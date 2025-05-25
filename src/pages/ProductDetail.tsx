@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { 
-  ShoppingCart, 
   Heart,
   Star, 
   Check, 
   ShieldCheck, 
   Clock,
-  Info,
-  Download
+  Info
 } from "lucide-react";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -16,8 +14,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProductGrid from "@/components/products/ProductGrid";
+import ProductTypeOrderForm from "@/components/products/ProductTypeOrderForm";
 import { useAuth } from "@/context/AuthContext";
-import { supabase, Product, Order, mockProducts } from "@/lib/supabase";
+import { supabase, Product, mockProducts } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -67,7 +66,8 @@ const ProductDetail = () => {
           file_url: 'https://example.com/sample.pdf',
           in_stock: 999,
           purchases: 124,
-          created_at: '2025-04-01T08:30:00Z'
+          created_at: '2025-04-01T08:30:00Z',
+          product_type: 'file_download'
         };
         
         return mockProduct;
@@ -113,8 +113,8 @@ const ProductDetail = () => {
   const mockUserPurchases = ['1', '2']; // Mock purchased product IDs
   const hasPurchased = mockUserPurchases.includes(id || '');
 
-  // Handle purchase - simplified for development
-  const handlePurchase = async () => {
+  // Handle purchase with buyer data
+  const handlePurchase = async (buyerData?: any) => {
     if (!user) {
       toast({
         title: "Vui lòng đăng nhập",
@@ -128,8 +128,18 @@ const ProductDetail = () => {
     setIsProcessing(true);
     
     try {
-      // Simulate order creation
+      // Simulate order creation with buyer data
       const orderId = 'order_' + Math.random().toString(36).substr(2, 9);
+      
+      console.log('Creating order with buyer data:', buyerData);
+      
+      // Here you would normally save the buyer data to the order
+      // await supabase.from('orders').insert({
+      //   user_id: user.id,
+      //   product_id: id,
+      //   buyer_data: buyerData,
+      //   status: 'pending'
+      // });
       
       toast({
         title: "Đặt hàng thành công",
@@ -147,24 +157,6 @@ const ProductDetail = () => {
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  // Handle download
-  const handleDownload = () => {
-    if (product?.file_url) {
-      window.open(product.file_url, '_blank');
-    } else {
-      // For demo purposes, create a mock download
-      const link = document.createElement('a');
-      link.href = 'data:text/plain;charset=utf-8,Sample Digital Product Content';
-      link.download = `${product?.title || 'product'}.txt`;
-      link.click();
-    }
-    
-    toast({
-      title: "Đang tải xuống",
-      description: "File của bạn đang được tải xuống",
-    });
   };
 
   useEffect(() => {
@@ -227,7 +219,7 @@ const ProductDetail = () => {
         <div className="container py-8">
           {/* Breadcrumb */}
           <div className="text-sm text-gray-500 mb-6">
-            Trang chủ &gt; {product.category} &gt; {product.title}
+            Trang chủ &gt; {product?.category} &gt; {product?.title}
           </div>
           
           {/* Product Info */}
@@ -236,8 +228,8 @@ const ProductDetail = () => {
             <div>
               <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
                 <img 
-                  src={product.image || '/placeholder.svg'} 
-                  alt={product.title}
+                  src={product?.image || '/placeholder.svg'} 
+                  alt={product?.title}
                   className="w-full h-full object-contain"
                 />
               </div>
@@ -245,7 +237,7 @@ const ProductDetail = () => {
             
             {/* Product Details */}
             <div className="space-y-6">
-              <h1 className="text-3xl font-bold">{product.title}</h1>
+              <h1 className="text-3xl font-bold">{product?.title}</h1>
               
               <div className="flex items-center gap-2">
                 <div className="flex">
@@ -256,24 +248,24 @@ const ProductDetail = () => {
                     />
                   ))}
                 </div>
-                <span className="text-gray-500">({product.purchases || 0} lượt mua)</span>
+                <span className="text-gray-500">({product?.purchases || 0} lượt mua)</span>
               </div>
               
               <div className="flex items-end gap-4">
                 <div className="text-3xl font-bold text-marketplace-primary">
-                  {formatPrice(product.price)}
+                  {product?.price ? formatPrice(product.price) : '0 ₫'}
                 </div>
               </div>
               
               <div className="flex items-center gap-2 text-gray-500">
                 <Info className="h-4 w-4" />
-                <span>Còn lại: {product.in_stock}</span>
+                <span>Còn lại: {product?.in_stock}</span>
               </div>
               
               <div className="pt-4 border-t">
                 <h3 className="font-medium mb-2">Người bán:</h3>
                 <div className="flex items-center gap-2">
-                  <span className="font-semibold">{product.seller_name}</span>
+                  <span className="font-semibold">{product?.seller_name}</span>
                   <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-200">
                     <Check className="h-3 w-3 mr-1" /> Đã xác thực
                   </Badge>
@@ -281,31 +273,13 @@ const ProductDetail = () => {
               </div>
               
               <div className="pt-6 space-y-4">
-                {hasPurchased ? (
-                  <Button 
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    onClick={handleDownload}
-                  >
-                    <Download className="h-5 w-5 mr-2" /> Tải xuống
-                  </Button>
-                ) : (
-                  <Button 
-                    className="w-full bg-marketplace-primary hover:bg-marketplace-primary/90"
-                    onClick={handlePurchase}
-                    disabled={isProcessing}
-                  >
-                    {isProcessing ? (
-                      <>
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Đang xử lý...
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingCart className="h-5 w-5 mr-2" /> Mua ngay
-                      </>
-                    )}
-                  </Button>
-                )}
+                <ProductTypeOrderForm
+                  productType={product?.product_type || 'file_download'}
+                  onPurchase={handlePurchase}
+                  isProcessing={isProcessing}
+                  hasPurchased={hasPurchased}
+                  product={product}
+                />
                 
                 <Button variant="outline" className="w-full">
                   <Heart className="h-5 w-5 mr-2" /> Thêm vào yêu thích
@@ -350,7 +324,7 @@ const ProductDetail = () => {
             
             <TabsContent value="description" className="mt-6">
               <div className="prose max-w-none">
-                <p>{product.description}</p>
+                <p>{product?.description}</p>
               </div>
             </TabsContent>
             
@@ -370,7 +344,7 @@ const ProductDetail = () => {
                           />
                         ))}
                       </div>
-                      <div className="text-sm text-gray-500 mt-1">{product.purchases || 0} đánh giá</div>
+                      <div className="text-sm text-gray-500 mt-1">{product?.purchases || 0} đánh giá</div>
                     </div>
                     
                     <div className="flex-1">
