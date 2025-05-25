@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     fetchProfile
   } = useSupabaseAuth(isOnline);
 
-  // Initialize auth session and set up listeners
+  // Initialize auth session and set up listeners - this should only run once
   useAuthInitialization({
     isOnline,
     setSession,
@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     fetchProfile,
   });
 
-  // Debug logging for auth state
+  // Debug logging for auth state - throttle this to prevent spam
   useAuthDebugLogging({
     user,
     profile,
@@ -48,19 +48,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     isOnline,
   });
 
+  const contextValue = {
+    session,
+    user,
+    profile,
+    loading,
+    profileLoading,
+    signIn,
+    signUp,
+    signOut,
+    refreshProfile,
+    isOnline,
+  };
+
   return (
-    <AuthContext.Provider value={{
-      session,
-      user,
-      profile,
-      loading,
-      profileLoading,
-      signIn,
-      signUp,
-      signOut,
-      refreshProfile,
-      isOnline,
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

@@ -8,26 +8,29 @@ import OrdersEmptyState from "./OrdersEmptyState";
 import OrdersErrorState from "./OrdersErrorState";
 
 const SellerOrders = () => {
-  const { user, profile, profileLoading } = useAuth();
+  const { user, profile, loading, profileLoading } = useAuth();
 
   console.log('SellerOrders component - auth state:', { 
     user: !!user, 
     profile: !!profile, 
+    loading,
     profileLoading,
     role: profile?.role 
   });
 
+  // Only enable query when all auth conditions are met
+  const isReadyToFetch = !loading && !profileLoading && !!user?.id && !!profile && profile.role === 'seller';
+
   const { data: orders, isLoading, error } = useQuery({
     queryKey: ['seller-orders', user?.id],
     queryFn: async () => {
-      console.log("fetchOrders running");
-      
-      if (!user?.id) {
-        console.log('No user found for seller orders');
-        throw new Error('User not authenticated');
+      // Guard clause to prevent execution if conditions aren't met
+      if (!user?.id || !profile || loading || profileLoading) {
+        console.log('Query guard: Not ready to fetch orders');
+        return [];
       }
       
-      console.log('Fetching seller orders for user:', user.id);
+      console.log("fetchOrders running for user:", user.id);
       
       try {
         const { data: ordersData, error: ordersError } = await supabase
@@ -60,33 +63,45 @@ const SellerOrders = () => {
           throw ordersError;
         }
 
-        console.log('Fetched orders:', ordersData);
         console.log('Seller orders fetched successfully:', ordersData?.length || 0, 'orders');
-        
-        if (ordersData && ordersData.length > 0) {
-          console.log('Sample order data:', ordersData[0]);
-        }
-        
         return ordersData || [];
       } catch (error) {
         console.error('Error in seller orders query:', error);
         throw error;
       }
     },
-    enabled: !!user?.id && !!profile && !profileLoading,
+    enabled: isReadyToFetch,
     retry: 2,
     retryDelay: 1000,
+    // Add staleTime to prevent unnecessary refetches
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
-  console.log('Query state:', { isLoading, hasError: !!error, ordersCount: orders?.length || 0 });
+  console.log('Query state:', { 
+    isLoading, 
+    hasError: !!error, 
+    ordersCount: orders?.length || 0,
+    isReadyToFetch
+  });
 
   // Show loading while profile is being fetched
-  if (profileLoading) {
-    console.log('Rendering loading skeleton - profile loading');
+  if (loading || profileLoading) {
+    console.log('Rendering loading skeleton - auth loading');
     return <OrdersLoadingSkeleton />;
   }
 
-  // Block loading if no profile or not a seller
+  // Check if user is authenticated
+  if (!user) {
+    console.log('User not authenticated');
+    return (
+      <div className="text-center py-12 bg-gray-50 rounded-lg">
+        <h3 className="text-lg font-medium mb-2">Cần đăng nhập</h3>
+        <p className="text-gray-500">Vui lòng đăng nhập để xem đơn hàng.</p>
+      </div>
+    );
+  }
+
+  // Check if profile exists and user is a seller
   if (!profile || profile.role !== 'seller') {
     console.log('User is not a seller or profile not loaded');
     return (
@@ -98,7 +113,7 @@ const SellerOrders = () => {
   }
 
   if (isLoading) {
-    console.log('Rendering loading skeleton');
+    console.log('Rendering loading skeleton - query loading');
     return <OrdersLoadingSkeleton />;
   }
 
@@ -107,7 +122,6 @@ const SellerOrders = () => {
     return <OrdersErrorState error={error} />;
   }
 
-  console.log('Fetched orders:', orders);
   console.log('Rendering orders:', orders?.length || 0);
 
   return (
