@@ -49,19 +49,54 @@ const MyAccount = () => {
     queryFn: async () => {
       if (!user) return [];
       
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          product:products(*)
-        `)
-        .eq('user_id', user.id)
-        .eq('status', 'paid')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      
-      return data as (Order & { product: Product })[];
+      try {
+        console.log('Fetching user purchases for:', user.id);
+        
+        // Get user's paid orders
+        const { data: ordersData, error: ordersError } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('status', 'paid')
+          .order('created_at', { ascending: false });
+        
+        if (ordersError) {
+          console.error('Error fetching orders:', ordersError);
+          return [];
+        }
+
+        if (!ordersData || ordersData.length === 0) {
+          console.log('No paid orders found for user');
+          return [];
+        }
+
+        // Get product details for the orders
+        const productIds = ordersData.map(order => order.product_id);
+        const { data: productsData, error: productsError } = await supabase
+          .from('products')
+          .select('*')
+          .in('id', productIds);
+
+        if (productsError) {
+          console.error('Error fetching products:', productsError);
+          return [];
+        }
+
+        // Combine orders with product details
+        const ordersWithProducts = ordersData.map(order => {
+          const product = productsData?.find(p => p.id === order.product_id);
+          return {
+            ...order,
+            product: product || null
+          };
+        }).filter(order => order.product !== null);
+
+        console.log('User purchases:', ordersWithProducts);
+        return ordersWithProducts as (Order & { product: Product })[];
+      } catch (error) {
+        console.error('Error in purchases query:', error);
+        return [];
+      }
     },
     enabled: !!user,
   });

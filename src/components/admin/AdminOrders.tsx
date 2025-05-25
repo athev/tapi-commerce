@@ -35,20 +35,49 @@ const AdminOrders = () => {
     queryKey: ['admin-orders'],
     queryFn: async () => {
       try {
-        const { data, error } = await supabase
+        console.log('Fetching admin orders...');
+        
+        // First get orders
+        const { data: ordersData, error: ordersError } = await supabase
           .from('orders')
-          .select(`
-            *,
-            product:products(*)
-          `)
+          .select('*')
           .order('created_at', { ascending: false });
         
-        if (error) throw error;
-        
-        return data as (Order & { product: Product })[];
+        if (ordersError) {
+          console.error('Orders fetch error:', ordersError);
+          return [];
+        }
+
+        if (!ordersData || ordersData.length === 0) {
+          console.log('No orders found');
+          return [];
+        }
+
+        // Then get products for these orders
+        const productIds = ordersData.map(order => order.product_id);
+        const { data: productsData, error: productsError } = await supabase
+          .from('products')
+          .select('*')
+          .in('id', productIds);
+
+        if (productsError) {
+          console.error('Products fetch error:', productsError);
+          return [];
+        }
+
+        // Combine orders with products
+        const ordersWithProducts = ordersData.map(order => {
+          const product = productsData?.find(p => p.id === order.product_id);
+          return {
+            ...order,
+            product: product || null
+          };
+        }).filter(order => order.product !== null);
+
+        console.log('Orders with products:', ordersWithProducts);
+        return ordersWithProducts as (Order & { product: Product })[];
       } catch (error) {
         console.error('Error fetching admin orders:', error);
-        // Return empty array for demo
         return [];
       }
     }
@@ -63,17 +92,17 @@ const AdminOrders = () => {
     setIsUpdating(orderId);
     
     try {
-      // In a real implementation, update the order status in Supabase
-      // const { error } = await supabase
-      //   .from('orders')
-      //   .update({ status: newStatus })
-      //   .eq('id', orderId);
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq('id', orderId);
       
-      // if (error) throw error;
+      if (error) throw error;
       
       toast.success('Cập nhật trạng thái thành công');
       refetch();
     } catch (error) {
+      console.error('Error updating order status:', error);
       toast.error('Có lỗi xảy ra khi cập nhật trạng thái');
     } finally {
       setIsUpdating(null);

@@ -107,26 +107,43 @@ const Payment = () => {
     queryFn: async () => {
       if (!orderId) return null;
 
-      const { data: orderData, error: orderError } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('id', orderId)
-        .single();
-      
-      if (orderError) throw orderError;
+      try {
+        console.log('Fetching order details for:', orderId);
+        
+        const { data: orderData, error: orderError } = await supabase
+          .from('orders')
+          .select('*')
+          .eq('id', orderId)
+          .single();
+        
+        if (orderError) {
+          console.error('Order fetch error:', orderError);
+          throw orderError;
+        }
 
-      const { data: productData, error: productError } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', orderData.product_id)
-        .single();
-      
-      if (productError) throw productError;
+        console.log('Order data:', orderData);
 
-      return {
-        order: orderData as Order,
-        product: productData as Product,
-      };
+        const { data: productData, error: productError } = await supabase
+          .from('products')
+          .select('*')
+          .eq('id', orderData.product_id)
+          .single();
+        
+        if (productError) {
+          console.error('Product fetch error:', productError);
+          throw productError;
+        }
+
+        console.log('Product data:', productData);
+
+        return {
+          order: orderData as Order,
+          product: productData as Product,
+        };
+      } catch (error) {
+        console.error('Error fetching order details:', error);
+        return null;
+      }
     },
     enabled: !!orderId && !!user,
   });

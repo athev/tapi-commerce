@@ -33,22 +33,67 @@ const SellerOrders = () => {
       try {
         if (!user) return [];
         
-        // In a real implementation, we would fetch orders for products sold by this seller
-        const { data, error } = await supabase
+        console.log('Fetching seller orders for user:', user.id);
+        
+        // First get the seller's products
+        const { data: sellerProducts, error: productsError } = await supabase
+          .from('products')
+          .select('id')
+          .eq('seller_id', user.id);
+        
+        if (productsError) {
+          console.error('Error fetching seller products:', productsError);
+          return [];
+        }
+
+        if (!sellerProducts || sellerProducts.length === 0) {
+          console.log('No products found for seller');
+          return [];
+        }
+
+        const productIds = sellerProducts.map(p => p.id);
+        
+        // Then get orders for these products
+        const { data: ordersData, error: ordersError } = await supabase
           .from('orders')
-          .select(`
-            *,
-            product:products(*)
-          `)
-          .eq('product.seller_id', user.id)
+          .select('*')
+          .in('product_id', productIds)
           .order('created_at', { ascending: false });
         
-        if (error) throw error;
-        
-        return data as (Order & { product: Product })[];
+        if (ordersError) {
+          console.error('Error fetching orders:', ordersError);
+          return [];
+        }
+
+        if (!ordersData || ordersData.length === 0) {
+          console.log('No orders found for seller products');
+          return [];
+        }
+
+        // Get product details for the orders
+        const { data: productsData, error: productDetailsError } = await supabase
+          .from('products')
+          .select('*')
+          .in('id', productIds);
+
+        if (productDetailsError) {
+          console.error('Error fetching product details:', productDetailsError);
+          return [];
+        }
+
+        // Combine orders with product details
+        const ordersWithProducts = ordersData.map(order => {
+          const product = productsData?.find(p => p.id === order.product_id);
+          return {
+            ...order,
+            product: product || null
+          };
+        }).filter(order => order.product !== null);
+
+        console.log('Seller orders with products:', ordersWithProducts);
+        return ordersWithProducts as (Order & { product: Product })[];
       } catch (error) {
         console.error('Error fetching seller orders:', error);
-        // Return empty array for demo
         return [];
       }
     },
