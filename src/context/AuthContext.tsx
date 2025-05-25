@@ -1,5 +1,5 @@
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
@@ -47,6 +47,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     fetchProfile
   } = useSupabaseAuth(isOnline);
 
+  // Track profile fetch attempts to prevent infinite loops
+  const profileFetchAttempted = useRef<Set<string>>(new Set());
+  const profileFetchInProgress = useRef<string | null>(null);
+
   // Initialize user session with better error handling and timeout
   useEffect(() => {
     const initSession = async () => {
@@ -83,30 +87,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(currentSession?.user ?? null);
         
         if (currentSession?.user) {
-          console.log('Fetching user profile...');
-          try {
-            // Add timeout for profile fetch and better error handling
-            const profileTimeoutPromise = new Promise((_, reject) => {
-              setTimeout(() => reject(new Error('Profile fetch timeout')), 3000);
-            });
+          const userId = currentSession.user.id;
+          console.log('Checking if profile fetch needed for user:', userId);
+          
+          // Only fetch profile if not already attempted and not in progress
+          if (!profileFetchAttempted.current.has(userId) && profileFetchInProgress.current !== userId) {
+            console.log('Fetching user profile...');
+            profileFetchInProgress.current = userId;
+            profileFetchAttempted.current.add(userId);
             
-            const profilePromise = fetchProfile(currentSession.user.id);
-            const userProfile = await Promise.race([profilePromise, profileTimeoutPromise]);
-            
-            if (userProfile) {
-              console.log('Profile fetched successfully');
-            } else {
-              console.log('No profile found for user - will use email fallback');
+            try {
+              // Add timeout for profile fetch and better error handling
+              const profileTimeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Profile fetch timeout')), 3000);
+              });
+              
+              const profilePromise = fetchProfile(userId);
+              const userProfile = await Promise.race([profilePromise, profileTimeoutPromise]);
+              
+              if (userProfile) {
+                console.log('Profile fetched successfully');
+              } else {
+                console.log('No profile found for user - will use email fallback');
+              }
+            } catch (profileError: any) {
+              console.error('Profile fetch failed or timed out:', profileError);
+              
+              // Log specific error types for debugging
+              if (profileError.message?.includes('INSUFFICIENT_RESOURCES')) {
+                console.error('Supabase rate limit or resource issue detected - profile fetch blocked for this session');
+              }
+              
+              // Don't block loading for profile fetch failures - user can still use the app
+            } finally {
+              profileFetchInProgress.current = null;
             }
-          } catch (profileError: any) {
-            console.error('Profile fetch failed or timed out:', profileError);
-            
-            // Log specific error types for debugging
-            if (profileError.message?.includes('INSUFFICIENT_RESOURCES')) {
-              console.error('Supabase rate limit or resource issue detected');
-            }
-            
-            // Don't block loading for profile fetch failures - user can still use the app
+          } else {
+            console.log('Profile fetch already attempted or in progress for user:', userId);
           }
         }
       } catch (error) {
@@ -127,27 +144,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setSession(newSession);
           setUser(newSession?.user ?? null);
           
-          // Only fetch profile for specific events to reduce API calls
+          // Clear profile fetch tracking when user signs out
+          if (event === 'SIGNED_OUT') {
+            profileFetchAttempted.current.clear();
+            profileFetchInProgress.current = null;
+            console.log('Cleared profile fetch tracking on sign out');
+          }
+          
+          // Only fetch profile for specific events and if not already attempted
           if (newSession?.user && (event === 'SIGNED_IN' || event === 'USER_UPDATED')) {
-            console.log('Fetching profile for auth event:', event);
-            try {
-              // Add timeout and better error handling
-              const profileTimeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('Profile fetch timeout')), 3000);
-              });
+            const userId = newSession.user.id;
+            console.log('Auth event profile check for:', event, userId);
+            
+            // Only fetch if not already attempted and not in progress
+            if (!profileFetchAttempted.current.has(userId) && profileFetchInProgress.current !== userId) {
+              console.log('Fetching profile for auth event:', event);
+              profileFetchInProgress.current = userId;
+              profileFetchAttempted.current.add(userId);
               
-              const profilePromise = fetchProfile(newSession.user.id);
-              const userProfile = await Promise.race([profilePromise, profileTimeoutPromise]);
-              
-              if (userProfile) {
-                console.log('Profile updated successfully');
+              try {
+                // Add timeout and better error handling
+                const profileTimeoutPromise = new Promise((_, reject) => {
+                  setTimeout(() => reject(new Error('Profile fetch timeout')), 3000);
+                });
+                
+                const profilePromise = fetchProfile(userId);
+                const userProfile = await Promise.race([profilePromise, profileTimeoutPromise]);
+                
+                if (userProfile) {
+                  console.log('Profile updated successfully');
+                }
+              } catch (profileError: any) {
+                console.error('Profile fetch failed or timed out:', profileError);
+                
+                if (profileError.message?.includes('INSUFFICIENT_RESOURCES')) {
+                  console.error('Supabase rate limit detected - profile will use fallback');
+                }
+              } finally {
+                profileFetchInProgress.current = null;
               }
-            } catch (profileError: any) {
-              console.error('Profile fetch failed or timed out:', profileError);
-              
-              if (profileError.message?.includes('INSUFFICIENT_RESOURCES')) {
-                console.error('Supabase rate limit detected - profile will use fallback');
-              }
+            } else {
+              console.log('Profile fetch already attempted for user:', userId);
             }
           }
         } catch (error) {
