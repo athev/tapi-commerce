@@ -9,6 +9,9 @@ import Index from "./pages/Index";
 import ProductDetail from "./pages/ProductDetail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import RegisterChoice from "./pages/RegisterChoice";
+import RegisterUser from "./pages/RegisterUser";
+import RegisterSeller from "./pages/RegisterSeller";
 import MyAccount from "./pages/MyAccount";
 import NotFound from "./pages/NotFound";
 import Payment from "./pages/Payment";
@@ -30,6 +33,9 @@ const App = () => (
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/register-choice" element={<RegisterChoice />} />
+            <Route path="/register-user" element={<RegisterUser />} />
+            <Route path="/register-seller" element={<RegisterSeller />} />
             <Route path="/my-account" element={<MyAccount />} />
             <Route path="/payment/:orderId" element={<Payment />} />
             
