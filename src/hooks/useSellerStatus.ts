@@ -8,7 +8,7 @@ import type { Database } from '@/integrations/supabase/types';
 type SellerApplication = Database['public']['Tables']['seller_applications']['Row'];
 
 export const useSellerStatus = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [sellerApplication, setSellerApplication] = useState<SellerApplication | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,6 +20,9 @@ export const useSellerStatus = () => {
       }
 
       try {
+        // First refresh the profile to get the latest role
+        await refreshProfile();
+
         const { data, error } = await supabase
           .from('seller_applications')
           .select('*')
@@ -41,7 +44,7 @@ export const useSellerStatus = () => {
     };
 
     fetchSellerStatus();
-  }, [user]);
+  }, [user, refreshProfile]);
 
   const getSellerStatus = () => {
     if (!user) return 'not_logged_in';

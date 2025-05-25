@@ -1,4 +1,5 @@
 
+import { useEffect } from "react";
 import { useSellerStatus } from "@/hooks/useSellerStatus";
 import { useAuth } from "@/context/AuthContext";
 import SellerApplicationForm from "./SellerApplicationForm";
@@ -9,8 +10,15 @@ interface SellerStatusHandlerProps {
 }
 
 const SellerStatusHandler = ({ children }: SellerStatusHandlerProps) => {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const { sellerStatus, sellerApplication, loading } = useSellerStatus();
+
+  // Refresh profile when component mounts to ensure we have latest data
+  useEffect(() => {
+    if (user) {
+      refreshProfile();
+    }
+  }, [user, refreshProfile]);
 
   console.log('SellerStatusHandler:', { 
     user: !!user, 
