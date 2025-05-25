@@ -54,10 +54,7 @@ const AdminSellerApplications = () => {
     setProcessingId(applicationId);
     
     try {
-      console.log('Updating application status:', { applicationId, newStatus });
-      
-      // First, update the application status
-      const { error: applicationError } = await supabase
+      const { error } = await supabase
         .from('seller_applications')
         .update({ 
           status: newStatus,
@@ -65,32 +62,22 @@ const AdminSellerApplications = () => {
         })
         .eq('id', applicationId);
       
-      if (applicationError) {
-        console.error('Error updating application:', applicationError);
-        throw applicationError;
-      }
+      if (error) throw error;
 
-      // If approved, update user role from end-user to seller
+      // If approved, update user role to seller
       if (newStatus === 'approved') {
         const application = applications?.find(app => app.id === applicationId);
         if (application) {
-          console.log('Updating user role to seller for user:', application.user_id);
-          
           const { error: profileError } = await supabase
             .from('profiles')
             .update({ role: 'seller' })
             .eq('id', application.user_id);
           
-          if (profileError) {
-            console.error('Error updating profile role:', profileError);
-            throw profileError;
-          }
-          
-          console.log('Successfully updated user role to seller');
+          if (profileError) throw profileError;
         }
       }
       
-      toast.success(newStatus === 'approved' ? 'Đã phê duyệt đơn đăng ký - người dùng đã trở thành seller' : 'Đã từ chối đơn đăng ký');
+      toast.success(newStatus === 'approved' ? 'Đã phê duyệt đơn đăng ký' : 'Đã từ chối đơn đăng ký');
       refetch();
     } catch (error: any) {
       console.error('Error updating application status:', error);

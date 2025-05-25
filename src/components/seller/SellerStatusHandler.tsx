@@ -10,24 +10,20 @@ interface SellerStatusHandlerProps {
 }
 
 const SellerStatusHandler = ({ children }: SellerStatusHandlerProps) => {
-  const { user, profile, refreshProfile } = useAuth();
-  const { sellerStatus, sellerApplication, loading, refreshStatus } = useSellerStatus();
+  const { user, refreshProfile } = useAuth();
+  const { sellerStatus, sellerApplication, loading } = useSellerStatus();
 
-  // Refresh profile and status when user changes
+  // Only refresh profile once when component mounts
   useEffect(() => {
-    if (user && profile) {
-      console.log('SellerStatusHandler: User profile loaded, refreshing status');
-      refreshStatus();
+    if (user) {
+      refreshProfile();
     }
-  }, [user?.id, profile?.role, refreshStatus]);
+  }, [user?.id]); // Only depend on user.id, not the refreshProfile function
 
   console.log('SellerStatusHandler:', { 
     user: !!user, 
-    profile: !!profile,
-    profileRole: profile?.role,
     sellerStatus, 
-    sellerApplication: !!sellerApplication,
-    appStatus: sellerApplication?.status,
+    sellerApplication,
     loading 
   });
 
@@ -127,7 +123,7 @@ const SellerStatusHandler = ({ children }: SellerStatusHandlerProps) => {
                   Bạn chưa đăng ký gian hàng
                 </h3>
                 <p className="text-gray-500 mb-4">
-                  Điền thông tin dưới đây để đăng ký trở thành người bán
+                  Bấm vào đây để tạo gian hàng đầu tiên
                 </p>
               </div>
             </CardContent>

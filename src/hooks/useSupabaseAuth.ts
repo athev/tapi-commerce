@@ -29,18 +29,6 @@ export const useSupabaseAuth = (isOnline: boolean) => {
     return result;
   };
 
-  // Enhanced refresh function that ensures profile is updated
-  const enhancedRefreshProfile = async () => {
-    if (user && isOnline) {
-      console.log('Refreshing profile for user:', user.id);
-      const updatedProfile = await fetchProfile(user.id);
-      if (updatedProfile) {
-        setProfile(updatedProfile);
-        console.log('Profile refreshed successfully:', updatedProfile.role);
-      }
-    }
-  };
-
   return {
     session,
     setSession,
@@ -53,7 +41,7 @@ export const useSupabaseAuth = (isOnline: boolean) => {
     signIn,
     signUp,
     signOut,
-    refreshProfile: enhancedRefreshProfile,
+    refreshProfile: () => refreshProfile(user),
     fetchProfile
   };
 };
