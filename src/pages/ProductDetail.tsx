@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
@@ -10,18 +9,25 @@ import { useToast } from "@/hooks/use-toast";
 import { Product } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import ProductBreadcrumb from "@/components/products/ProductBreadcrumb";
-import ProductMainSection from "@/components/products/ProductMainSection";
-import ProductMobileAccordion from "@/components/products/ProductMobileAccordion";
-import ProductReviewsSection from "@/components/products/ProductReviewsSection";
-import ProductRelatedSection from "@/components/products/ProductRelatedSection";
+import ProductTypeOrderForm from "@/components/products/ProductTypeOrderForm";
+import ProductImageGallery from "@/components/products/ProductImageGallery";
+import ProductReviews from "@/components/products/ProductReviews";
+import SellerInfo from "@/components/products/SellerInfo";
+import RelatedProducts from "@/components/products/RelatedProducts";
+import ProductHeader from "@/components/products/ProductHeader";
+import ProductTabs from "@/components/products/ProductTabs";
+import ProductDetailsAccordion from "@/components/products/ProductDetailsAccordion";
 import StickyBottomButton from "@/components/products/StickyBottomButton";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const { user, isOnline } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasPurchased, setHasPurchased] = useState(false);
 
@@ -156,39 +162,128 @@ const ProductDetail = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       <Navbar />
       
-      <main className="flex-1 pb-28 md:pb-0">
+      <main className="flex-1 pb-20 lg:pb-0">
         {/* Breadcrumb */}
-        <ProductBreadcrumb 
-          category={product?.category} 
-          title={product?.title} 
-        />
+        <div className="bg-white border-b">
+          <div className="container py-3">
+            <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="p-0 h-auto text-sm">
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Trang chủ
+              </Button>
+              <span>/</span>
+              <span className="hidden sm:inline">{product?.category}</span>
+              <span className="hidden sm:inline">/</span>
+              <span className="text-gray-900 font-medium truncate">{product?.title}</span>
+            </div>
+          </div>
+        </div>
 
         {/* Main Product Section */}
-        <ProductMainSection
-          product={product!}
-          isProcessing={isProcessing}
-          hasPurchased={hasPurchased}
-          onPurchase={handlePurchase}
-        />
+        <div className="container py-4 lg:py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12">
+            {/* Left Column - Product Images */}
+            <div className="lg:col-span-1">
+              <div className="lg:sticky lg:top-6">
+                <ProductImageGallery 
+                  images={product?.image ? [product.image] : []} 
+                  title={product?.title || ''} 
+                />
+              </div>
+            </div>
+            
+            {/* Right Column - Product Info and Purchase */}
+            <div className="lg:col-span-1">
+              <div className="space-y-6">
+                {/* Product Information */}
+                <ProductHeader 
+                  title={product?.title || ''} 
+                  price={product?.price || 0} 
+                  category={product?.category || ''} 
+                  productType={product?.product_type || 'file_download'} 
+                  purchases={product?.purchases || 0} 
+                  inStock={product?.in_stock || 0} 
+                  sellerName={product?.seller_name || ''} 
+                />
+                
+                {/* Purchase Section - Desktop */}
+                <div className="hidden lg:block">
+                  <Card className="shadow-lg border-gray-200">
+                    <CardContent className="p-6">
+                      <ProductTypeOrderForm 
+                        productType={product?.product_type || 'file_download'} 
+                        onPurchase={handlePurchase} 
+                        isProcessing={isProcessing} 
+                        hasPurchased={hasPurchased} 
+                        product={product} 
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Purchase Section - Mobile */}
+                <div className="lg:hidden bg-white rounded-lg shadow-md border border-gray-200 p-4">
+                  <ProductTypeOrderForm 
+                    productType={product?.product_type || 'file_download'} 
+                    onPurchase={handlePurchase} 
+                    isProcessing={isProcessing} 
+                    hasPurchased={hasPurchased} 
+                    product={product} 
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Mobile Accordion */}
-        <ProductMobileAccordion
-          productType={product?.product_type || 'file_download'}
-          description={product?.description || ''}
-          sellerName={product?.seller_name || ''}
-        />
+        <div className="container lg:hidden py-4">
+          <ProductDetailsAccordion 
+            description={product?.description || ''} 
+            productType={product?.product_type || 'file_download'} 
+            sellerName={product?.seller_name || ''}
+          />
+        </div>
+
+        {/* Desktop Product Details Tabs */}
+        <div className="hidden lg:block bg-white border-t">
+          <div className="container py-8">
+            <ProductTabs 
+              description={product?.description || ''} 
+              productType={product?.product_type || 'file_download'} 
+            />
+          </div>
+        </div>
+
+        {/* Seller Info - Desktop */}
+        <div className="hidden lg:block container py-6">
+          <SellerInfo 
+            sellerId={product?.seller_id || ''} 
+            sellerName={product?.seller_name || ''} 
+          />
+        </div>
 
         {/* Reviews Section */}
-        <ProductReviewsSection />
+        <div className="bg-white border-t">
+          <div className="container py-6 lg:py-8">
+            <ProductReviews 
+              reviews={[]} 
+              averageRating={4.8} 
+              totalReviews={156} 
+            />
+          </div>
+        </div>
 
         {/* Related Products */}
-        <ProductRelatedSection
-          currentProductId={id || ''}
-          category={product?.category || ''}
-        />
+        <div className="container py-6">
+          <RelatedProducts 
+            currentProductId={id || ''} 
+            category={product?.category || ''} 
+          />
+        </div>
       </main>
 
       {/* Sticky Bottom Button for Mobile */}

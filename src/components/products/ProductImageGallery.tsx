@@ -1,9 +1,8 @@
 
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, ZoomIn, Heart } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ProductImageGalleryProps {
@@ -14,7 +13,6 @@ interface ProductImageGalleryProps {
 const ProductImageGallery = ({ images, title }: ProductImageGalleryProps) => {
   const [currentImage, setCurrentImage] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
-  const [isFavorited, setIsFavorited] = useState(false);
   const isMobile = useIsMobile();
 
   const productImages = images.length > 0 ? images : ["/placeholder.svg"];
@@ -28,34 +26,10 @@ const ProductImageGallery = ({ images, title }: ProductImageGalleryProps) => {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Main Image Display */}
-      <Card className="relative overflow-hidden bg-white border border-gray-200 shadow-md">
+    <div className="space-y-3">
+      {/* Main Image */}
+      <Card className="relative overflow-hidden bg-gray-50 border-2 border-gray-100">
         <div className="aspect-square relative group">
-          {/* Product Badges */}
-          <div className="absolute top-3 left-3 z-10 flex flex-col space-y-2">
-            <Badge className="bg-red-600 text-white shadow-lg">
-              -23% OFF
-            </Badge>
-            <Badge className="bg-green-600 text-white shadow-lg">
-              Bán chạy
-            </Badge>
-          </div>
-
-          {/* Favorite Button */}
-          <div className="absolute top-3 right-3 z-10">
-            <Button 
-              size="sm" 
-              variant="secondary" 
-              className={`bg-white/90 hover:bg-white h-9 w-9 p-0 shadow-lg ${
-                isFavorited ? "text-red-500" : "text-gray-600"
-              }`}
-              onClick={() => setIsFavorited(!isFavorited)}
-            >
-              <Heart className={`h-4 w-4 ${isFavorited ? "fill-current" : ""}`} />
-            </Button>
-          </div>
-          
           <img 
             src={productImages[currentImage]} 
             alt={title}
@@ -65,17 +39,17 @@ const ProductImageGallery = ({ images, title }: ProductImageGalleryProps) => {
             onClick={() => setIsZoomed(!isZoomed)}
           />
           
-          {/* Image Counter */}
+          {/* Image Indicator */}
           {productImages.length > 1 && (
-            <div className="absolute bottom-3 right-3 bg-black/70 text-white text-sm px-3 py-1 rounded-full">
+            <div className="absolute bottom-3 right-3 bg-black/60 text-white text-xs px-2 py-1 rounded">
               {currentImage + 1}/{productImages.length}
             </div>
           )}
           
           {/* Zoom Icon - Hide on mobile */}
           {!isMobile && (
-            <div className="absolute bottom-3 left-3 opacity-0 group-hover:opacity-100 transition-opacity">
-              <Button size="sm" variant="secondary" className="bg-white/90 hover:bg-white h-8 w-8 p-0 shadow-lg">
+            <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+              <Button size="sm" variant="secondary" className="bg-white/90 hover:bg-white h-8 w-8 p-0">
                 <ZoomIn className="h-4 w-4" />
               </Button>
             </div>
@@ -87,18 +61,18 @@ const ProductImageGallery = ({ images, title }: ProductImageGalleryProps) => {
               <Button
                 size="sm"
                 variant="secondary"
-                className="absolute left-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 hover:bg-white h-12 w-12 p-0 rounded-full shadow-lg border"
+                className="absolute left-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 hover:bg-white h-10 w-10 p-0 rounded-full shadow-lg"
                 onClick={prevImage}
               >
-                <ChevronLeft className="h-6 w-6" />
+                <ChevronLeft className="h-5 w-5" />
               </Button>
               <Button
                 size="sm"
                 variant="secondary"
-                className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/95 hover:bg-white h-12 w-12 p-0 rounded-full shadow-lg border"
+                className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white/90 hover:bg-white h-10 w-10 p-0 rounded-full shadow-lg"
                 onClick={nextImage}
               >
-                <ChevronRight className="h-6 w-6" />
+                <ChevronRight className="h-5 w-5" />
               </Button>
             </>
           )}
@@ -107,15 +81,15 @@ const ProductImageGallery = ({ images, title }: ProductImageGalleryProps) => {
 
       {/* Thumbnail Gallery */}
       {productImages.length > 1 && (
-        <div className="flex space-x-3 overflow-x-auto pb-2">
+        <div className="flex space-x-2 overflow-x-auto pb-2">
           {productImages.map((image, index) => (
             <button
               key={index}
               onClick={() => setCurrentImage(index)}
-              className={`flex-shrink-0 w-20 h-20 lg:w-24 lg:h-24 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+              className={`flex-shrink-0 w-16 h-16 lg:w-20 lg:h-20 rounded-lg overflow-hidden border-2 transition-all ${
                 currentImage === index 
-                  ? 'border-blue-600 shadow-lg scale-105' 
-                  : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                  ? 'border-marketplace-primary shadow-md' 
+                  : 'border-gray-200 hover:border-gray-300'
               }`}
             >
               <img 
@@ -127,24 +101,6 @@ const ProductImageGallery = ({ images, title }: ProductImageGalleryProps) => {
           ))}
         </div>
       )}
-
-      {/* Trust Signals */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-3 lg:p-4">
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center text-green-800">
-            <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-            <span className="font-medium">Tải về ngay sau khi thanh toán</span>
-          </div>
-          <div className="flex items-center text-green-700">
-            <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-            <span>File đã được kiểm tra an toàn</span>
-          </div>
-          <div className="flex items-center text-green-700">
-            <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-            <span>Hoàn tiền 100% trong 7 ngày</span>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
