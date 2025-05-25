@@ -1,8 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
@@ -10,26 +10,18 @@ import { useToast } from "@/hooks/use-toast";
 import { Product } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import ProductTypeOrderForm from "@/components/products/ProductTypeOrderForm";
-import ProductImageGallery from "@/components/products/ProductImageGallery";
-import ProductReviews from "@/components/products/ProductReviews";
-import SellerInfo from "@/components/products/SellerInfo";
-import RelatedProducts from "@/components/products/RelatedProducts";
-import ProductHeader from "@/components/products/ProductHeader";
-import ProductTabs from "@/components/products/ProductTabs";
-import ProductDetailsAccordion from "@/components/products/ProductDetailsAccordion";
-import ProductHighlights from "@/components/products/ProductHighlights";
+import ProductBreadcrumb from "@/components/products/ProductBreadcrumb";
+import ProductMainSection from "@/components/products/ProductMainSection";
+import ProductMobileAccordion from "@/components/products/ProductMobileAccordion";
+import ProductReviewsSection from "@/components/products/ProductReviewsSection";
+import ProductRelatedSection from "@/components/products/ProductRelatedSection";
 import StickyBottomButton from "@/components/products/StickyBottomButton";
-import { Separator } from "@/components/ui/separator";
-import { ArrowLeft } from "lucide-react";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const { user, isOnline } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const isMobile = useIsMobile();
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasPurchased, setHasPurchased] = useState(false);
 
@@ -169,136 +161,34 @@ const ProductDetail = () => {
       
       <main className="flex-1 pb-20 lg:pb-0">
         {/* Breadcrumb */}
-        <div className="bg-gray-50 border-b">
-          <div className="container py-2">
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="p-0 h-auto text-sm hover:text-marketplace-primary">
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Trang chủ
-              </Button>
-              <span>/</span>
-              <span className="hidden sm:inline text-gray-500">{product?.category}</span>
-              <span className="hidden sm:inline">/</span>
-              <span className="text-gray-900 font-medium truncate">{product?.title}</span>
-            </div>
-          </div>
-        </div>
+        <ProductBreadcrumb 
+          category={product?.category} 
+          title={product?.title} 
+        />
 
-        {/* Main Product Section - Desktop 2 Column Layout */}
-        <div className="container py-4 lg:py-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-            {/* Left Column - Images & Details (Desktop: 7 cols, Mobile: full width) */}
-            <div className="lg:col-span-7">
-              {/* Product Images */}
-              <div className="sticky top-4 mb-6">
-                <ProductImageGallery 
-                  images={product?.image ? [product.image] : []} 
-                  title={product?.title || ''} 
-                />
-              </div>
-
-              {/* Desktop Product Details */}
-              <div className="hidden lg:block space-y-6">
-                <ProductHighlights productType={product?.product_type || 'file_download'} />
-                
-                <Separator />
-                
-                <ProductTabs 
-                  description={product?.description || ''} 
-                  productType={product?.product_type || 'file_download'} 
-                />
-                
-                <Separator />
-                
-                <SellerInfo 
-                  sellerId={product?.seller_id || ''} 
-                  sellerName={product?.seller_name || ''} 
-                />
-              </div>
-            </div>
-            
-            {/* Right Column - Product Info & Purchase (Desktop: 5 cols) */}
-            <div className="lg:col-span-5">
-              <div className="lg:sticky lg:top-4 space-y-6">
-                {/* Product Header */}
-                <ProductHeader 
-                  title={product?.title || ''} 
-                  price={product?.price || 0} 
-                  category={product?.category || ''} 
-                  productType={product?.product_type || 'file_download'} 
-                  purchases={product?.purchases || 0} 
-                  inStock={product?.in_stock || 0} 
-                  sellerName={product?.seller_name || ''} 
-                />
-                
-                {/* Purchase Section */}
-                <Card className="shadow-lg border-2 border-gray-100 bg-white">
-                  <CardContent className="p-4 lg:p-6">
-                    <ProductTypeOrderForm 
-                      productType={product?.product_type || 'file_download'} 
-                      onPurchase={handlePurchase} 
-                      isProcessing={isProcessing} 
-                      hasPurchased={hasPurchased} 
-                      product={product} 
-                    />
-                  </CardContent>
-                </Card>
-
-                {/* Trust Signals - Desktop */}
-                <div className="hidden lg:block">
-                  <Card className="bg-green-50 border-green-200">
-                    <CardContent className="p-4">
-                      <div className="space-y-2 text-sm">
-                        <div className="flex items-center text-green-700">
-                          <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                          <span>Tải về ngay sau khi thanh toán</span>
-                        </div>
-                        <div className="flex items-center text-green-700">
-                          <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                          <span>Bảo mật thanh toán SSL 256-bit</span>
-                        </div>
-                        <div className="flex items-center text-green-700">
-                          <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                          <span>Hoàn tiền 100% nếu không hài lòng</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Main Product Section */}
+        <ProductMainSection
+          product={product!}
+          isProcessing={isProcessing}
+          hasPurchased={hasPurchased}
+          onPurchase={handlePurchase}
+        />
 
         {/* Mobile Accordion */}
-        <div className="lg:hidden container py-4 space-y-4">
-          <ProductHighlights productType={product?.product_type || 'file_download'} />
-          
-          <ProductDetailsAccordion 
-            description={product?.description || ''} 
-            productType={product?.product_type || 'file_download'} 
-            sellerName={product?.seller_name || ''}
-          />
-        </div>
+        <ProductMobileAccordion
+          productType={product?.product_type || 'file_download'}
+          description={product?.description || ''}
+          sellerName={product?.seller_name || ''}
+        />
 
         {/* Reviews Section */}
-        <div className="bg-gray-50 border-t">
-          <div className="container py-6 lg:py-8">
-            <ProductReviews 
-              reviews={[]} 
-              averageRating={4.8} 
-              totalReviews={156} 
-            />
-          </div>
-        </div>
+        <ProductReviewsSection />
 
         {/* Related Products */}
-        <div className="container py-6">
-          <RelatedProducts 
-            currentProductId={id || ''} 
-            category={product?.category || ''} 
-          />
-        </div>
+        <ProductRelatedSection
+          currentProductId={id || ''}
+          category={product?.category || ''}
+        />
       </main>
 
       {/* Sticky Bottom Button for Mobile */}
