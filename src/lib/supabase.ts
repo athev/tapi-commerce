@@ -1,24 +1,11 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Use the actual Supabase configuration
 const supabaseUrl = 'https://vpogvgilorgkeulvnpbb.supabase.co';
 const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZwb2d2Z2lsb3Jna2V1bHZucGJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgwMTY1MjAsImV4cCI6MjA2MzU5MjUyMH0.fnYnpeGNV_FDZTswcjTdoyfaSUc4Rkt_a9F7BdH2oFw';
 
-// Create a single instance to avoid multiple GoTrueClient warnings
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    storage: localStorage,
-  },
-  global: {
-    headers: {
-      'X-Client-Info': 'supabase-js-web'
-    }
-  }
-});
+// Export the supabase client from integrations to use single instance
+export { supabase } from '@/integrations/supabase/client';
 
 export type UserProfile = {
   id: string;

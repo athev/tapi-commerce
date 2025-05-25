@@ -1,6 +1,6 @@
 
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import { mockCategories } from "@/lib/supabase";
 import CategoryCard, { CategoryCardProps } from "../products/CategoryCard";
 import { Link } from "react-router-dom";
@@ -10,15 +10,20 @@ const FeaturedCategories = () => {
     queryKey: ['featured-categories'],
     queryFn: async () => {
       try {
-        console.log('🔍 Fetching categories...');
-        console.log('🔍 Supabase client:', supabase);
+        console.log('🔍 Fetching categories from Supabase...');
+        
+        // Add timeout to prevent hanging
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
         
         const { data, error } = await supabase
           .from('categories')
           .select('*')
-          .order('name');
+          .order('name')
+          .abortSignal(controller.signal);
         
-        console.log('📊 Supabase response:', { data, error });
+        clearTimeout(timeoutId);
+        console.log('📊 Supabase categories response:', { data, error });
         
         if (error) {
           console.error('❌ Categories fetch error:', error);
@@ -60,9 +65,10 @@ const FeaturedCategories = () => {
         }));
       }
     },
-    retry: 1,
+    retry: false, // Disable retry to prevent hanging
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
   });
 
   console.log('🎯 FeaturedCategories render state:', { isLoading, error, categoriesCount: categories?.length });
