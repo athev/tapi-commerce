@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Mail, User, Key, Users, Info, Download, FileText } from "lucide-react";
 import PurchaseConfirmationModal from "./PurchaseConfirmationModal";
+import { useNavigate } from "react-router-dom";
 
 interface ProductTypeOrderFormProps {
   productType: string;
@@ -22,6 +23,7 @@ const ProductTypeOrderForm = ({
   hasPurchased,
   product 
 }: ProductTypeOrderFormProps) => {
+  const navigate = useNavigate();
   const [buyerData, setBuyerData] = useState({
     email: '',
     username: '',
@@ -72,12 +74,16 @@ const ProductTypeOrderForm = ({
     setShowConfirmModal(true);
   };
 
-  const handleConfirmPurchase = () => {
+  const handleConfirmPurchase = async () => {
     setShowConfirmModal(false);
-    if (['upgrade_account_no_pass', 'upgrade_account_with_pass'].includes(productType)) {
-      onPurchase(buyerData);
-    } else {
-      onPurchase();
+    
+    // Create order and redirect to payment page
+    try {
+      await onPurchase(buyerData);
+      // After successful order creation, redirect to payment page
+      navigate(`/payment/${product?.id || 'temp'}`);
+    } catch (error) {
+      console.error('Order creation failed:', error);
     }
   };
 

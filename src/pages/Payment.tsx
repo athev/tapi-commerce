@@ -5,10 +5,11 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { mockProducts } from "@/lib/supabase";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Check } from "lucide-react";
+import { Check, ArrowLeft, Clock } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { 
@@ -73,8 +74,8 @@ const PaymentInstructions = () => {
       
       <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
         <p className="text-yellow-700">
-          <span className="font-medium">Lưu ý:</span> Sau khi chuyển khoản thành công, vui lòng chờ trong giây lát. 
-          Đơn hàng của bạn sẽ được xác nhận và xử lý bởi đội ngũ admin của chúng tôi.
+          <span className="font-medium">Lưu ý:</span> Sau khi chuyển khoản thành công, vui lòng bấm nút 
+          "Tôi đã thanh toán" bên dưới. Đơn hàng sẽ được xác nhận và xử lý trong 1-3 phút.
         </p>
       </div>
     </div>
@@ -86,60 +87,98 @@ const Payment = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
-  const [isPaymentComplete, setIsPaymentComplete] = useState(false);
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'confirming' | 'completed'>('pending');
 
-  // Mock order data for development
-  const mockOrder = {
-    id: orderId || 'order_123',
-    user_id: user?.id || 'user1',
-    product_id: '1',
-    status: 'pending' as const,
-    created_at: new Date().toISOString(),
-  };
-
-  const mockProduct = mockProducts[0]; // Use first mock product
+  // Fetch product details for the payment page
+  const { data: product } = useQuery({
+    queryKey: ['payment-product', orderId],
+    queryFn: async () => {
+      if (!orderId) return null;
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', orderId)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!orderId
+  });
 
   useEffect(() => {
     document.title = "Thanh toán đơn hàng | DigitalMarket";
   }, []);
 
-  // Function to simulate payment completion
-  const checkPaymentStatus = async () => {
-    setIsCheckingPayment(true);
+  const handlePaymentConfirmation = async () => {
+    setIsConfirmingPayment(true);
+    setPaymentStatus('confirming');
 
-    // Simulate payment processing
-    setTimeout(() => {
-      setIsPaymentComplete(true);
-      setIsCheckingPayment(false);
+    try {
+      // Simulate payment confirmation process
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Update order status to paid
+      if (orderId && user?.id) {
+        const { error } = await supabase
+          .from('orders')
+          .update({ 
+            status: 'paid',
+            delivery_status: 'pending' 
+          })
+          .eq('product_id', orderId)
+          .eq('user_id', user.id);
+        
+        if (error) throw error;
+      }
+
+      setPaymentStatus('completed');
       
       toast({
-        title: "Thanh toán thành công",
-        description: "Đơn hàng của bạn đã được thanh toán",
+        title: "Thanh toán đã được xác nhận",
+        description: "Đơn hàng của bạn đang được xử lý. Cảm ơn bạn đã mua hàng!",
       });
-    }, 2000);
+    } catch (error) {
+      console.error('Payment confirmation error:', error);
+      setPaymentStatus('pending');
+      toast({
+        title: "Lỗi xác nhận thanh toán",
+        description: "Có lỗi xảy ra. Vui lòng thử lại hoặc liên hệ hỗ trợ.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsConfirmingPayment(false);
+    }
   };
 
-  if (isPaymentComplete) {
+  // Payment completed screen
+  if (paymentStatus === 'completed') {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
         
         <main className="flex-1 container py-12">
           <div className="max-w-3xl mx-auto">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-6 text-center">
+            <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Check className="h-8 w-8 text-green-600" />
               </div>
-              <h2 className="text-xl font-bold text-green-800 mb-2">Đơn hàng đã được thanh toán!</h2>
-              <p className="text-green-700 mb-6">Cảm ơn bạn đã mua sản phẩm của chúng tôi.</p>
+              <h2 className="text-2xl font-bold text-green-800 mb-2">Thanh toán thành công!</h2>
+              <p className="text-green-700 mb-6">
+                Đơn hàng của bạn đã được xác nhận và đang được xử lý. 
+                Sản phẩm sẽ được gửi đến bạn trong ít phút.
+              </p>
               <div className="space-y-3">
-                <Button className="bg-marketplace-primary" onClick={() => navigate(`/product/${mockProduct.id}`)}>
-                  Tải xuống sản phẩm
+                <Button 
+                  className="bg-marketplace-primary hover:bg-marketplace-primary/90" 
+                  onClick={() => navigate(`/product/${orderId}`)}
+                >
+                  Về trang sản phẩm
                 </Button>
                 <br />
                 <Button variant="outline" onClick={() => navigate('/my-purchases')}>
-                  Xem tất cả đơn hàng
+                  Xem đơn hàng của tôi
                 </Button>
               </div>
             </div>
@@ -151,57 +190,115 @@ const Payment = () => {
     );
   }
 
+  // Payment confirming screen
+  if (paymentStatus === 'confirming') {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        
+        <main className="flex-1 container py-12">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="h-8 w-8 text-blue-600 animate-pulse" />
+              </div>
+              <h2 className="text-xl font-bold text-blue-800 mb-2">Đang xác nhận thanh toán...</h2>
+              <p className="text-blue-700 mb-4">
+                Vui lòng chờ trong giây lát. Chúng tôi đang xác nhận thanh toán của bạn.
+              </p>
+              <div className="animate-pulse text-blue-600">
+                Thời gian xử lý: 1-3 phút
+              </div>
+            </div>
+          </div>
+        </main>
+        
+        <Footer />
+      </div>
+    );
+  }
+
+  // Main payment screen
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       
       <main className="flex-1 container py-12">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8 text-center">Thanh toán đơn hàng</h1>
+          {/* Header */}
+          <div className="flex items-center mb-8">
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate(`/product/${orderId}`)}
+              className="mr-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Quay lại
+            </Button>
+            <h1 className="text-3xl font-bold">Thanh toán đơn hàng</h1>
+          </div>
           
+          {/* Order Summary */}
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle>Chi tiết đơn hàng #{mockOrder.id.slice(0, 8).toUpperCase()}</CardTitle>
+              <CardTitle>Chi tiết đơn hàng</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center gap-4 pb-4 border-b">
                   <div className="h-16 w-16 bg-gray-100 rounded overflow-hidden">
                     <img 
-                      src={mockProduct.image || '/placeholder.svg'} 
-                      alt={mockProduct.title}
+                      src={product?.image || '/placeholder.svg'} 
+                      alt={product?.title}
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div>
-                    <h3 className="font-medium">{mockProduct.title}</h3>
+                  <div className="flex-1">
+                    <h3 className="font-medium">{product?.title}</h3>
                     <p className="text-sm text-gray-500">
-                      Người bán: {mockProduct.seller_name}
+                      Người bán: {product?.seller_name}
                     </p>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span>Email người mua:</span>
+                    <span className="font-medium">{user?.email}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Loại sản phẩm:</span>
+                    <span className="font-medium">
+                      {product?.product_type === 'file_download' ? 'File tải về' : 
+                       product?.product_type === 'license_key_delivery' ? 'Mã kích hoạt' :
+                       'Dịch vụ khác'}
+                    </span>
                   </div>
                 </div>
                 
                 <div className="flex justify-between items-center text-lg font-bold py-2 border-t">
                   <span>Tổng thanh toán:</span>
-                  <span className="text-marketplace-primary">{formatPrice(mockProduct.price)}</span>
+                  <span className="text-marketplace-primary">{formatPrice(product?.price || 0)}</span>
                 </div>
               </div>
             </CardContent>
-            <CardFooter className="flex justify-between">
-              <Button variant="outline" onClick={() => navigate(`/product/${mockProduct.id}`)}>
-                Quay lại
-              </Button>
-              <Button onClick={checkPaymentStatus} disabled={isCheckingPayment}>
-                {isCheckingPayment ? (
+            <CardFooter>
+              <Button 
+                className="w-full bg-green-600 hover:bg-green-700" 
+                onClick={handlePaymentConfirmation}
+                disabled={isConfirmingPayment}
+              >
+                {isConfirmingPayment ? (
                   <>
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Đang xử lý thanh toán...
+                    Đang xác nhận...
                   </>
-                ) : "Xác nhận đã thanh toán"}
+                ) : "Tôi đã thanh toán"}
               </Button>
             </CardFooter>
           </Card>
           
+          {/* Payment Instructions */}
           <PaymentInstructions />
         </div>
       </main>

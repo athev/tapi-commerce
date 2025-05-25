@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Heart, Zap } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useNavigate } from "react-router-dom";
 
 interface StickyBottomButtonProps {
   onPurchase: () => void;
@@ -9,6 +10,7 @@ interface StickyBottomButtonProps {
   hasPurchased: boolean;
   productType: string;
   price: number;
+  productId?: string;
 }
 
 const formatPrice = (price: number) => {
@@ -24,13 +26,22 @@ const StickyBottomButton = ({
   isProcessing,
   hasPurchased,
   productType,
-  price
+  price,
+  productId
 }: StickyBottomButtonProps) => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
 
   if (!isMobile || (hasPurchased && productType === 'file_download')) {
     return null;
   }
+
+  const handlePurchase = async () => {
+    await onPurchase();
+    if (productId) {
+      navigate(`/payment/${productId}`);
+    }
+  };
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 safe-area-pb z-50 shadow-lg">
@@ -46,7 +57,7 @@ const StickyBottomButton = ({
         <div className="flex-1 flex items-center space-x-3">
           <Button 
             className="flex-1 bg-red-500 hover:bg-red-600 text-white h-12 font-semibold text-base"
-            onClick={onPurchase}
+            onClick={handlePurchase}
             disabled={isProcessing}
           >
             {isProcessing ? (

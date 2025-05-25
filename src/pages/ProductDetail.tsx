@@ -99,12 +99,13 @@ const ProductDetail = () => {
 
     setIsProcessing(true);
     try {
+      // Create order with pending status
       const { data: order, error } = await supabase
         .from('orders')
         .insert([{
           user_id: user.id,
           product_id: product.id,
-          status: 'paid',
+          status: 'pending', // Changed from 'paid' to 'pending'
           buyer_email: buyerData?.email || user.email || '',
           buyer_data: buyerData || null,
           delivery_status: 'pending'
@@ -117,19 +118,18 @@ const ProductDetail = () => {
         throw error;
       }
 
-      if (product.product_type === 'file_download') {
-        setHasPurchased(true);
-      }
-
       toast({
-        title: "Đặt hàng thành công!",
-        description: "Cảm ơn bạn đã mua sản phẩm. Thông tin sẽ được xử lý ngay."
+        title: "Đơn hàng đã được tạo!",
+        description: "Đang chuyển đến trang thanh toán..."
       });
+
+      // Don't set hasPurchased here - only after payment confirmation
+      
     } catch (error) {
       console.error('Purchase error:', error);
       toast({
-        title: "Lỗi thanh toán",
-        description: "Có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại.",
+        title: "Lỗi tạo đơn hàng",
+        description: "Có lỗi xảy ra khi tạo đơn hàng. Vui lòng thử lại.",
         variant: "destructive"
       });
     } finally {
