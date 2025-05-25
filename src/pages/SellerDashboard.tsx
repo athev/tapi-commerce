@@ -14,6 +14,7 @@ import SellerPromotions from "@/components/seller/SellerPromotions";
 import SellerReviews from "@/components/seller/SellerReviews";
 import SellerAnalytics from "@/components/seller/SellerAnalytics";
 import NotificationCenter from "@/components/seller/NotificationCenter";
+import SellerStatusHandler from "@/components/seller/SellerStatusHandler";
 
 const SellerDashboard = () => {
   const { profile } = useAuth();
@@ -43,67 +44,97 @@ const SellerDashboard = () => {
             <p className="text-gray-500">Xin chào, {profile?.full_name}</p>
           </div>
           
-          <Button 
-            onClick={() => navigate('/seller/products/add')}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            Thêm mới
-          </Button>
+          {/* Only show the add button for approved sellers */}
+          {profile?.role === 'seller' && (
+            <Button 
+              onClick={() => navigate('/seller/products/add')}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Thêm mới
+            </Button>
+          )}
         </div>
         
-        <Tabs 
-          value={getActiveTab()}
-          onValueChange={(value) => {
-            switch(value) {
-              case 'dashboard':
-                navigate('/seller');
-                break;
-              case 'products':
-                navigate('/seller/products');
-                break;
-              case 'orders':
-                navigate('/seller/orders');
-                break;
-              case 'add':
-                navigate('/seller/products/add');
-                break;
-              case 'promotions':
-                navigate('/seller/promotions');
-                break;
-              case 'reviews':
-                navigate('/seller/reviews');
-                break;
-              case 'analytics':
-                navigate('/seller/analytics');
-                break;
-              case 'notifications':
-                navigate('/seller/notifications');
-                break;
-            }
-          }}
-          className="mb-8"
-        >
-          <TabsList className="grid w-full grid-cols-8">
-            <TabsTrigger value="dashboard">Tổng quan</TabsTrigger>
-            <TabsTrigger value="products">Sản phẩm</TabsTrigger>
-            <TabsTrigger value="orders">Đơn hàng</TabsTrigger>
-            <TabsTrigger value="promotions">Khuyến mãi</TabsTrigger>
-            <TabsTrigger value="reviews">Đánh giá</TabsTrigger>
-            <TabsTrigger value="analytics">Phân tích</TabsTrigger>
-            <TabsTrigger value="notifications">Thông báo</TabsTrigger>
-            <TabsTrigger value="add">Thêm mới</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {/* Only show tabs for approved sellers */}
+        {profile?.role === 'seller' && (
+          <Tabs 
+            value={getActiveTab()}
+            onValueChange={(value) => {
+              switch(value) {
+                case 'dashboard':
+                  navigate('/seller');
+                  break;
+                case 'products':
+                  navigate('/seller/products');
+                  break;
+                case 'orders':
+                  navigate('/seller/orders');
+                  break;
+                case 'add':
+                  navigate('/seller/products/add');
+                  break;
+                case 'promotions':
+                  navigate('/seller/promotions');
+                  break;
+                case 'reviews':
+                  navigate('/seller/reviews');
+                  break;
+                case 'analytics':
+                  navigate('/seller/analytics');
+                  break;
+                case 'notifications':
+                  navigate('/seller/notifications');
+                  break;
+              }
+            }}
+            className="mb-8"
+          >
+            <TabsList className="grid w-full grid-cols-8">
+              <TabsTrigger value="dashboard">Tổng quan</TabsTrigger>
+              <TabsTrigger value="products">Sản phẩm</TabsTrigger>
+              <TabsTrigger value="orders">Đơn hàng</TabsTrigger>
+              <TabsTrigger value="promotions">Khuyến mãi</TabsTrigger>
+              <TabsTrigger value="reviews">Đánh giá</TabsTrigger>
+              <TabsTrigger value="analytics">Phân tích</TabsTrigger>
+              <TabsTrigger value="notifications">Thông báo</TabsTrigger>
+              <TabsTrigger value="add">Thêm mới</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
         
         <Routes>
-          <Route index element={<SellerStats />} />
+          <Route index element={
+            <SellerStatusHandler>
+              <SellerStats />
+            </SellerStatusHandler>
+          } />
           <Route path="/products" element={<SellerProducts />} />
           <Route path="/products/add" element={<SellerAddProduct />} />
-          <Route path="/orders" element={<SellerOrders />} />
-          <Route path="/promotions" element={<SellerPromotions />} />
-          <Route path="/reviews" element={<SellerReviews />} />
-          <Route path="/analytics" element={<SellerAnalytics />} />
-          <Route path="/notifications" element={<NotificationCenter />} />
+          <Route path="/orders" element={
+            <SellerStatusHandler>
+              <SellerOrders />
+            </SellerStatusHandler>
+          } />
+          <Route path="/promotions" element={
+            <SellerStatusHandler>
+              <SellerPromotions />
+            </SellerStatusHandler>
+          } />
+          <Route path="/reviews" element={
+            <SellerStatusHandler>
+              <SellerReviews />
+            </SellerStatusHandler>
+          } />
+          <Route path="/analytics" element={
+            <SellerStatusHandler>
+              <SellerAnalytics />
+            </SellerStatusHandler>
+          } />
+          <Route path="/notifications" element={
+            <SellerStatusHandler>
+              <NotificationCenter />
+            </SellerStatusHandler>
+          } />
         </Routes>
       </main>
       

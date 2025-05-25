@@ -9,6 +9,7 @@ import SellerProductsFilters from "./SellerProductsFilters";
 import SellerProductItem from "./SellerProductItem";
 import SellerProductsEmptyState from "./SellerProductsEmptyState";
 import SellerProductsLoading from "./SellerProductsLoading";
+import SellerStatusHandler from "./SellerStatusHandler";
 
 const SellerProducts = () => {
   const { user, profile } = useAuth();
@@ -46,7 +47,7 @@ const SellerProducts = () => {
       console.log('Fetched seller products:', data);
       return data;
     },
-    enabled: !!user
+    enabled: !!user && profile?.role === 'seller'
   });
 
   const filteredProducts = products?.filter(product => {
@@ -80,63 +81,37 @@ const SellerProducts = () => {
     }
   };
 
-  // Block access if not logged in
-  if (!user) {
-    return (
-      <div className="text-center py-12 bg-gray-50 rounded-lg">
-        <h3 className="text-lg font-medium mb-2">Bạn cần đăng nhập</h3>
-        <p className="text-gray-500">
-          Vui lòng đăng nhập để truy cập trang này.
-        </p>
-      </div>
-    );
-  }
-
-  // Check if user is not a seller yet
-  if (!profile || profile.role !== 'seller') {
-    return (
-      <div className="text-center py-12 bg-gray-50 rounded-lg">
-        <h3 className="text-lg font-medium mb-2">Bạn chưa đăng ký gian hàng</h3>
-        <p className="text-gray-500 mb-4">
-          Bấm vào đây để tạo gian hàng đầu tiên
-        </p>
-        <button className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700">
-          Đăng ký làm người bán
-        </button>
-      </div>
-    );
-  }
-
-  if (isLoading) {
-    return <SellerProductsLoading />;
-  }
-
+  // Use SellerStatusHandler to handle different user states
   return (
-    <div>
-      <SellerProductsHeader productCount={products?.length || 0} />
-      
-      <SellerProductsFilters
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        category={category}
-        onCategoryChange={setCategory}
-      />
-      
-      {filteredProducts && filteredProducts.length > 0 ? (
-        <div className="space-y-4">
-          {filteredProducts.map((product) => (
-            <SellerProductItem
-              key={product.id}
-              product={product}
-              isDeleting={isDeleting === product.id}
-              onDelete={handleDelete}
-            />
-          ))}
-        </div>
-      ) : (
-        <SellerProductsEmptyState />
-      )}
-    </div>
+    <SellerStatusHandler>
+      <div>
+        <SellerProductsHeader productCount={products?.length || 0} />
+        
+        <SellerProductsFilters
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          category={category}
+          onCategoryChange={setCategory}
+        />
+        
+        {isLoading ? (
+          <SellerProductsLoading />
+        ) : filteredProducts && filteredProducts.length > 0 ? (
+          <div className="space-y-4">
+            {filteredProducts.map((product) => (
+              <SellerProductItem
+                key={product.id}
+                product={product}
+                isDeleting={isDeleting === product.id}
+                onDelete={handleDelete}
+              />
+            ))}
+          </div>
+        ) : (
+          <SellerProductsEmptyState />
+        )}
+      </div>
+    </SellerStatusHandler>
   );
 };
 
