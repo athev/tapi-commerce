@@ -68,3 +68,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export { AuthContext };
+
+// Re-export the useAuth hook for convenience
+export { useAuth } from '@/hooks/useAuth';

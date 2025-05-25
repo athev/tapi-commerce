@@ -1,5 +1,4 @@
 
-import { ReturnType } from 'react';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 export type AuthContextType = {
