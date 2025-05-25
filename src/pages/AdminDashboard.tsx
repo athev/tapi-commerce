@@ -9,6 +9,7 @@ import AdminProducts from "@/components/admin/AdminProducts";
 import AdminOrders from "@/components/admin/AdminOrders";
 import AdminUsers from "@/components/admin/AdminUsers";
 import AdminStats from "@/components/admin/AdminStats";
+import AdminSellerApplications from "@/components/admin/AdminSellerApplications";
 
 const AdminDashboard = () => {
   const { profile } = useAuth();
@@ -30,12 +31,14 @@ const AdminDashboard = () => {
           value={
             currentPath.includes('/admin/users') ? 'users' :
             currentPath.includes('/admin/orders') ? 'orders' :
+            currentPath.includes('/admin/seller-applications') ? 'seller-applications' :
             currentPath.includes('/admin/stats') ? 'stats' : 'products'
           }
           onValueChange={(value) => {
             if (value === 'products') navigate('/admin/products');
             else if (value === 'orders') navigate('/admin/orders');
             else if (value === 'users') navigate('/admin/users');
+            else if (value === 'seller-applications') navigate('/admin/seller-applications');
             else if (value === 'stats') navigate('/admin/stats');
           }}
           className="mb-8"
@@ -44,6 +47,7 @@ const AdminDashboard = () => {
             <TabsTrigger value="products">Sản phẩm</TabsTrigger>
             <TabsTrigger value="orders">Đơn hàng</TabsTrigger>
             <TabsTrigger value="users">Người dùng</TabsTrigger>
+            <TabsTrigger value="seller-applications">Đơn đăng ký</TabsTrigger>
             <TabsTrigger value="stats">Thống kê</TabsTrigger>
           </TabsList>
         </Tabs>
@@ -53,6 +57,7 @@ const AdminDashboard = () => {
           <Route path="/products" element={<AdminProducts />} />
           <Route path="/orders" element={<AdminOrders />} />
           <Route path="/users" element={<AdminUsers />} />
+          <Route path="/seller-applications" element={<AdminSellerApplications />} />
           <Route path="/stats" element={<AdminStats />} />
         </Routes>
       </main>
