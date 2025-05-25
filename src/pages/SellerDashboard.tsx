@@ -55,7 +55,7 @@ const SellerDashboard = () => {
         </Tabs>
         
         <Routes>
-          <Route path="/" element={<SellerProducts />} />
+          <Route index element={<SellerProducts />} />
           <Route path="/products" element={<SellerProducts />} />
           <Route path="/products/add" element={<SellerAddProduct />} />
           <Route path="/orders" element={<SellerOrders />} />

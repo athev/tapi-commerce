@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, ShoppingCart, User, LogOut } from "lucide-react";
+import { Search, ShoppingCart, User, LogOut, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { 
@@ -47,6 +47,14 @@ const Navbar = () => {
           <Link to="/help" className="text-sm font-medium transition-colors hover:text-marketplace-primary">
             Hỗ trợ
           </Link>
+          
+          {/* Seller button for authenticated sellers */}
+          {user && (profile?.role === 'seller' || profile?.role === 'admin') && (
+            <Link to="/seller" className="text-sm font-medium transition-colors hover:text-marketplace-primary bg-green-50 px-3 py-2 rounded-md border border-green-200 flex items-center gap-2">
+              <Store className="h-4 w-4" />
+              Kênh người bán
+            </Link>
+          )}
         </nav>
 
         {/* Search */}
@@ -92,9 +100,17 @@ const Navbar = () => {
                   <DropdownMenuItem asChild>
                     <Link to="/my-purchases">Sản phẩm đã mua</Link>
                   </DropdownMenuItem>
-                  {profile?.role === 'seller' && (
+                  {(profile?.role === 'seller' || profile?.role === 'admin') && (
                     <DropdownMenuItem asChild>
-                      <Link to="/seller/dashboard">Kênh người bán</Link>
+                      <Link to="/seller">
+                        <Store className="mr-2 h-4 w-4" />
+                        Kênh người bán
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {profile?.role === 'admin' && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin">Quản trị viên</Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
