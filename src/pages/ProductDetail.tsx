@@ -18,66 +18,66 @@ import ProductHeader from "@/components/products/ProductHeader";
 import ProductTabs from "@/components/products/ProductTabs";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft } from "lucide-react";
-
 const ProductDetail = () => {
-  const { id } = useParams();
-  const { user, isOnline } = useAuth();
+  const {
+    id
+  } = useParams();
+  const {
+    user,
+    isOnline
+  } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasPurchased, setHasPurchased] = useState(false);
-
-  const { data: product, isLoading, isError } = useQuery({
+  const {
+    data: product,
+    isLoading,
+    isError
+  } = useQuery({
     queryKey: ['product', id],
     queryFn: async () => {
       if (!isOnline) {
         throw new Error("Không có kết nối internet");
       }
-
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .eq('id', id)
-        .single();
-
+      const {
+        data,
+        error
+      } = await supabase.from('products').select('*').eq('id', id).single();
       if (error) {
         console.error("Error fetching product:", error);
         throw error;
       }
-      
       return data as Product;
     },
-    retry: false,
+    retry: false
   });
 
   // Check if user has already purchased this product (only for file_download type)
-  const { data: existingOrder } = useQuery({
+  const {
+    data: existingOrder
+  } = useQuery({
     queryKey: ['user-order', id, user?.id],
     queryFn: async () => {
       if (!user?.id || !id || !product) return null;
-      
+
       // Only check for existing orders for file_download type
       if (product.product_type !== 'file_download') {
         return null;
       }
-      
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('product_id', id)
-        .eq('status', 'paid')
-        .single();
-
+      const {
+        data,
+        error
+      } = await supabase.from('orders').select('*').eq('user_id', user.id).eq('product_id', id).eq('status', 'paid').single();
       if (error && error.code !== 'PGRST116') {
         throw error;
       }
-      
       return data;
     },
-    enabled: !!user?.id && !!id && !!product,
+    enabled: !!user?.id && !!id && !!product
   });
-
   useEffect(() => {
     // Only set hasPurchased to true for file_download products
     if (existingOrder && product?.product_type === 'file_download') {
@@ -86,22 +86,18 @@ const ProductDetail = () => {
       setHasPurchased(false);
     }
   }, [existingOrder, product?.product_type]);
-
   const handlePurchase = async (buyerData?: any) => {
     if (!user) {
       toast({
         title: "Vui lòng đăng nhập",
         description: "Bạn cần đăng nhập để mua sản phẩm này",
-        variant: "destructive",
+        variant: "destructive"
       });
       navigate('/login');
       return;
     }
-
     if (!product) return;
-
     setIsProcessing(true);
-
     try {
       console.log('Creating order with data:', {
         user_id: user.id,
@@ -114,62 +110,49 @@ const ProductDetail = () => {
           title: product.title
         }
       });
-
-      const { data: order, error } = await supabase
-        .from('orders')
-        .insert([
-          {
-            user_id: user.id,
-            product_id: product.id,
-            status: 'paid',
-            buyer_email: buyerData?.email || user.email || '',
-            buyer_data: buyerData || null,
-            delivery_status: 'pending'
-          }
-        ])
-        .select()
-        .single();
-
+      const {
+        data: order,
+        error
+      } = await supabase.from('orders').insert([{
+        user_id: user.id,
+        product_id: product.id,
+        status: 'paid',
+        buyer_email: buyerData?.email || user.email || '',
+        buyer_data: buyerData || null,
+        delivery_status: 'pending'
+      }]).select().single();
       if (error) {
         console.error('Error creating order:', error);
         throw error;
       }
-
       console.log('Order created successfully:', order);
-      
+
       // Only set hasPurchased for file_download products
       if (product.product_type === 'file_download') {
         setHasPurchased(true);
       }
-
       toast({
         title: "Đặt hàng thành công!",
-        description: "Cảm ơn bạn đã mua sản phẩm. Thông tin sẽ được xử lý ngay.",
+        description: "Cảm ơn bạn đã mua sản phẩm. Thông tin sẽ được xử lý ngay."
       });
-
     } catch (error) {
       console.error('Purchase error:', error);
       toast({
         title: "Lỗi thanh toán",
         description: "Có lỗi xảy ra khi xử lý đơn hàng. Vui lòng thử lại.",
-        variant: "destructive",
+        variant: "destructive"
       });
     } finally {
       setIsProcessing(false);
     }
   };
-
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen bg-gray-50">
+    return <div className="flex justify-center items-center h-screen bg-gray-50">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-marketplace-primary"></div>
-      </div>
-    );
+      </div>;
   }
-
   if (isError) {
-    return (
-      <div className="flex justify-center items-center h-screen bg-gray-50">
+    return <div className="flex justify-center items-center h-screen bg-gray-50">
         <Card className="max-w-md">
           <CardHeader>
             <CardTitle>Lỗi</CardTitle>
@@ -179,12 +162,9 @@ const ProductDetail = () => {
             <Button onClick={() => navigate('/')}>Về trang chủ</Button>
           </CardContent>
         </Card>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+  return <div className="flex flex-col min-h-screen bg-gray-50">
       <Navbar />
       
       <main className="flex-1">
@@ -192,12 +172,7 @@ const ProductDetail = () => {
         <div className="bg-white border-b">
           <div className="container py-3">
             <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => navigate('/')}
-                className="p-0 h-auto"
-              >
+              <Button variant="ghost" size="sm" onClick={() => navigate('/')} className="p-0 h-auto">
                 <ArrowLeft className="h-4 w-4 mr-1" />
                 Trang chủ
               </Button>
@@ -215,10 +190,7 @@ const ProductDetail = () => {
             {/* Left - Product Images */}
             <div className="lg:col-span-1">
               <div className="sticky top-6">
-                <ProductImageGallery 
-                  images={product?.image ? [product.image] : []} 
-                  title={product?.title || ''} 
-                />
+                <ProductImageGallery images={product?.image ? [product.image] : []} title={product?.title || ''} />
               </div>
             </div>
             
@@ -226,30 +198,13 @@ const ProductDetail = () => {
             <div className="lg:col-span-1">
               <div className="space-y-6">
                 {/* Product Information */}
-                <ProductHeader
-                  title={product?.title || ''}
-                  price={product?.price || 0}
-                  category={product?.category || ''}
-                  productType={product?.product_type || 'file_download'}
-                  purchases={product?.purchases || 0}
-                  inStock={product?.in_stock || 0}
-                  sellerName={product?.seller_name || ''}
-                />
+                <ProductHeader title={product?.title || ''} price={product?.price || 0} category={product?.category || ''} productType={product?.product_type || 'file_download'} purchases={product?.purchases || 0} inStock={product?.in_stock || 0} sellerName={product?.seller_name || ''} />
                 
                 {/* Purchase Section - Separated with clear visual distinction */}
                 <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
-                  <div className="bg-gradient-to-r from-marketplace-primary/5 to-marketplace-primary/10 px-6 py-4 border-b">
-                    <h3 className="font-semibold text-lg text-gray-900">Mua ngay</h3>
-                    <p className="text-sm text-gray-600 mt-1">Thanh toán an toàn, giao hàng tức thì</p>
-                  </div>
+                  
                   <div className="p-6">
-                    <ProductTypeOrderForm 
-                      productType={product?.product_type || 'file_download'}
-                      onPurchase={handlePurchase}
-                      isProcessing={isProcessing}
-                      hasPurchased={hasPurchased}
-                      product={product}
-                    />
+                    <ProductTypeOrderForm productType={product?.product_type || 'file_download'} onPurchase={handlePurchase} isProcessing={isProcessing} hasPurchased={hasPurchased} product={product} />
                   </div>
                 </div>
               </div>
@@ -260,44 +215,29 @@ const ProductDetail = () => {
         {/* Product Details Tabs */}
         <div className="bg-white border-t">
           <div className="container py-8 lg:py-12">
-            <ProductTabs 
-              description={product?.description || ''} 
-              productType={product?.product_type || 'file_download'}
-            />
+            <ProductTabs description={product?.description || ''} productType={product?.product_type || 'file_download'} />
           </div>
         </div>
 
         {/* Seller Info */}
         <div className="container py-6 lg:py-8">
-          <SellerInfo 
-            sellerId={product?.seller_id || ''} 
-            sellerName={product?.seller_name || ''}
-          />
+          <SellerInfo sellerId={product?.seller_id || ''} sellerName={product?.seller_name || ''} />
         </div>
 
         {/* Reviews Section */}
         <div className="bg-white border-t">
           <div className="container py-8 lg:py-12">
-            <ProductReviews 
-              reviews={[]}
-              averageRating={4.8}
-              totalReviews={156}
-            />
+            <ProductReviews reviews={[]} averageRating={4.8} totalReviews={156} />
           </div>
         </div>
 
         {/* Related Products */}
         <div className="container py-6 lg:py-8">
-          <RelatedProducts 
-            currentProductId={id || ''}
-            category={product?.category || ''}
-          />
+          <RelatedProducts currentProductId={id || ''} category={product?.category || ''} />
         </div>
       </main>
       
       <Footer />
-    </div>
-  );
+    </div>;
 };
-
 export default ProductDetail;

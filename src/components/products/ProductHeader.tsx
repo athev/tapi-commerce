@@ -1,11 +1,9 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Star, Heart, Share2, Flag, Shield, Award, Zap } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-
 interface ProductHeaderProps {
   title: string;
   price: number;
@@ -18,15 +16,13 @@ interface ProductHeaderProps {
   sellerName: string;
   sellerVerified?: boolean;
 }
-
 const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('vi-VN', { 
-    style: 'currency', 
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
     currency: 'VND',
-    maximumFractionDigits: 0 
+    maximumFractionDigits: 0
   }).format(price);
 };
-
 const getProductTypeLabel = (type: string) => {
   const types = {
     file_download: 'Tệp tải về',
@@ -37,7 +33,6 @@ const getProductTypeLabel = (type: string) => {
   };
   return types[type as keyof typeof types] || type;
 };
-
 const getShortDescription = (type: string) => {
   const descriptions = {
     file_download: 'Tải về ngay lập tức sau khi thanh toán - Chất lượng cao, bảo mật',
@@ -48,39 +43,37 @@ const getShortDescription = (type: string) => {
   };
   return descriptions[type as keyof typeof descriptions] || 'Sản phẩm chất lượng cao - Giao hàng nhanh chóng';
 };
-
-const ProductHeader = ({ 
-  title, 
-  price, 
-  category, 
-  productType, 
-  rating = 4.8, 
-  reviews = 156, 
+const ProductHeader = ({
+  title,
+  price,
+  category,
+  productType,
+  rating = 4.8,
+  reviews = 156,
   purchases = 0,
   inStock = 0,
   sellerName,
   sellerVerified = true
 }: ProductHeaderProps) => {
   const [isFavorited, setIsFavorited] = useState(false);
-  const { toast } = useToast();
-
+  const {
+    toast
+  } = useToast();
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
         title: title,
-        url: window.location.href,
+        url: window.location.href
       });
     } else {
       navigator.clipboard.writeText(window.location.href);
       toast({
         title: "Đã sao chép liên kết",
-        description: "Liên kết sản phẩm đã được sao chép vào clipboard",
+        description: "Liên kết sản phẩm đã được sao chép vào clipboard"
       });
     }
   };
-
-  return (
-    <div className="space-y-4">
+  return <div className="space-y-4">
       {/* Category Badge */}
       <div className="flex items-center justify-between">
         <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-sm px-3 py-1">
@@ -89,12 +82,7 @@ const ProductHeader = ({
         
         {/* Action Buttons */}
         <div className="flex items-center space-x-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsFavorited(!isFavorited)}
-            className={`h-8 w-8 p-0 ${isFavorited ? "text-red-500" : "text-gray-500"}`}
-          >
+          <Button variant="ghost" size="sm" onClick={() => setIsFavorited(!isFavorited)} className={`h-8 w-8 p-0 ${isFavorited ? "text-red-500" : "text-gray-500"}`}>
             <Heart className={`h-4 w-4 ${isFavorited ? "fill-current" : ""}`} />
           </Button>
           <Button variant="ghost" size="sm" onClick={handleShare} className="h-8 w-8 p-0 text-gray-500">
@@ -128,9 +116,7 @@ const ProductHeader = ({
       <div className="flex flex-wrap items-center gap-4 text-sm">
         <div className="flex items-center space-x-2">
           <div className="flex">
-            {Array(5).fill(0).map((_, i) => (
-              <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            ))}
+            {Array(5).fill(0).map((_, i) => <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />)}
           </div>
           <span className="font-medium">{rating}</span>
           <span className="text-gray-500">({reviews} đánh giá)</span>
@@ -151,11 +137,9 @@ const ProductHeader = ({
           <div className="text-3xl lg:text-4xl font-bold text-marketplace-primary">
             {formatPrice(price)}
           </div>
-          {purchases > 50 && (
-            <Badge className="bg-orange-100 text-orange-700 border-orange-200 text-xs">
+          {purchases > 50 && <Badge className="bg-orange-100 text-orange-700 border-orange-200 text-xs">
               Bán chạy
-            </Badge>
-          )}
+            </Badge>}
         </div>
         <div className="text-sm text-gray-500">
           Giá đã bao gồm VAT • Thanh toán an toàn
@@ -183,31 +167,8 @@ const ProductHeader = ({
 
       {/* Seller Info */}
       <Card className="bg-gray-50 border-gray-200">
-        <div className="p-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-marketplace-primary rounded-full flex items-center justify-center text-white font-semibold text-sm">
-              {sellerName.charAt(0).toUpperCase()}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center space-x-2 mb-1">
-                <h3 className="font-semibold text-sm truncate">{sellerName}</h3>
-                {sellerVerified && (
-                  <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs px-2 py-0.5">
-                    <Shield className="h-3 w-3 mr-1" />
-                    Đã xác minh
-                  </Badge>
-                )}
-              </div>
-              <div className="flex items-center space-x-2 text-xs text-gray-600">
-                <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                <span>4.9 • Phản hồi nhanh • Online</span>
-              </div>
-            </div>
-          </div>
-        </div>
+        
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default ProductHeader;
