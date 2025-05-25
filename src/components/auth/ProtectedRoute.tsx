@@ -1,7 +1,7 @@
 
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProtectedRouteProps {

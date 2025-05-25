@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context";
 import { toast } from "sonner";
 import RegisterForm from "@/components/auth/RegisterUserForm";
 import RegisterPageLayout from "@/components/auth/RegisterPageLayout";

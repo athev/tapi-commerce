@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/context";
 import { supabase, Order, Product } from "@/lib/supabase";
 import { Download, User, ShoppingBag } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";

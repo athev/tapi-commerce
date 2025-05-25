@@ -1,10 +1,6 @@
 
-import { createContext, ReactNode } from 'react';
-import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { useAuthInitialization } from '@/hooks/useAuthInitialization';
-import { useAuthDebugLogging } from '@/hooks/useAuthDebugLogging';
-import { AuthContextType } from '@/context/AuthContextTypes';
+import { createContext, useContext } from 'react';
+import { AuthContextType } from './AuthContextTypes';
 
 const AuthContext = createContext<AuthContextType>({
   session: null,
@@ -19,55 +15,12 @@ const AuthContext = createContext<AuthContextType>({
   isOnline: true,
 });
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const isOnline = useNetworkStatus();
-  
-  const {
-    session,
-    setSession,
-    user,
-    setUser,
-    profile,
-    setProfile,
-    loading,
-    setLoading,
-    signIn,
-    signUp,
-    signOut,
-    refreshProfile,
-    fetchProfile
-  } = useSupabaseAuth(isOnline);
-
-  const { profileLoading } = useAuthInitialization(
-    isOnline,
-    setSession,
-    setUser,
-    setProfile,
-    setLoading,
-    fetchProfile
-  );
-
-  useAuthDebugLogging(user, profile, session, loading, profileLoading, isOnline);
-
-  return (
-    <AuthContext.Provider value={{
-      session,
-      user,
-      profile,
-      loading,
-      profileLoading,
-      signIn,
-      signUp,
-      signOut,
-      refreshProfile,
-      isOnline,
-    }}>
-      {children}
-    </AuthContext.Provider>
-  );
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
 
 export { AuthContext };
-
-// Re-export the useAuth hook for convenience
-export { useAuth } from '@/hooks/useAuth';
