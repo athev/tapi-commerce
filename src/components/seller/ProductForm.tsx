@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useProductUpload, ProductFormData } from "@/hooks/useProductUpload";
 import { useAuth } from "@/context/AuthContext";
+import { useSellerRegistration } from "@/hooks/useSellerRegistration";
 import ProductBasicInfo from "./ProductBasicInfo";
 import ProductDescription from "./ProductDescription";
 import ProductImageUpload from "./ProductImageUpload";
@@ -14,6 +15,7 @@ const ProductForm = () => {
   const navigate = useNavigate();
   const { user, profile, session, loading } = useAuth();
   const { isSubmitting, submitProduct } = useProductUpload();
+  const { isRegistering, registerAsSeller } = useSellerRegistration();
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   
   const [formData, setFormData] = useState<ProductFormData>({
@@ -28,7 +30,6 @@ const ProductForm = () => {
 
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({});
 
-  // Add timeout for loading state to prevent infinite loading
   useEffect(() => {
     console.log('ProductForm auth state:', { user: !!user, profile: !!profile, session: !!session, loading });
     
@@ -36,7 +37,7 @@ const ProductForm = () => {
       const timer = setTimeout(() => {
         console.log('Loading timeout reached, forcing render');
         setLoadingTimeout(true);
-      }, 5000); // 5 second timeout
+      }, 5000);
       
       return () => clearTimeout(timer);
     } else {
@@ -44,7 +45,6 @@ const ProductForm = () => {
     }
   }, [loading, user, profile, session]);
 
-  // Show loading state only while auth is actively loading (with timeout)
   if (loading && !loadingTimeout) {
     return (
       <Card>
@@ -58,7 +58,6 @@ const ProductForm = () => {
     );
   }
 
-  // Show auth error if user is not authenticated
   if (!user || !session) {
     console.log('User not authenticated, redirecting to login');
     return (
@@ -80,15 +79,31 @@ const ProductForm = () => {
     );
   }
 
-  // Show seller registration prompt if profile is missing or loading timed out
-  if (!profile || loadingTimeout) {
-    console.log('Profile missing or loading timed out:', { profile: !!profile, loadingTimeout });
+  const handleSellerRegistration = async () => {
+    const success = await registerAsSeller();
+    if (success) {
+      console.log('Seller registration successful, profile should refresh');
+    }
+  };
+
+  if (!profile || loadingTimeout || (profile && profile.role !== 'seller')) {
+    console.log('Profile missing, loading timed out, or user is not a seller:', { 
+      profile: !!profile, 
+      loadingTimeout, 
+      role: profile?.role 
+    });
+    
     return (
       <Card>
         <CardContent className="p-6">
           <div className="text-center py-8">
             <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {loadingTimeout ? 'Không thể tải thông tin người bán' : 'Bạn chưa có gian hàng'}
+              {loadingTimeout 
+                ? 'Không thể tải thông tin người bán' 
+                : profile?.role !== 'seller' 
+                  ? 'Bạn chưa có gian hàng'
+                  : 'Bạn chưa có gian hàng'
+              }
             </h3>
             <p className="text-gray-500 mb-4">
               {loadingTimeout 
@@ -97,8 +112,19 @@ const ProductForm = () => {
               }
             </p>
             <div className="space-x-2">
-              <Button onClick={() => navigate('/register-seller')}>
-                Đăng ký người bán
+              <Button 
+                onClick={handleSellerRegistration}
+                disabled={isRegistering}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {isRegistering ? (
+                  <>
+                    <span className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-b-transparent"></span>
+                    Đang đăng ký...
+                  </>
+                ) : (
+                  'Đăng ký người bán'
+                )}
               </Button>
               {loadingTimeout && (
                 <Button variant="outline" onClick={() => window.location.reload()}>
@@ -112,7 +138,7 @@ const ProductForm = () => {
     );
   }
 
-  console.log('ProductForm rendering with valid auth state');
+  console.log('ProductForm rendering with valid seller auth state');
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof ProductFormData, string>> = {};
@@ -155,7 +181,6 @@ const ProductForm = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Clear error when user starts typing
     if (errors[name as keyof ProductFormData]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
@@ -164,7 +189,6 @@ const ProductForm = () => {
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Clear error when user selects
     if (errors[name as keyof ProductFormData]) {
       setErrors(prev => ({ ...prev, [name]: undefined }));
     }
@@ -193,7 +217,6 @@ const ProductForm = () => {
     const success = await submitProduct(formData);
     
     if (success) {
-      // Reset form on success
       setFormData({
         title: '',
         description: '',
