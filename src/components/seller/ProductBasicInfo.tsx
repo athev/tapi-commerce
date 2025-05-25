@@ -8,7 +8,7 @@ interface ProductBasicInfoProps {
   formData: ProductFormData;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSelectChange: (name: string, value: string) => void;
-  errors?: Partial<ProductFormData>;
+  errors?: Partial<Record<keyof ProductFormData, string>>;
 }
 
 const ProductBasicInfo = ({ formData, onInputChange, onSelectChange, errors }: ProductBasicInfoProps) => {

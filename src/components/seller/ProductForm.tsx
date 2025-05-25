@@ -24,10 +24,10 @@ const ProductForm = () => {
     file: null
   });
 
-  const [errors, setErrors] = useState<Partial<ProductFormData>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({});
 
   const validateForm = (): boolean => {
-    const newErrors: Partial<ProductFormData> = {};
+    const newErrors: Partial<Record<keyof ProductFormData, string>> = {};
 
     if (!formData.title.trim()) {
       newErrors.title = "Tên sản phẩm là bắt buộc";
