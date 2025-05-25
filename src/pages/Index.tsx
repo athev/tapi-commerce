@@ -66,6 +66,9 @@ const Index = () => {
         return filteredProducts;
       }
     },
+    retry: 1,
+    staleTime: 30000, // 30 seconds
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 
   return (

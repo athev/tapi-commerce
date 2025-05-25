@@ -9,7 +9,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
-import { Product } from "@/lib/supabase";
+import { Product, mockProducts } from "@/lib/supabase";
 
 interface ProductGridProps {
   products: Product[];
@@ -28,44 +28,42 @@ const transformProductToCard = (product: Product): ProductCardProps => {
     },
     image: product.image || '/placeholder.svg',
     category: product.category,
-    rating: 4.5, // Default rating
+    rating: 4.5,
     reviews: product.purchases || 0,
     seller: {
       name: product.seller_name,
-      verified: true // Default to verified
+      verified: true
     },
     inStock: product.in_stock || 0,
-    isNew: false, // Could be calculated based on created_at
-    isHot: product.purchases > 50, // Hot if more than 50 purchases
+    isNew: false,
+    isHot: (product.purchases || 0) > 50,
   };
 };
 
 const ProductGrid = ({ products, isLoading, error }: ProductGridProps) => {
   const [sortBy, setSortBy] = useState("popular");
   
-  if (isLoading) {
+  // If there's an error or no products, show mock products
+  const displayProducts = products && products.length > 0 ? products : mockProducts;
+  
+  if (isLoading && (!products || products.length === 0)) {
     return (
       <section className="container py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-          {Array.from({ length: 10 }).map((_, index) => (
-            <div key={index} className="h-64 bg-gray-200 rounded-lg animate-pulse"></div>
-          ))}
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-bold">Sản phẩm nổi bật</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {Array.from({ length: 10 }).map((_, index) => (
+              <div key={index} className="h-64 bg-gray-200 rounded-lg animate-pulse"></div>
+            ))}
+          </div>
         </div>
       </section>
     );
   }
 
-  if (error) {
-    return (
-      <section className="container py-12">
-        <div className="text-center">
-          <p className="text-gray-500">Có lỗi xảy ra khi tải sản phẩm</p>
-        </div>
-      </section>
-    );
-  }
-
-  const transformedProducts = products.map(transformProductToCard);
+  const transformedProducts = displayProducts.map(transformProductToCard);
   
   return (
     <section className="container py-12">
@@ -87,6 +85,14 @@ const ProductGrid = ({ products, isLoading, error }: ProductGridProps) => {
             </Select>
           </div>
         </div>
+        
+        {error && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+            <p className="text-yellow-800">
+              Có lỗi khi tải dữ liệu từ server. Đang hiển thị dữ liệu mẫu.
+            </p>
+          </div>
+        )}
         
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
           {transformedProducts.map((product) => (

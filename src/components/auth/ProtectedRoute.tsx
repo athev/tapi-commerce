@@ -1,8 +1,8 @@
 
-import { ReactNode, useEffect } from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import { toast } from 'sonner';
+import { ReactNode } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -13,31 +13,50 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const { user, profile, loading } = useAuth();
   const location = useLocation();
 
-  useEffect(() => {
-    // If user is logged in but doesn't have the required role
-    if (user && profile && !loading && !allowedRoles.includes(profile.role)) {
-      toast.error('Bạn không có quyền truy cập trang này');
-    }
-  }, [user, profile, loading, allowedRoles]);
+  console.log('ProtectedRoute check:', { user: !!user, profile, loading, allowedRoles, currentPath: location.pathname });
 
+  // Show loading state while checking authentication
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-marketplace-primary"></div>
+      <div className="flex flex-col min-h-screen">
+        <div className="container py-8">
+          <div className="space-y-4">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+          </div>
+        </div>
       </div>
     );
   }
 
-  // If not logged in, redirect to login page with return URL
+  // Redirect to login if not authenticated
   if (!user) {
-    return <Navigate to={`/login?redirect=${encodeURIComponent(location.pathname)}`} replace />;
+    console.log('User not authenticated, redirecting to login');
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // If user doesn't have the required role
-  if (profile && !allowedRoles.includes(profile.role)) {
+  // If we don't have profile data yet, try to wait a bit
+  if (!profile) {
+    console.log('Profile not loaded yet');
+    return (
+      <div className="flex flex-col min-h-screen">
+        <div className="container py-8">
+          <div className="text-center">
+            <p>Đang tải thông tin người dùng...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if user has required role
+  if (!allowedRoles.includes(profile.role)) {
+    console.log('User role not allowed:', { userRole: profile.role, allowedRoles });
     return <Navigate to="/" replace />;
   }
 
+  console.log('Access granted to protected route');
   return <>{children}</>;
 };
 

@@ -17,28 +17,16 @@ const FeaturedCategories = ({ activeCategory, onCategoryChange }: FeaturedCatego
       try {
         console.log('🔍 Fetching categories from Supabase...');
         
-        // Add timeout to prevent hanging
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-        
         const { data, error } = await supabase
           .from('categories')
           .select('*')
-          .order('name')
-          .abortSignal(controller.signal);
+          .order('name');
         
-        clearTimeout(timeoutId);
         console.log('📊 Supabase categories response:', { data, error });
         
         if (error) {
           console.error('❌ Categories fetch error:', error);
-          console.log('🔄 Falling back to mock data...');
-          return mockCategories.map(item => ({
-            id: item.id,
-            title: item.name,
-            icon: item.icon,
-            count: item.count
-          }));
+          throw error;
         }
         
         if (!data || data.length === 0) {
@@ -70,38 +58,27 @@ const FeaturedCategories = ({ activeCategory, onCategoryChange }: FeaturedCatego
         }));
       }
     },
-    retry: false, // Disable retry to prevent hanging
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    retry: 1,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
   console.log('🎯 FeaturedCategories render state:', { isLoading, error, categoriesCount: categories?.length });
 
-  if (isLoading) {
-    console.log('⏳ Categories loading...');
-    return (
-      <section className="container py-12">
-        <h2 className="text-2xl font-bold mb-8 text-center">Danh mục sản phẩm</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div key={index} className="h-24 bg-gray-200 rounded-lg animate-pulse"></div>
-          ))}
-        </div>
-      </section>
-    );
-  }
+  // Always show categories, even if loading - use mock data immediately
+  const displayCategories = categories || mockCategories.map(item => ({
+    id: item.id,
+    title: item.name,
+    icon: item.icon,
+    count: item.count
+  }));
 
-  if (error) {
-    console.error('❌ Categories error in render:', error);
-  }
-
-  // Always render categories, either from Supabase or mock data
   return (
     <section className="container py-12">
       <h2 className="text-2xl font-bold mb-8 text-center">Danh mục sản phẩm</h2>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-        {categories?.map((category) => (
+        {displayCategories.map((category) => (
           <div 
             key={category.id} 
             onClick={() => onCategoryChange(category.title)}
@@ -111,7 +88,7 @@ const FeaturedCategories = ({ activeCategory, onCategoryChange }: FeaturedCatego
           </div>
         ))}
       </div>
-      {categories?.length === 0 && (
+      {displayCategories.length === 0 && (
         <div className="text-center py-8">
           <p className="text-gray-500">Không có danh mục nào để hiển thị</p>
         </div>
