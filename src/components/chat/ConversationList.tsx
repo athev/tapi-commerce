@@ -65,13 +65,16 @@ const ConversationList = ({ onConversationSelect, selectedConversationId }: Conv
             
             console.log('Conversation display info:', {
               id: conversation.id,
+              chat_type: conversation.chat_type,
               isBuyer,
               isSeller,
               displayName,
               roleLabel,
               seller_name: conversation.seller_name,
               buyer_name: conversation.buyer_name,
-              other_user: conversation.other_user
+              other_user: conversation.other_user,
+              order: conversation.order,
+              product: conversation.product
             });
             
             return (
@@ -110,6 +113,19 @@ const ConversationList = ({ onConversationSelect, selectedConversationId }: Conv
                           </Badge>
                         )}
                       </div>
+                    </div>
+                    
+                    {/* Chat type indicator */}
+                    <div className="flex items-center gap-2 mt-1">
+                      {conversation.chat_type === 'order_support' && conversation.order ? (
+                        <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                          Hỗ trợ đơn hàng #{conversation.order.id.slice(0, 8)}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                          Tư vấn sản phẩm
+                        </span>
+                      )}
                     </div>
                     
                     {conversation.product && (

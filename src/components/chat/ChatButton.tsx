@@ -1,24 +1,34 @@
 
+import { useState } from "react";
 import { MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useChat } from "@/hooks/useChat";
 import { useToast } from "@/hooks/use-toast";
+import ChatConfirmationModal from "./ChatConfirmationModal";
+
+interface Product {
+  id: string;
+  title: string;
+  image?: string;
+  price: number;
+  seller_name: string;
+  seller_id: string;
+  product_type?: string;
+}
 
 interface ChatButtonProps {
-  sellerId: string;
-  productId?: string;
-  productTitle?: string;
+  product: Product;
+  orderId?: string;
   variant?: "default" | "outline" | "ghost";
   size?: "default" | "sm" | "lg";
   className?: string;
 }
 
 const ChatButton = ({ 
-  sellerId, 
-  productId, 
-  productTitle,
+  product, 
+  orderId,
   variant = "outline",
   size = "sm",
   className = ""
@@ -27,8 +37,9 @@ const ChatButton = ({
   const navigate = useNavigate();
   const { createOrGetConversation } = useChat();
   const { toast } = useToast();
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  const handleChatClick = async () => {
+  const handleChatClick = () => {
     if (!user) {
       toast({
         title: "Cần đăng nhập",
@@ -39,7 +50,7 @@ const ChatButton = ({
       return;
     }
 
-    if (user.id === sellerId) {
+    if (user.id === product.seller_id) {
       toast({
         title: "Không thể chat",
         description: "Bạn không thể chat với chính mình",
@@ -48,9 +59,25 @@ const ChatButton = ({
       return;
     }
 
+    // If there's an order ID, go directly to chat (order support)
+    if (orderId) {
+      handleConfirmChat();
+    } else {
+      // Show confirmation modal for product consultation
+      setShowConfirmModal(true);
+    }
+  };
+
+  const handleConfirmChat = async () => {
     try {
-      const conversationId = await createOrGetConversation(sellerId, productId);
+      const conversationId = await createOrGetConversation(
+        product.seller_id, 
+        product.id,
+        orderId,
+        orderId ? 'order_support' : 'product_consultation'
+      );
       navigate(`/chat/${conversationId}`);
+      setShowConfirmModal(false);
     } catch (error) {
       toast({
         title: "Lỗi",
@@ -61,15 +88,24 @@ const ChatButton = ({
   };
 
   return (
-    <Button
-      variant={variant}
-      size={size}
-      onClick={handleChatClick}
-      className={className}
-    >
-      <MessageCircle className="h-4 w-4 mr-2" />
-      Chat với người bán
-    </Button>
+    <>
+      <Button
+        variant={variant}
+        size={size}
+        onClick={handleChatClick}
+        className={className}
+      >
+        <MessageCircle className="h-4 w-4 mr-2" />
+        {orderId ? "Chat hỗ trợ đơn hàng" : "Chat với người bán"}
+      </Button>
+
+      <ChatConfirmationModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleConfirmChat}
+        product={product}
+      />
+    </>
   );
 };
 

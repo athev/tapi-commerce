@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +21,8 @@ export interface Conversation {
   buyer_id: string;
   seller_id: string;
   product_id?: string;
+  order_id?: string;
+  chat_type: 'product_consultation' | 'order_support';
   last_message_at: string;
   buyer_unread_count: number;
   seller_unread_count: number;
@@ -29,6 +32,17 @@ export interface Conversation {
     title: string;
     image?: string;
     seller_name?: string;
+    product_type?: string;
+  };
+  order?: {
+    id: string;
+    status: string;
+    created_at: string;
+    delivery_status?: string;
+    products?: {
+      title: string;
+      price: number;
+    };
   };
   other_user?: {
     id: string;
@@ -59,7 +73,8 @@ export const useChat = () => {
         .from('conversations')
         .select(`
           *,
-          products:product_id (id, title, image, seller_name)
+          products:product_id (id, title, image, seller_name, product_type),
+          orders:order_id (id, status, created_at, delivery_status, products(title, price))
         `)
         .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
         .order('last_message_at', { ascending: false });
@@ -71,7 +86,7 @@ export const useChat = () => {
 
       console.log('Raw conversations data:', conversationsData);
 
-      // Get user profiles for all participants (both buyers and sellers)
+      // Get user profiles for all participants
       const userIds = new Set<string>();
       conversationsData?.forEach(conv => {
         userIds.add(conv.buyer_id);
@@ -105,14 +120,18 @@ export const useChat = () => {
 
           console.log('Processing conversation:', {
             id: conv.id,
+            chat_type: conv.chat_type,
             buyerProfile,
             sellerProfile,
-            otherUserProfile
+            otherUserProfile,
+            order: conv.orders,
+            product: conv.products
           });
 
           return {
             ...conv,
             product: conv.products,
+            order: conv.orders,
             other_user: otherUserProfile,
             buyer_name: buyerProfile?.full_name || 'Khách hàng',
             seller_name: sellerProfile?.full_name || conv.products?.seller_name || 'Người bán'
@@ -216,21 +235,39 @@ export const useChat = () => {
   }, [toast]);
 
   // Create or get conversation
-  const createOrGetConversation = async (sellerId: string, productId?: string) => {
+  const createOrGetConversation = async (
+    sellerId: string, 
+    productId?: string, 
+    orderId?: string,
+    chatType: 'product_consultation' | 'order_support' = 'product_consultation'
+  ) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      console.log('Creating/getting conversation:', { buyerId: user.id, sellerId, productId });
+      console.log('Creating/getting conversation:', { 
+        buyerId: user.id, 
+        sellerId, 
+        productId, 
+        orderId, 
+        chatType 
+      });
 
       // Check if conversation already exists
-      const { data: existingConv } = await supabase
+      let existingConvQuery = supabase
         .from('conversations')
         .select('id')
         .eq('buyer_id', user.id)
         .eq('seller_id', sellerId)
-        .eq('product_id', productId || null)
-        .single();
+        .eq('chat_type', chatType);
+
+      if (orderId) {
+        existingConvQuery = existingConvQuery.eq('order_id', orderId);
+      } else if (productId) {
+        existingConvQuery = existingConvQuery.eq('product_id', productId);
+      }
+
+      const { data: existingConv } = await existingConvQuery.single();
 
       if (existingConv) {
         console.log('Found existing conversation:', existingConv.id);
@@ -238,13 +275,22 @@ export const useChat = () => {
       }
 
       // Create new conversation
+      const conversationData: any = {
+        buyer_id: user.id,
+        seller_id: sellerId,
+        chat_type: chatType
+      };
+
+      if (orderId) {
+        conversationData.order_id = orderId;
+      }
+      if (productId) {
+        conversationData.product_id = productId;
+      }
+
       const { data: newConv, error } = await supabase
         .from('conversations')
-        .insert({
-          buyer_id: user.id,
-          seller_id: sellerId,
-          product_id: productId || null
-        })
+        .insert(conversationData)
         .select('id')
         .single();
 

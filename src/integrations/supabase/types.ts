@@ -37,9 +37,11 @@ export type Database = {
         Row: {
           buyer_id: string
           buyer_unread_count: number | null
+          chat_type: string | null
           created_at: string | null
           id: string
           last_message_at: string | null
+          order_id: string | null
           product_id: string | null
           seller_id: string
           seller_unread_count: number | null
@@ -48,9 +50,11 @@ export type Database = {
         Insert: {
           buyer_id: string
           buyer_unread_count?: number | null
+          chat_type?: string | null
           created_at?: string | null
           id?: string
           last_message_at?: string | null
+          order_id?: string | null
           product_id?: string | null
           seller_id: string
           seller_unread_count?: number | null
@@ -59,15 +63,24 @@ export type Database = {
         Update: {
           buyer_id?: string
           buyer_unread_count?: number | null
+          chat_type?: string | null
           created_at?: string | null
           id?: string
           last_message_at?: string | null
+          order_id?: string | null
           product_id?: string | null
           seller_id?: string
           seller_unread_count?: number | null
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "conversations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "conversations_product_id_fkey"
             columns: ["product_id"]

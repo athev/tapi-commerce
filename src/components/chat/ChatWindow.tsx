@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +9,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
+import QuickQuestions from "./QuickQuestions";
+import OrderInfoCard from "./OrderInfoCard";
 
 interface ChatWindowProps {
   conversationId: string;
@@ -73,6 +74,10 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
     }
   };
 
+  const handleQuestionSelect = (question: string) => {
+    setNewMessage(question);
+  };
+
   if (!currentConversation) {
     return (
       <Card className="h-full">
@@ -122,17 +127,35 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
                 Sản phẩm: {currentConversation.product.title}
               </p>
             )}
+            {currentConversation.chat_type === 'order_support' && currentConversation.order && (
+              <p className="text-sm text-orange-600">
+                Chat hỗ trợ đơn hàng #{currentConversation.order.id.slice(0, 8)}
+              </p>
+            )}
           </div>
         </div>
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col p-0">
+        {/* Order Info Card for order support chats */}
+        {currentConversation.chat_type === 'order_support' && currentConversation.order && (
+          <div className="p-4 border-b bg-gray-50">
+            <OrderInfoCard order={currentConversation.order} />
+          </div>
+        )}
+
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {/* Quick Questions - only show at the beginning of product consultation */}
+          {currentConversation.chat_type === 'product_consultation' && messages.length === 0 && (
+            <QuickQuestions 
+              onQuestionSelect={handleQuestionSelect}
+              productType={currentConversation.product?.product_type}
+            />
+          )}
+
           {messages.map((message: Message) => {
             const isOwn = message.sender_id === user?.id;
-            
-            // Get actual sender name - this should now be populated correctly
             const senderDisplayName = message.sender_name || 'Người dùng';
             
             console.log('Message display info:', {
