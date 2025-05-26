@@ -53,19 +53,34 @@ export const useChat = () => {
         .from('conversations')
         .select(`
           *,
-          products:product_id (id, title, image),
-          buyer_profile:buyer_id (id, full_name),
-          seller_profile:seller_id (id, full_name)
+          products:product_id (id, title, image)
         `)
         .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
         .order('last_message_at', { ascending: false });
 
       if (error) throw error;
 
+      // Get user profiles separately
+      const userIds = new Set<string>();
+      conversationsData?.forEach(conv => {
+        if (conv.buyer_id !== user.id) userIds.add(conv.buyer_id);
+        if (conv.seller_id !== user.id) userIds.add(conv.seller_id);
+      });
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', Array.from(userIds));
+
+      const profileMap = new Map();
+      profiles?.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+
       const processedConversations = conversationsData?.map(conv => ({
         ...conv,
         product: conv.products,
-        other_user: conv.buyer_id === user.id ? conv.seller_profile : conv.buyer_profile
+        other_user: profileMap.get(conv.buyer_id === user.id ? conv.seller_id : conv.buyer_id)
       })) || [];
 
       setConversations(processedConversations);
@@ -86,18 +101,30 @@ export const useChat = () => {
     try {
       const { data: messagesData, error } = await supabase
         .from('messages')
-        .select(`
-          *,
-          sender:sender_id (full_name)
-        `)
+        .select('*')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
+      // Get sender names separately
+      const senderIds = new Set<string>();
+      messagesData?.forEach(msg => senderIds.add(msg.sender_id));
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .in('id', Array.from(senderIds));
+
+      const profileMap = new Map();
+      profiles?.forEach(profile => {
+        profileMap.set(profile.id, profile);
+      });
+
       const processedMessages = messagesData?.map(msg => ({
         ...msg,
-        sender_name: msg.sender?.full_name
+        message_type: msg.message_type as 'text' | 'image' | 'emoji',
+        sender_name: profileMap.get(msg.sender_id)?.full_name
       })) || [];
 
       setMessages(processedMessages);
