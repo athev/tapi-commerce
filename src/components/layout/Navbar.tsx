@@ -1,147 +1,195 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, ShoppingCart, User, LogOut, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { 
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { Menu, Search, ShoppingCart, User, Bell, MessageCircle, LogOut, Settings, Package } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
-  DropdownMenuSeparator 
 } from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/context/AuthContext";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const Navbar = () => {
-  const { user, profile, session, signOut } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
 
-  // Debug logging
-  console.log('Navbar: Auth state:', { user: !!user, profile: !!profile, session: !!session, role: profile?.role });
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      navigate(`/?search=${encodeURIComponent(searchTerm)}`);
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
     }
   };
 
-  const handleSignOut = async () => {
-    console.log('Navbar: Signing out user');
-    await signOut();
-  };
-
-  // Check if user is authenticated
-  const isAuthenticated = !!(user && session);
-  const isSeller = profile?.role === 'seller';
-  const isAdmin = profile?.role === 'admin';
+  const NavigationItems = () => (
+    <>
+      <Link 
+        to="/" 
+        className="text-sm font-medium hover:text-marketplace-primary transition-colors"
+        onClick={() => setIsOpen(false)}
+      >
+        Trang chủ
+      </Link>
+      <Link 
+        to="/categories" 
+        className="text-sm font-medium hover:text-marketplace-primary transition-colors"
+        onClick={() => setIsOpen(false)}
+      >
+        Danh mục
+      </Link>
+      <Link 
+        to="/sellers" 
+        className="text-sm font-medium hover:text-marketplace-primary transition-colors"
+        onClick={() => setIsOpen(false)}
+      >
+        Người bán
+      </Link>
+      {user && (
+        <Link 
+          to="/chat" 
+          className="text-sm font-medium hover:text-marketplace-primary transition-colors flex items-center"
+          onClick={() => setIsOpen(false)}
+        >
+          <MessageCircle className="h-4 w-4 mr-1" />
+          Tin nhắn
+        </Link>
+      )}
+    </>
+  );
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur">
-      <div className="container flex h-16 items-center">
-        {/* Logo */}
-        <Link to="/" className="mr-6 flex items-center">
-          <span className="text-xl font-bold text-marketplace-primary">DigitalMarket</span>
-        </Link>
-
-        {/* Navigation */}
-        <nav className="hidden md:flex flex-1 items-center space-x-4 lg:space-x-6">
-          <Link to="/products" className="text-sm font-medium transition-colors hover:text-marketplace-primary">
-            Sản phẩm
-          </Link>
-          <Link to="/services" className="text-sm font-medium transition-colors hover:text-marketplace-primary">
-            Dịch vụ
-          </Link>
-          <Link to="/categories" className="text-sm font-medium transition-colors hover:text-marketplace-primary">
-            Danh mục
-          </Link>
-          <Link to="/help" className="text-sm font-medium transition-colors hover:text-marketplace-primary">
-            Hỗ trợ
-          </Link>
-          
-          {/* Seller button for all authenticated users */}
-          {isAuthenticated && (
-            <Link to="/seller" className="text-sm font-medium transition-colors hover:text-marketplace-primary bg-green-50 px-3 py-2 rounded-md border border-green-200 flex items-center gap-2">
-              <Store className="h-4 w-4" />
-              Kênh người bán
+    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+      <div className="container mx-auto px-4">
+        <div className="flex h-16 items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center space-x-4">
+            <Link to="/" className="flex items-center space-x-2">
+              <div className="h-8 w-8 rounded bg-marketplace-primary flex items-center justify-center">
+                <span className="text-white font-bold text-sm">SP</span>
+              </div>
+              <span className="font-bold text-lg text-gray-900 hidden sm:inline-block">
+                Sàn Phẩm Số
+              </span>
             </Link>
-          )}
-        </nav>
+          </div>
 
-        {/* Search */}
-        <form onSubmit={handleSearch} className="hidden w-full max-w-sm md:flex items-center space-x-2 px-4">
-          <Input 
-            type="search" 
-            placeholder="Tìm kiếm sản phẩm..." 
-            className="h-9 md:w-[200px] lg:w-[300px]"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <Button type="submit" size="icon" variant="ghost" className="h-9 w-9 text-muted-foreground">
-            <Search className="h-4 w-4" />
-            <span className="sr-only">Tìm kiếm</span>
-          </Button>
-        </form>
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-6">
+            <NavigationItems />
+          </nav>
 
-        {/* User menu */}
-        <div className="flex items-center space-x-4">
-          {isAuthenticated && (
-            <Link to="/cart">
-              <Button variant="ghost" size="icon" className="relative">
-                <ShoppingCart className="h-5 w-5" />
-                <span className="absolute -right-1 -top-1 h-5 w-5 rounded-full bg-marketplace-primary text-xs font-medium text-white flex items-center justify-center">
-                  0
-                </span>
-              </Button>
-            </Link>
-          )}
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <User className="h-5 w-5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {isAuthenticated ? (
-                <>
-                  <DropdownMenuItem asChild>
-                    <Link to="/my-account">Tài khoản của tôi</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/my-purchases">Sản phẩm đã mua</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/seller">
-                      <Store className="mr-2 h-4 w-4" />
-                      Kênh người bán
-                    </Link>
-                  </DropdownMenuItem>
-                  {isAdmin && (
-                    <DropdownMenuItem asChild>
-                      <Link to="/admin">Quản trị viên</Link>
+          {/* Right Side */}
+          <div className="flex items-center space-x-4">
+            {/* Search Icon */}
+            <Button variant="ghost" size="sm">
+              <Search className="h-4 w-4" />
+            </Button>
+
+            {user ? (
+              <div className="flex items-center space-x-2">
+                {/* Notifications */}
+                <Button variant="ghost" size="sm" className="relative">
+                  <Bell className="h-4 w-4" />
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs p-0"
+                  >
+                    3
+                  </Badge>
+                </Button>
+
+                {/* Chat */}
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/chat">
+                    <MessageCircle className="h-4 w-4" />
+                  </Link>
+                </Button>
+
+                {/* User Menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback>
+                          {user.email?.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56" align="end" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">
+                          {user.email}
+                        </p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          Tài khoản của bạn
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem asChild>
+                        <Link to="/my-account">
+                          <User className="mr-2 h-4 w-4" />
+                          <span>Tài khoản</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/my-purchases">
+                          <Package className="mr-2 h-4 w-4" />
+                          <span>Đơn hàng</span>
+                        </Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link to="/seller">
+                          <Settings className="mr-2 h-4 w-4" />
+                          <span>Bán hàng</span>
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Đăng xuất</span>
                     </DropdownMenuItem>
-                  )}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Đăng xuất</span>
-                  </DropdownMenuItem>
-                </>
-              ) : (
-                <>
-                  <DropdownMenuItem asChild>
-                    <Link to="/login">Đăng nhập</Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/register">Đăng ký</Link>
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" size="sm" asChild>
+                  <Link to="/login">Đăng nhập</Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link to="/register">Đăng ký</Link>
+                </Button>
+              </div>
+            )}
+
+            {/* Mobile Menu */}
+            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="sm" className="md:hidden">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                <nav className="flex flex-col space-y-4">
+                  <NavigationItems />
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
     </header>

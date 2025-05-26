@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Star, Shield, MessageCircle, Store, Calendar, Award } from "lucide-react";
+import ChatButton from "@/components/chat/ChatButton";
 
 interface SellerInfoProps {
   sellerId: string;
@@ -12,6 +13,8 @@ interface SellerInfoProps {
   joinDate?: string;
   responseTime?: string;
   verified?: boolean;
+  productId?: string;
+  productTitle?: string;
 }
 
 const SellerInfo = ({ 
@@ -21,7 +24,9 @@ const SellerInfo = ({
   totalSales = 1250,
   joinDate = "2022-03-15",
   responseTime = "Trong vòng 2 giờ",
-  verified = true 
+  verified = true,
+  productId,
+  productTitle
 }: SellerInfoProps) => {
   
   const formatJoinDate = (dateString: string) => {
@@ -86,10 +91,13 @@ const SellerInfo = ({
 
         {/* Action Buttons */}
         <div className="space-y-2 pt-4 border-t">
-          <Button variant="outline" className="w-full">
-            <MessageCircle className="h-4 w-4 mr-2" />
-            Liên hệ người bán
-          </Button>
+          <ChatButton
+            sellerId={sellerId}
+            productId={productId}
+            productTitle={productTitle}
+            variant="outline"
+            className="w-full"
+          />
           <Button variant="ghost" className="w-full text-marketplace-primary hover:text-marketplace-primary/80">
             <Store className="h-4 w-4 mr-2" />
             Xem cửa hàng

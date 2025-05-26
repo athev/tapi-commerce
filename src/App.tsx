@@ -16,6 +16,7 @@ import MyAccount from "./pages/MyAccount";
 import MyPurchases from "./pages/MyPurchases";
 import NotFound from "./pages/NotFound";
 import Payment from "./pages/Payment";
+import Chat from "./pages/Chat";
 import SellerDashboard from "./pages/SellerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -40,6 +41,8 @@ const App = () => (
             <Route path="/my-account" element={<MyAccount />} />
             <Route path="/my-purchases" element={<MyPurchases />} />
             <Route path="/payment/:orderId" element={<Payment />} />
+            <Route path="/chat" element={<Chat />} />
+            <Route path="/chat/:conversationId" element={<Chat />} />
             
             {/* Temporarily remove protection for development */}
             <Route path="/seller/*" element={<SellerDashboard />} />

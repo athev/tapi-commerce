@@ -33,6 +33,50 @@ export type Database = {
         }
         Relationships: []
       }
+      conversations: {
+        Row: {
+          buyer_id: string
+          buyer_unread_count: number | null
+          created_at: string | null
+          id: string
+          last_message_at: string | null
+          product_id: string | null
+          seller_id: string
+          seller_unread_count: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          buyer_id: string
+          buyer_unread_count?: number | null
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          product_id?: string | null
+          seller_id: string
+          seller_unread_count?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          buyer_id?: string
+          buyer_unread_count?: number | null
+          created_at?: string | null
+          id?: string
+          last_message_at?: string | null
+          product_id?: string | null
+          seller_id?: string
+          seller_unread_count?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       license_keys: {
         Row: {
           assigned_to_order: string | null
@@ -74,6 +118,50 @@ export type Database = {
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string | null
+          conversation_id: string
+          created_at: string | null
+          id: string
+          image_url: string | null
+          is_read: boolean | null
+          message_type: string | null
+          sender_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          content?: string | null
+          conversation_id: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_read?: boolean | null
+          message_type?: string | null
+          sender_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string | null
+          conversation_id?: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          is_read?: boolean | null
+          message_type?: string | null
+          sender_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
             referencedColumns: ["id"]
           },
         ]
