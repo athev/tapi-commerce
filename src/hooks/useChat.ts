@@ -49,6 +49,8 @@ export const useChat = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      console.log('Fetching conversations for user:', user.id);
+
       const { data: conversationsData, error } = await supabase
         .from('conversations')
         .select(`
@@ -58,32 +60,42 @@ export const useChat = () => {
         .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
         .order('last_message_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching conversations:', error);
+        throw error;
+      }
 
-      // Get user profiles separately
+      console.log('Raw conversations data:', conversationsData);
+
+      // Get user profiles for other participants
       const userIds = new Set<string>();
       conversationsData?.forEach(conv => {
         if (conv.buyer_id !== user.id) userIds.add(conv.buyer_id);
         if (conv.seller_id !== user.id) userIds.add(conv.seller_id);
       });
 
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', Array.from(userIds));
+      if (userIds.size > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', Array.from(userIds));
 
-      const profileMap = new Map();
-      profiles?.forEach(profile => {
-        profileMap.set(profile.id, profile);
-      });
+        const profileMap = new Map();
+        profiles?.forEach(profile => {
+          profileMap.set(profile.id, profile);
+        });
 
-      const processedConversations = conversationsData?.map(conv => ({
-        ...conv,
-        product: conv.products,
-        other_user: profileMap.get(conv.buyer_id === user.id ? conv.seller_id : conv.buyer_id)
-      })) || [];
+        const processedConversations = conversationsData?.map(conv => ({
+          ...conv,
+          product: conv.products,
+          other_user: profileMap.get(conv.buyer_id === user.id ? conv.seller_id : conv.buyer_id)
+        })) || [];
 
-      setConversations(processedConversations);
+        console.log('Processed conversations:', processedConversations);
+        setConversations(processedConversations);
+      } else {
+        setConversations(conversationsData || []);
+      }
     } catch (error) {
       console.error('Error fetching conversations:', error);
       toast({
@@ -99,35 +111,47 @@ export const useChat = () => {
   // Get messages for a conversation
   const fetchMessages = useCallback(async (conversationId: string) => {
     try {
+      console.log('Fetching messages for conversation:', conversationId);
+      
       const { data: messagesData, error } = await supabase
         .from('messages')
         .select('*')
         .eq('conversation_id', conversationId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching messages:', error);
+        throw error;
+      }
 
-      // Get sender names separately
+      console.log('Raw messages data:', messagesData);
+
+      // Get sender names
       const senderIds = new Set<string>();
       messagesData?.forEach(msg => senderIds.add(msg.sender_id));
 
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name')
-        .in('id', Array.from(senderIds));
+      if (senderIds.size > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, full_name')
+          .in('id', Array.from(senderIds));
 
-      const profileMap = new Map();
-      profiles?.forEach(profile => {
-        profileMap.set(profile.id, profile);
-      });
+        const profileMap = new Map();
+        profiles?.forEach(profile => {
+          profileMap.set(profile.id, profile);
+        });
 
-      const processedMessages = messagesData?.map(msg => ({
-        ...msg,
-        message_type: msg.message_type as 'text' | 'image' | 'emoji',
-        sender_name: profileMap.get(msg.sender_id)?.full_name
-      })) || [];
+        const processedMessages = messagesData?.map(msg => ({
+          ...msg,
+          message_type: msg.message_type as 'text' | 'image' | 'emoji',
+          sender_name: profileMap.get(msg.sender_id)?.full_name
+        })) || [];
 
-      setMessages(processedMessages);
+        console.log('Processed messages:', processedMessages);
+        setMessages(processedMessages);
+      } else {
+        setMessages(messagesData || []);
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast({
@@ -144,8 +168,10 @@ export const useChat = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      console.log('Creating/getting conversation:', { buyerId: user.id, sellerId, productId });
+
       // Check if conversation already exists
-      let { data: existingConv } = await supabase
+      const { data: existingConv } = await supabase
         .from('conversations')
         .select('id')
         .eq('buyer_id', user.id)
@@ -154,6 +180,7 @@ export const useChat = () => {
         .single();
 
       if (existingConv) {
+        console.log('Found existing conversation:', existingConv.id);
         return existingConv.id;
       }
 
@@ -168,7 +195,12 @@ export const useChat = () => {
         .select('id')
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating conversation:', error);
+        throw error;
+      }
+
+      console.log('Created new conversation:', newConv.id);
       return newConv.id;
     } catch (error) {
       console.error('Error creating conversation:', error);
@@ -182,6 +214,8 @@ export const useChat = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      console.log('Sending message:', { conversationId, content, messageType, sender: user.id });
+
       const { error } = await supabase
         .from('messages')
         .insert({
@@ -192,10 +226,15 @@ export const useChat = () => {
           image_url: imageUrl
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error sending message:', error);
+        throw error;
+      }
 
-      // Mark messages as read for sender
-      await markMessagesAsRead(conversationId);
+      console.log('Message sent successfully');
+      
+      // Refresh messages immediately
+      await fetchMessages(conversationId);
       
     } catch (error) {
       console.error('Error sending message:', error);
@@ -213,7 +252,8 @@ export const useChat = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Update unread count for current user
+      console.log('Marking messages as read for conversation:', conversationId);
+
       const { data: conversation } = await supabase
         .from('conversations')
         .select('buyer_id, seller_id')
@@ -222,14 +262,15 @@ export const useChat = () => {
 
       if (!conversation) return;
 
-      const isbuyer = conversation.buyer_id === user.id;
-      const updateField = isbuyer ? 'buyer_unread_count' : 'seller_unread_count';
+      const isBuyer = conversation.buyer_id === user.id;
+      const updateField = isBuyer ? 'buyer_unread_count' : 'seller_unread_count';
 
       await supabase
         .from('conversations')
         .update({ [updateField]: 0 })
         .eq('id', conversationId);
 
+      console.log('Messages marked as read');
     } catch (error) {
       console.error('Error marking messages as read:', error);
     }
@@ -264,13 +305,16 @@ export const useChat = () => {
 
   // Set up realtime subscriptions
   useEffect(() => {
+    console.log('Setting up realtime subscriptions');
+    
     const conversationsChannel = supabase
       .channel('conversations-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
         table: 'conversations'
-      }, () => {
+      }, (payload) => {
+        console.log('Conversation change detected:', payload);
         fetchConversations();
       })
       .subscribe();
@@ -282,13 +326,17 @@ export const useChat = () => {
         schema: 'public',
         table: 'messages'
       }, (payload) => {
+        console.log('New message detected:', payload);
         if (payload.new.conversation_id === currentConversation) {
           fetchMessages(currentConversation);
         }
+        // Always refresh conversations to update unread counts
+        fetchConversations();
       })
       .subscribe();
 
     return () => {
+      console.log('Cleaning up realtime subscriptions');
       supabase.removeChannel(conversationsChannel);
       supabase.removeChannel(messagesChannel);
     };

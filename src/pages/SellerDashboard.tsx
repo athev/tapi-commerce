@@ -30,6 +30,7 @@ const SellerDashboard = () => {
     if (currentPath.includes('/seller/reviews')) return 'reviews';
     if (currentPath.includes('/seller/analytics')) return 'analytics';
     if (currentPath.includes('/seller/notifications')) return 'notifications';
+    if (currentPath.includes('/seller/chat')) return 'chat';
     return 'dashboard';
   };
 
@@ -85,11 +86,14 @@ const SellerDashboard = () => {
                 case 'notifications':
                   navigate('/seller/notifications');
                   break;
+                case 'chat':
+                  navigate('/seller/chat');
+                  break;
               }
             }}
             className="mb-8"
           >
-            <TabsList className="grid w-full grid-cols-8">
+            <TabsList className="grid w-full grid-cols-9">
               <TabsTrigger value="dashboard">Tổng quan</TabsTrigger>
               <TabsTrigger value="products">Sản phẩm</TabsTrigger>
               <TabsTrigger value="orders">Đơn hàng</TabsTrigger>
@@ -97,6 +101,7 @@ const SellerDashboard = () => {
               <TabsTrigger value="reviews">Đánh giá</TabsTrigger>
               <TabsTrigger value="analytics">Phân tích</TabsTrigger>
               <TabsTrigger value="notifications">Thông báo</TabsTrigger>
+              <TabsTrigger value="chat">Tin nhắn</TabsTrigger>
               <TabsTrigger value="add">Thêm mới</TabsTrigger>
             </TabsList>
           </Tabs>
@@ -133,6 +138,16 @@ const SellerDashboard = () => {
           <Route path="/notifications" element={
             <SellerStatusHandler>
               <NotificationCenter />
+            </SellerStatusHandler>
+          } />
+          <Route path="/chat" element={
+            <SellerStatusHandler>
+              <Chat />
+            </SellerStatusHandler>
+          } />
+          <Route path="/chat/:conversationId" element={
+            <SellerStatusHandler>
+              <Chat />
             </SellerStatusHandler>
           } />
         </Routes>

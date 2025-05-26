@@ -16,6 +16,9 @@ const ConversationList = ({ onConversationSelect, selectedConversationId }: Conv
   const { conversations, loading } = useChat();
   const { user } = useAuth();
 
+  console.log('ConversationList - Current user:', user?.id);
+  console.log('ConversationList - Conversations:', conversations);
+
   if (loading) {
     return (
       <Card>
@@ -48,8 +51,17 @@ const ConversationList = ({ onConversationSelect, selectedConversationId }: Conv
         <div className="space-y-1">
           {conversations.map((conversation: Conversation) => {
             const isBuyer = conversation.buyer_id === user?.id;
+            const isSeller = conversation.seller_id === user?.id;
             const unreadCount = isBuyer ? conversation.buyer_unread_count : conversation.seller_unread_count;
             const isSelected = conversation.id === selectedConversationId;
+            
+            console.log('Conversation:', {
+              id: conversation.id,
+              isBuyer,
+              isSeller,
+              unreadCount,
+              other_user: conversation.other_user
+            });
             
             return (
               <div
@@ -70,11 +82,14 @@ const ConversationList = ({ onConversationSelect, selectedConversationId }: Conv
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium text-sm truncate">
                         {conversation.other_user?.full_name || 'Người dùng'}
+                        {isSeller && <span className="text-xs text-green-600 ml-2">(Khách hàng)</span>}
+                        {isBuyer && <span className="text-xs text-blue-600 ml-2">(Người bán)</span>}
                       </h3>
                       <div className="flex items-center space-x-2">
                         <span className="text-xs text-gray-500">
                           {formatDistanceToNow(new Date(conversation.last_message_at), { 
-                            locale: vi 
+                            locale: vi,
+                            addSuffix: true 
                           })}
                         </span>
                         {unreadCount > 0 && (
@@ -87,7 +102,7 @@ const ConversationList = ({ onConversationSelect, selectedConversationId }: Conv
                     
                     {conversation.product && (
                       <p className="text-xs text-gray-600 truncate mt-1">
-                        {conversation.product.title}
+                        Sản phẩm: {conversation.product.title}
                       </p>
                     )}
                   </div>
