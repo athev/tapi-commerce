@@ -96,8 +96,17 @@ const ChatButton = ({
         console.log('Using existing conversation and updating product context:', existingConversationId);
         conversationId = existingConversationId;
         
-        // Update the conversation to reflect the current product being discussed
-        await updateConversationProduct(conversationId, product.id);
+        // Try to update the conversation to reflect the current product being discussed
+        // Handle any constraint violations gracefully
+        try {
+          await updateConversationProduct(conversationId, product.id);
+        } catch (error: any) {
+          if (error.code === '23505') {
+            console.log('Product context already exists for this conversation');
+          } else {
+            console.error('Unexpected error updating product context:', error);
+          }
+        }
       } else if (existingConversationId) {
         console.log('Using existing conversation:', existingConversationId);
         conversationId = existingConversationId;
@@ -121,13 +130,49 @@ const ChatButton = ({
       // Navigate directly to chat
       navigate(`/chat/${conversationId}`);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating conversation:', error);
-      toast({
-        title: "Lỗi",
-        description: "Không thể tạo cuộc trò chuyện",
-        variant: "destructive"
-      });
+      
+      // Handle specific error cases
+      if (error.code === '23505') {
+        toast({
+          title: "Thông báo",
+          description: "Cuộc trò chuyện đã tồn tại. Đang chuyển hướng...",
+        });
+        
+        // Try to find and navigate to existing conversation
+        try {
+          const existingConversationId = await findValidConversation(
+            user!.id,
+            product.seller_id,
+            orderId ? 'order_support' : 'product_consultation'
+          );
+          
+          if (existingConversationId) {
+            await fetchConversations();
+            navigate(`/chat/${existingConversationId}`);
+          } else {
+            toast({
+              title: "Lỗi",
+              description: "Không thể tìm thấy cuộc trò chuyện",
+              variant: "destructive"
+            });
+          }
+        } catch (findError) {
+          console.error('Error finding existing conversation:', findError);
+          toast({
+            title: "Lỗi",
+            description: "Không thể tạo hoặc tìm cuộc trò chuyện",
+            variant: "destructive"
+          });
+        }
+      } else {
+        toast({
+          title: "Lỗi",
+          description: "Không thể tạo cuộc trò chuyện",
+          variant: "destructive"
+        });
+      }
     } finally {
       setIsLoading(false);
     }

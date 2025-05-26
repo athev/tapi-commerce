@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Conversation } from './types';
 
@@ -161,9 +160,20 @@ export const createConversation = async (
     if (existingConv) {
       console.log('Found existing product consultation conversation:', existingConv.id);
       
-      // Update the conversation with the new product context if provided
+      // Try to update the conversation with the new product context if provided
       if (productId) {
-        await updateConversationProduct(existingConv.id, productId);
+        try {
+          await updateConversationProduct(existingConv.id, productId);
+        } catch (error: any) {
+          // If we get a unique constraint violation, it means there's already 
+          // a conversation with this exact combination, so just continue
+          if (error.code === '23505') {
+            console.log('Conversation already has this product context, continuing...');
+          } else {
+            // Re-throw other errors
+            throw error;
+          }
+        }
       }
       
       return existingConv.id;
@@ -214,9 +224,21 @@ export const createConversation = async (
   return newConv.id;
 };
 
-// New function to update conversation's current product context
+// Updated function to handle constraint violations gracefully
 export const updateConversationProduct = async (conversationId: string, productId: string) => {
   console.log('Updating conversation product context:', { conversationId, productId });
+  
+  // First check if the conversation already has this product_id
+  const { data: existingConv } = await supabase
+    .from('conversations')
+    .select('product_id')
+    .eq('id', conversationId)
+    .single();
+
+  if (existingConv?.product_id === productId) {
+    console.log('Conversation already has the correct product context');
+    return;
+  }
   
   const { error } = await supabase
     .from('conversations')
@@ -228,10 +250,15 @@ export const updateConversationProduct = async (conversationId: string, productI
 
   if (error) {
     console.error('Error updating conversation product:', error);
-    throw error;
+    // Don't throw constraint violation errors, just log them
+    if (error.code !== '23505') {
+      throw error;
+    } else {
+      console.log('Constraint violation when updating product context - this may be expected');
+    }
+  } else {
+    console.log('Successfully updated conversation product context');
   }
-
-  console.log('Successfully updated conversation product context');
 };
 
 // New function to find valid conversation for a user pair
