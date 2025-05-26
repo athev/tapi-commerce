@@ -40,23 +40,40 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   const [currentConversation, setCurrentConv] = useState<any>(null);
 
   useEffect(() => {
-    const findConversation = () => {
+    const findAndSetConversation = async () => {
+      console.log('Looking for conversation:', conversationId);
+      console.log('Available conversations:', conversations);
+      
       const conv = conversations.find(c => c.id === conversationId);
       if (conv) {
+        console.log('Found conversation:', conv);
         setCurrentConv(conv);
         setIsLoading(false);
-      } else if (conversations.length > 0) {
-        // If conversations are loaded but this one isn't found
-        console.log('Conversation not found in list:', conversationId);
-        setIsLoading(false);
+      } else {
+        console.log('Conversation not found, refreshing...');
+        // Try refreshing conversations first
+        await fetchConversations();
+        
+        // Check again after refresh
+        const refreshedConv = conversations.find(c => c.id === conversationId);
+        if (refreshedConv) {
+          console.log('Found conversation after refresh:', refreshedConv);
+          setCurrentConv(refreshedConv);
+          setIsLoading(false);
+        } else {
+          console.log('Conversation still not found after refresh');
+          setIsLoading(false);
+        }
       }
     };
 
-    if (conversations.length > 0) {
-      findConversation();
-    } else {
-      // Refresh conversations to make sure we have the latest data
-      fetchConversations();
+    if (conversationId) {
+      if (conversations.length > 0) {
+        findAndSetConversation();
+      } else {
+        // If no conversations loaded yet, fetch them
+        fetchConversations();
+      }
     }
   }, [conversationId, conversations, fetchConversations]);
 
@@ -119,7 +136,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
       <Card className="h-full">
         <CardContent className="flex items-center justify-center h-full">
           <div className="text-center">
-            <p className="text-gray-500 mb-4">Cuộc trò chuyện không tồn tại hoặc đang được tạo</p>
+            <p className="text-gray-500 mb-4">Cuộc trò chuyện không tồn tại</p>
             <Button onClick={() => navigate('/chat')} variant="outline">
               Quay lại danh sách chat
             </Button>

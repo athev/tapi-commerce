@@ -91,10 +91,8 @@ const ChatButton = ({
       
       setShowConfirmModal(false);
       
-      // Navigate to chat with a slight delay to ensure conversation is created
-      setTimeout(() => {
-        navigate(`/chat/${conversationId}`);
-      }, 100);
+      // Navigate directly to chat without delay - the conversation should exist now
+      navigate(`/chat/${conversationId}`);
       
     } catch (error) {
       console.error('Error creating conversation:', error);
