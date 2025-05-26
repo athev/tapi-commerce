@@ -15,6 +15,7 @@ import SellerReviews from "@/components/seller/SellerReviews";
 import SellerAnalytics from "@/components/seller/SellerAnalytics";
 import NotificationCenter from "@/components/seller/NotificationCenter";
 import SellerStatusHandler from "@/components/seller/SellerStatusHandler";
+import Chat from "@/pages/Chat";
 
 const SellerDashboard = () => {
   const { profile } = useAuth();

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -141,16 +140,22 @@ export const useChat = () => {
           profileMap.set(profile.id, profile);
         });
 
-        const processedMessages = messagesData?.map(msg => ({
+        // Fix type casting by ensuring message_type is properly typed
+        const processedMessages: Message[] = messagesData?.map(msg => ({
           ...msg,
-          message_type: msg.message_type as 'text' | 'image' | 'emoji',
+          message_type: (msg.message_type as 'text' | 'image' | 'emoji') || 'text',
           sender_name: profileMap.get(msg.sender_id)?.full_name
         })) || [];
 
         console.log('Processed messages:', processedMessages);
         setMessages(processedMessages);
       } else {
-        setMessages(messagesData || []);
+        // Fix type casting for messages without profiles
+        const processedMessages: Message[] = messagesData?.map(msg => ({
+          ...msg,
+          message_type: (msg.message_type as 'text' | 'image' | 'emoji') || 'text'
+        })) || [];
+        setMessages(processedMessages);
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
