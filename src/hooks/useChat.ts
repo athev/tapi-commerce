@@ -18,7 +18,7 @@ import {
 } from './chat/messageService';
 import { uploadImageToStorage } from './chat/imageService';
 
-export { Message, Conversation };
+export type { Message, Conversation };
 
 export const useChat = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
