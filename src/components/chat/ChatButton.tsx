@@ -38,6 +38,7 @@ const ChatButton = ({
   const { createOrGetConversation } = useChat();
   const { toast } = useToast();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChatClick = () => {
     if (!user) {
@@ -70,20 +71,40 @@ const ChatButton = ({
 
   const handleConfirmChat = async () => {
     try {
+      setIsLoading(true);
+      
+      console.log('Creating/getting conversation for:', {
+        productId: product.id,
+        sellerId: product.seller_id,
+        orderId,
+        userId: user?.id
+      });
+
       const conversationId = await createOrGetConversation(
         product.seller_id, 
         product.id,
         orderId,
         orderId ? 'order_support' : 'product_consultation'
       );
-      navigate(`/chat/${conversationId}`);
+      
+      console.log('Conversation created/found:', conversationId);
+      
       setShowConfirmModal(false);
+      
+      // Navigate to chat with a slight delay to ensure conversation is created
+      setTimeout(() => {
+        navigate(`/chat/${conversationId}`);
+      }, 100);
+      
     } catch (error) {
+      console.error('Error creating conversation:', error);
       toast({
         title: "Lỗi",
         description: "Không thể tạo cuộc trò chuyện",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -93,10 +114,14 @@ const ChatButton = ({
         variant={variant}
         size={size}
         onClick={handleChatClick}
+        disabled={isLoading}
         className={className}
       >
         <MessageCircle className="h-4 w-4 mr-2" />
-        {orderId ? "Chat hỗ trợ đơn hàng" : "Chat với người bán"}
+        {isLoading 
+          ? "Đang tạo..." 
+          : (orderId ? "Chat hỗ trợ đơn hàng" : "Chat với người bán")
+        }
       </Button>
 
       <ChatConfirmationModal

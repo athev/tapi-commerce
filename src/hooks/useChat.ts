@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -343,6 +344,8 @@ export const useChat = () => {
 
       if (existingConv) {
         console.log('Found existing conversation:', existingConv.id);
+        // Refresh conversations to make sure we have the latest data
+        await fetchConversations();
         return existingConv.id;
       }
 
@@ -372,6 +375,10 @@ export const useChat = () => {
       }
 
       console.log('Created new conversation:', newConv.id);
+      
+      // Refresh conversations to include the new one
+      await fetchConversations();
+      
       return newConv.id;
     } catch (error) {
       console.error('Error creating conversation:', error);

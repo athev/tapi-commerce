@@ -23,6 +23,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   const navigate = useNavigate();
   const [newMessage, setNewMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -31,10 +32,33 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
     conversations, 
     sendMessage, 
     uploadImage,
-    setCurrentConversation 
+    setCurrentConversation,
+    fetchConversations 
   } = useChat();
 
-  const currentConversation = conversations.find(c => c.id === conversationId);
+  // Find conversation and handle loading state
+  const [currentConversation, setCurrentConv] = useState<any>(null);
+
+  useEffect(() => {
+    const findConversation = () => {
+      const conv = conversations.find(c => c.id === conversationId);
+      if (conv) {
+        setCurrentConv(conv);
+        setIsLoading(false);
+      } else if (conversations.length > 0) {
+        // If conversations are loaded but this one isn't found
+        console.log('Conversation not found in list:', conversationId);
+        setIsLoading(false);
+      }
+    };
+
+    if (conversations.length > 0) {
+      findConversation();
+    } else {
+      // Refresh conversations to make sure we have the latest data
+      fetchConversations();
+    }
+  }, [conversationId, conversations, fetchConversations]);
 
   useEffect(() => {
     setCurrentConversation(conversationId);
@@ -80,11 +104,26 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
     setNewMessage(question);
   };
 
+  if (isLoading) {
+    return (
+      <Card className="h-full">
+        <CardContent className="flex items-center justify-center h-full">
+          <p className="text-gray-500">Đang tải cuộc trò chuyện...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (!currentConversation) {
     return (
       <Card className="h-full">
         <CardContent className="flex items-center justify-center h-full">
-          <p className="text-gray-500">Cuộc trò chuyện không tồn tại</p>
+          <div className="text-center">
+            <p className="text-gray-500 mb-4">Cuộc trò chuyện không tồn tại hoặc đang được tạo</p>
+            <Button onClick={() => navigate('/chat')} variant="outline">
+              Quay lại danh sách chat
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );
