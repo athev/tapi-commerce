@@ -6,6 +6,7 @@ import { useChat, Conversation } from "@/hooks/useChat";
 import { useAuth } from "@/context/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
+import { Package, ShoppingCart } from "lucide-react";
 
 interface ConversationListProps {
   onConversationSelect: (conversationId: string) => void;
@@ -74,7 +75,9 @@ const ConversationList = ({ onConversationSelect, selectedConversationId }: Conv
               buyer_name: conversation.buyer_name,
               other_user: conversation.other_user,
               order: conversation.order,
-              product: conversation.product
+              product: conversation.product,
+              related_products: conversation.related_products,
+              related_orders: conversation.related_orders
             });
             
             return (
@@ -118,19 +121,35 @@ const ConversationList = ({ onConversationSelect, selectedConversationId }: Conv
                     {/* Chat type indicator */}
                     <div className="flex items-center gap-2 mt-1">
                       {conversation.chat_type === 'order_support' && conversation.order ? (
-                        <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
+                        <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded flex items-center gap-1">
+                          <Package className="w-3 h-3" />
                           Hỗ trợ đơn hàng #{conversation.order.id.slice(0, 8)}
                         </span>
                       ) : (
-                        <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                        <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded flex items-center gap-1">
+                          <ShoppingCart className="w-3 h-3" />
                           Tư vấn sản phẩm
                         </span>
                       )}
                     </div>
                     
+                    {/* Main product/order info */}
                     {conversation.product && (
                       <p className="text-xs text-gray-600 truncate mt-1">
                         Sản phẩm: {conversation.product.title}
+                      </p>
+                    )}
+                    
+                    {/* Related products/orders summary */}
+                    {conversation.related_products && conversation.related_products.length > 1 && (
+                      <p className="text-xs text-blue-500 mt-1">
+                        +{conversation.related_products.length - 1} sản phẩm khác được hỏi
+                      </p>
+                    )}
+                    
+                    {conversation.related_orders && conversation.related_orders.length > 0 && (
+                      <p className="text-xs text-orange-500 mt-1">
+                        {conversation.related_orders.length} đơn hàng liên quan
                       </p>
                     )}
                   </div>

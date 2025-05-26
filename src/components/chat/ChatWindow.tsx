@@ -124,15 +124,32 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
               {isBuyer && <span className="text-sm font-normal text-green-600 ml-2">(Cửa hàng)</span>}
               {!isBuyer && <span className="text-sm font-normal text-blue-600 ml-2">(Khách hàng)</span>}
             </CardTitle>
-            {currentConversation.product && (
-              <p className="text-sm text-gray-600">
-                Sản phẩm: {currentConversation.product.title}
-              </p>
-            )}
+            
+            {/* Enhanced header info */}
             {currentConversation.chat_type === 'order_support' && currentConversation.order && (
               <p className="text-sm text-orange-600">
                 Chat hỗ trợ đơn hàng #{currentConversation.order.id.slice(0, 8)}
               </p>
+            )}
+            
+            {currentConversation.chat_type === 'product_consultation' && (
+              <div className="space-y-1">
+                {currentConversation.product && (
+                  <p className="text-sm text-gray-600">
+                    Sản phẩm: {currentConversation.product.title}
+                  </p>
+                )}
+                {currentConversation.related_products && currentConversation.related_products.length > 1 && (
+                  <p className="text-xs text-blue-500">
+                    +{currentConversation.related_products.length - 1} sản phẩm khác
+                  </p>
+                )}
+                {currentConversation.related_orders && currentConversation.related_orders.length > 0 && (
+                  <p className="text-xs text-orange-500">
+                    {currentConversation.related_orders.length} đơn hàng đã mua
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -150,6 +167,51 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
         {currentConversation.chat_type === 'product_consultation' && currentConversation.product && (
           <div className="p-4 border-b bg-gray-50">
             <ProductInfoCard product={currentConversation.product} />
+            
+            {/* Related products summary */}
+            {currentConversation.related_products && currentConversation.related_products.length > 1 && (
+              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                <h4 className="text-sm font-medium text-blue-800 mb-2">
+                  Sản phẩm khác đã thảo luận ({currentConversation.related_products.length - 1})
+                </h4>
+                <div className="space-y-1">
+                  {currentConversation.related_products
+                    .filter(p => p.id !== currentConversation.product?.id)
+                    .slice(0, 3)
+                    .map(product => (
+                      <p key={product.id} className="text-xs text-blue-600">
+                        • {product.title}
+                      </p>
+                    ))}
+                  {currentConversation.related_products.length > 4 && (
+                    <p className="text-xs text-blue-500">
+                      ... và {currentConversation.related_products.length - 4} sản phẩm khác
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+            
+            {/* Related orders summary */}
+            {currentConversation.related_orders && currentConversation.related_orders.length > 0 && (
+              <div className="mt-3 p-3 bg-orange-50 rounded-lg">
+                <h4 className="text-sm font-medium text-orange-800 mb-2">
+                  Đơn hàng đã mua ({currentConversation.related_orders.length})
+                </h4>
+                <div className="space-y-1">
+                  {currentConversation.related_orders.slice(0, 3).map(order => (
+                    <p key={order.id} className="text-xs text-orange-600">
+                      • #{order.id.slice(0, 8)} - {order.status} - {order.products?.title}
+                    </p>
+                  ))}
+                  {currentConversation.related_orders.length > 3 && (
+                    <p className="text-xs text-orange-500">
+                      ... và {currentConversation.related_orders.length - 3} đơn khác
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

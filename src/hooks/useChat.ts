@@ -50,6 +50,20 @@ export interface Conversation {
   };
   buyer_name?: string;
   seller_name?: string;
+  // For grouped conversations
+  related_products?: {
+    id: string;
+    title: string;
+    image?: string;
+  }[];
+  related_orders?: {
+    id: string;
+    status: string;
+    products?: {
+      title: string;
+      price: number;
+    };
+  }[];
 }
 
 export const useChat = () => {
@@ -111,34 +125,84 @@ export const useChat = () => {
           profileMap.set(profile.id, profile);
         });
 
-        const processedConversations: Conversation[] = conversationsData?.map(conv => {
+        // Group conversations by user pairs and process
+        const conversationGroups = new Map<string, any[]>();
+        
+        conversationsData?.forEach(conv => {
           const buyerProfile = profileMap.get(conv.buyer_id);
           const sellerProfile = profileMap.get(conv.seller_id);
           const otherUserId = conv.buyer_id === user.id ? conv.seller_id : conv.buyer_id;
-          const otherUserProfile = profileMap.get(otherUserId);
-
-          console.log('Processing conversation:', {
-            id: conv.id,
-            chat_type: conv.chat_type,
+          
+          // Create a unique key for each user pair
+          const pairKey = [conv.buyer_id, conv.seller_id].sort().join('-');
+          
+          if (!conversationGroups.has(pairKey)) {
+            conversationGroups.set(pairKey, []);
+          }
+          
+          conversationGroups.get(pairKey)!.push({
+            ...conv,
             buyerProfile,
             sellerProfile,
-            otherUserProfile,
-            order: conv.orders,
-            product: conv.products
+            otherUserId
           });
+        });
 
-          return {
-            ...conv,
-            chat_type: (conv.chat_type as 'product_consultation' | 'order_support') || 'product_consultation',
-            product: conv.products,
-            order: conv.orders,
-            other_user: otherUserProfile,
-            buyer_name: buyerProfile?.full_name || 'Khách hàng',
-            seller_name: sellerProfile?.full_name || conv.products?.seller_name || 'Người bán'
-          };
-        }) || [];
+        const processedConversations: Conversation[] = [];
 
-        console.log('Processed conversations with names:', processedConversations);
+        // Process each group
+        conversationGroups.forEach((groupConvs, pairKey) => {
+          // Sort conversations in group by last message time
+          groupConvs.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
+          
+          // For each chat type, create separate conversations but with grouped context
+          const orderChats = groupConvs.filter(c => c.chat_type === 'order_support');
+          const productChats = groupConvs.filter(c => c.chat_type === 'product_consultation');
+          
+          // Add order support conversations
+          orderChats.forEach(conv => {
+            const otherUserProfile = profileMap.get(conv.otherUserId);
+            processedConversations.push({
+              ...conv,
+              chat_type: 'order_support' as const,
+              product: conv.products,
+              order: conv.orders,
+              other_user: otherUserProfile,
+              buyer_name: conv.buyerProfile?.full_name || 'Khách hàng',
+              seller_name: conv.sellerProfile?.full_name || conv.products?.seller_name || 'Người bán',
+              // Add related context from same user pair
+              related_products: productChats.map(pc => pc.products).filter(Boolean),
+              related_orders: orderChats.filter(oc => oc.id !== conv.id).map(oc => oc.orders).filter(Boolean)
+            });
+          });
+          
+          // For product consultations, group by user pair
+          if (productChats.length > 0) {
+            // Use the most recent product chat as the main conversation
+            const mainConv = productChats[0];
+            const otherUserProfile = profileMap.get(mainConv.otherUserId);
+            
+            processedConversations.push({
+              ...mainConv,
+              chat_type: 'product_consultation' as const,
+              product: mainConv.products,
+              order: mainConv.orders,
+              other_user: otherUserProfile,
+              buyer_name: mainConv.buyerProfile?.full_name || 'Khách hàng',
+              seller_name: mainConv.sellerProfile?.full_name || mainConv.products?.seller_name || 'Người bán',
+              // Add all products discussed with this user
+              related_products: productChats.map(pc => pc.products).filter(Boolean),
+              related_orders: orderChats.map(oc => oc.orders).filter(Boolean)
+            });
+          }
+        });
+
+        // Sort final conversations by last message time
+        processedConversations.sort((a, b) => 
+          new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()
+        );
+
+        console.log('Processed conversations with grouping:', processedConversations);
         setConversations(processedConversations);
       } else {
         const processedConversations: Conversation[] = conversationsData?.map(conv => ({
@@ -242,7 +306,7 @@ export const useChat = () => {
     }
   }, [toast]);
 
-  // Create or get conversation
+  // Create or get conversation - enhanced for order support
   const createOrGetConversation = async (
     sellerId: string, 
     productId?: string, 
@@ -313,6 +377,11 @@ export const useChat = () => {
       console.error('Error creating conversation:', error);
       throw error;
     }
+  };
+
+  // Create order support conversation
+  const createOrderSupportConversation = async (orderId: string, sellerId: string) => {
+    return await createOrGetConversation(sellerId, undefined, orderId, 'order_support');
   };
 
   // Send message
@@ -469,6 +538,7 @@ export const useChat = () => {
     loading,
     setCurrentConversation,
     createOrGetConversation,
+    createOrderSupportConversation,
     sendMessage,
     markMessagesAsRead,
     uploadImage,
