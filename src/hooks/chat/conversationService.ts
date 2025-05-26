@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Conversation } from './types';
 
@@ -145,7 +146,7 @@ export const createConversation = async (
   });
 
   // For product consultations, check if a conversation already exists between these users
-  // regardless of the specific product (since we group by user pairs)
+  // and update it with the new product instead of creating a new one
   if (chatType === 'product_consultation') {
     const { data: existingConv } = await supabase
       .from('conversations')
@@ -160,20 +161,10 @@ export const createConversation = async (
     if (existingConv) {
       console.log('Found existing product consultation conversation:', existingConv.id);
       
-      // Try to update the conversation with the new product context if provided
+      // Update the conversation with the new product
       if (productId) {
-        try {
-          await updateConversationProduct(existingConv.id, productId);
-        } catch (error: any) {
-          // If we get a unique constraint violation, it means there's already 
-          // a conversation with this exact combination, so just continue
-          if (error.code === '23505') {
-            console.log('Conversation already has this product context, continuing...');
-          } else {
-            // Re-throw other errors
-            throw error;
-          }
-        }
+        console.log('Updating conversation with new product:', productId);
+        await updateConversationProduct(existingConv.id, productId);
       }
       
       return existingConv.id;
@@ -224,44 +215,28 @@ export const createConversation = async (
   return newConv.id;
 };
 
-// Updated function to handle constraint violations gracefully
+// Update conversation to reflect current product being discussed
 export const updateConversationProduct = async (conversationId: string, productId: string) => {
   console.log('Updating conversation product context:', { conversationId, productId });
-  
-  // First check if the conversation already has this product_id
-  const { data: existingConv } = await supabase
-    .from('conversations')
-    .select('product_id')
-    .eq('id', conversationId)
-    .single();
-
-  if (existingConv?.product_id === productId) {
-    console.log('Conversation already has the correct product context');
-    return;
-  }
   
   const { error } = await supabase
     .from('conversations')
     .update({ 
       product_id: productId,
+      last_message_at: new Date().toISOString(), // Update timestamp to bring to top
       updated_at: new Date().toISOString()
     })
     .eq('id', conversationId);
 
   if (error) {
     console.error('Error updating conversation product:', error);
-    // Don't throw constraint violation errors, just log them
-    if (error.code !== '23505') {
-      throw error;
-    } else {
-      console.log('Constraint violation when updating product context - this may be expected');
-    }
+    throw error;
   } else {
     console.log('Successfully updated conversation product context');
   }
 };
 
-// New function to find valid conversation for a user pair
+// Find conversation between two users for product consultation
 export const findValidConversation = async (
   userId: string,
   otherUserId: string,

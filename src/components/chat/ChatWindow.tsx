@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -146,34 +145,39 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
     setNewMessage(question);
   };
 
-  // Enhanced logic to get the current product - prioritize based on URL parameter or most recent context
+  // Enhanced logic to get the current product - prioritize URL parameter as main product
   const getCurrentProduct = () => {
     if (!currentConversation) return null;
     
-    // If we have a productId from URL parameter, try to find it in related products first
-    if (productId && currentConversation.related_products) {
-      const urlProduct = currentConversation.related_products.find(p => p.id === productId);
-      if (urlProduct) {
-        console.log('Using product from URL parameter:', urlProduct);
-        return urlProduct;
+    // If we have a productId from URL parameter, this is the main product being discussed
+    if (productId) {
+      // First, check if URL product matches the conversation's main product
+      if (currentConversation.product && currentConversation.product.id === productId) {
+        console.log('URL product matches conversation main product:', currentConversation.product);
+        return currentConversation.product;
       }
+      
+      // Then, check in related products
+      if (currentConversation.related_products) {
+        const urlProduct = currentConversation.related_products.find(p => p.id === productId);
+        if (urlProduct) {
+          console.log('Found URL product in related products:', urlProduct);
+          return urlProduct;
+        }
+      }
+      
+      console.log('URL product not found in conversation context');
     }
     
-    // If we have a productId from URL parameter and it matches the main product
-    if (productId && currentConversation.product && currentConversation.product.id === productId) {
-      console.log('Using main product matching URL parameter:', currentConversation.product);
-      return currentConversation.product;
-    }
-    
-    // If conversation has a main product, use it as fallback
+    // If no URL parameter or product not found, fall back to conversation's main product
     if (currentConversation.product) {
-      console.log('Using main conversation product:', currentConversation.product);
+      console.log('Using conversation main product as fallback:', currentConversation.product);
       return currentConversation.product;
     }
     
-    // Otherwise, use the first related product if available
+    // Last resort: use first related product
     if (currentConversation.related_products && currentConversation.related_products.length > 0) {
-      console.log('Using first related product:', currentConversation.related_products[0]);
+      console.log('Using first related product as last resort:', currentConversation.related_products[0]);
       return currentConversation.related_products[0];
     }
     
@@ -225,7 +229,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
 
   console.log('ChatWindow - Current conversation:', currentConversation);
   console.log('ChatWindow - URL productId:', productId);
-  console.log('ChatWindow - Current product (prioritized):', currentProduct);
+  console.log('ChatWindow - Current product (from URL priority):', currentProduct);
   console.log('ChatWindow - Related products:', relatedProducts);
 
   return (
@@ -254,7 +258,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
               {!isBuyer && <span className="text-sm font-normal text-blue-600 ml-2">(Khách hàng)</span>}
             </CardTitle>
             
-            {/* Enhanced header info with URL parameter priority */}
+            {/* Enhanced header info showing current product from URL */}
             {currentConversation.chat_type === 'order_support' && currentConversation.order && (
               <p className="text-sm text-orange-600">
                 Chat hỗ trợ đơn hàng #{currentConversation.order.id.slice(0, 8)}
@@ -267,7 +271,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
                   <p className="text-sm text-gray-600">
                     Đang tư vấn: {currentProduct.title}
                     {productId && currentProduct.id === productId && (
-                      <span className="text-blue-600 ml-2">(Hiện tại)</span>
+                      <span className="text-blue-600 ml-2 font-medium">⭐ Hiện tại</span>
                     )}
                   </p>
                 )}
@@ -295,34 +299,34 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
           </div>
         )}
 
-        {/* Product Info Card for product consultation chats - now shows prioritized product */}
+        {/* Product Info Card showing current product from URL */}
         {currentConversation.chat_type === 'product_consultation' && currentProduct && (
           <div className="p-4 border-b bg-gray-50">
             <ProductInfoCard product={currentProduct} />
             
-            {/* Show indicator if this is the current product from URL */}
+            {/* Show clear indicator for current product */}
             {productId && currentProduct.id === productId && (
-              <div className="mt-2 p-2 bg-blue-100 rounded-lg">
+              <div className="mt-2 p-2 bg-blue-100 rounded-lg border-l-4 border-blue-500">
                 <p className="text-xs text-blue-700 font-medium">
-                  📍 Đang tư vấn sản phẩm này
+                  🎯 Đang tư vấn sản phẩm này
                 </p>
               </div>
             )}
             
-            {/* Related products summary */}
+            {/* Show related products that were discussed before */}
             {relatedProducts.length > 0 && (
-              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                <h4 className="text-sm font-medium text-blue-800 mb-2">
+              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">
                   Sản phẩm khác đã thảo luận ({relatedProducts.length})
                 </h4>
                 <div className="space-y-1">
                   {relatedProducts.slice(0, 3).map(product => (
-                    <p key={product.id} className="text-xs text-blue-600">
+                    <p key={product.id} className="text-xs text-gray-600">
                       • {product.title}
                     </p>
                   ))}
                   {relatedProducts.length > 3 && (
-                    <p className="text-xs text-blue-500">
+                    <p className="text-xs text-gray-500">
                       ... và {relatedProducts.length - 3} sản phẩm khác
                     </p>
                   )}
