@@ -36,6 +36,16 @@ const SellerInfo = ({
     });
   };
 
+  // Create product object for ChatButton
+  const product = {
+    id: productId || '',
+    title: productTitle || '',
+    seller_id: sellerId,
+    seller_name: sellerName,
+    price: 0,
+    image: undefined
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -91,13 +101,13 @@ const SellerInfo = ({
 
         {/* Action Buttons */}
         <div className="space-y-2 pt-4 border-t">
-          <ChatButton
-            sellerId={sellerId}
-            productId={productId}
-            productTitle={productTitle}
-            variant="outline"
-            className="w-full"
-          />
+          {productId && (
+            <ChatButton
+              product={product}
+              variant="outline"
+              className="w-full"
+            />
+          )}
           <Button variant="ghost" className="w-full text-marketplace-primary hover:text-marketplace-primary/80">
             <Store className="h-4 w-4 mr-2" />
             Xem cửa hàng

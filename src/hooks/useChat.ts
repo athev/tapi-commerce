@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -112,7 +111,7 @@ export const useChat = () => {
           profileMap.set(profile.id, profile);
         });
 
-        const processedConversations = conversationsData?.map(conv => {
+        const processedConversations: Conversation[] = conversationsData?.map(conv => {
           const buyerProfile = profileMap.get(conv.buyer_id);
           const sellerProfile = profileMap.get(conv.seller_id);
           const otherUserId = conv.buyer_id === user.id ? conv.seller_id : conv.buyer_id;
@@ -130,6 +129,7 @@ export const useChat = () => {
 
           return {
             ...conv,
+            chat_type: (conv.chat_type as 'product_consultation' | 'order_support') || 'product_consultation',
             product: conv.products,
             order: conv.orders,
             other_user: otherUserProfile,
@@ -141,7 +141,15 @@ export const useChat = () => {
         console.log('Processed conversations with names:', processedConversations);
         setConversations(processedConversations);
       } else {
-        setConversations(conversationsData || []);
+        const processedConversations: Conversation[] = conversationsData?.map(conv => ({
+          ...conv,
+          chat_type: (conv.chat_type as 'product_consultation' | 'order_support') || 'product_consultation',
+          product: conv.products,
+          order: conv.orders,
+          buyer_name: 'Khách hàng',
+          seller_name: conv.products?.seller_name || 'Người bán'
+        })) || [];
+        setConversations(processedConversations);
       }
     } catch (error) {
       console.error('Error fetching conversations:', error);
