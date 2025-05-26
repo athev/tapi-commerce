@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, Image, ArrowLeft } from "lucide-react";
 import { useChat, Message } from "@/hooks/useChat";
 import { useAuth } from "@/context/AuthContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import QuickQuestions from "./QuickQuestions";
@@ -21,6 +20,7 @@ interface ChatWindowProps {
 const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { productId } = useParams(); // Get productId from URL if available
   const [newMessage, setNewMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -145,6 +145,33 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
     setNewMessage(question);
   };
 
+  // Get the current product context - prioritize the main product over related products
+  const getCurrentProduct = () => {
+    if (!currentConversation) return null;
+    
+    // If conversation has a main product, use it
+    if (currentConversation.product) {
+      return currentConversation.product;
+    }
+    
+    // Otherwise, use the first related product if available
+    if (currentConversation.related_products && currentConversation.related_products.length > 0) {
+      return currentConversation.related_products[0];
+    }
+    
+    return null;
+  };
+
+  const getCurrentRelatedProducts = () => {
+    if (!currentConversation || !currentConversation.related_products) return [];
+    
+    const currentProduct = getCurrentProduct();
+    if (!currentProduct) return currentConversation.related_products;
+    
+    // Filter out the current product from related products
+    return currentConversation.related_products.filter(p => p.id !== currentProduct.id);
+  };
+
   if (isLoading) {
     return (
       <Card className="h-full">
@@ -175,9 +202,13 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
     ? (currentConversation.seller_name || 'Người bán')
     : (currentConversation.buyer_name || 'Khách hàng');
 
+  const currentProduct = getCurrentProduct();
+  const relatedProducts = getCurrentRelatedProducts();
+
   console.log('ChatWindow - Current conversation:', currentConversation);
   console.log('ChatWindow - User role:', isBuyer ? 'buyer' : 'seller');
   console.log('ChatWindow - Header display name:', headerDisplayName);
+  console.log('ChatWindow - Current product:', currentProduct);
 
   return (
     <Card className="h-full flex flex-col">
@@ -214,14 +245,14 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
             
             {currentConversation.chat_type === 'product_consultation' && (
               <div className="space-y-1">
-                {currentConversation.product && (
+                {currentProduct && (
                   <p className="text-sm text-gray-600">
-                    Sản phẩm: {currentConversation.product.title}
+                    Đang tư vấn: {currentProduct.title}
                   </p>
                 )}
-                {currentConversation.related_products && currentConversation.related_products.length > 1 && (
+                {relatedProducts.length > 0 && (
                   <p className="text-xs text-blue-500">
-                    +{currentConversation.related_products.length - 1} sản phẩm khác
+                    +{relatedProducts.length} sản phẩm khác đã thảo luận
                   </p>
                 )}
                 {currentConversation.related_orders && currentConversation.related_orders.length > 0 && (
@@ -244,28 +275,25 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
         )}
 
         {/* Product Info Card for product consultation chats */}
-        {currentConversation.chat_type === 'product_consultation' && currentConversation.product && (
+        {currentConversation.chat_type === 'product_consultation' && currentProduct && (
           <div className="p-4 border-b bg-gray-50">
-            <ProductInfoCard product={currentConversation.product} />
+            <ProductInfoCard product={currentProduct} />
             
             {/* Related products summary */}
-            {currentConversation.related_products && currentConversation.related_products.length > 1 && (
+            {relatedProducts.length > 0 && (
               <div className="mt-3 p-3 bg-blue-50 rounded-lg">
                 <h4 className="text-sm font-medium text-blue-800 mb-2">
-                  Sản phẩm khác đã thảo luận ({currentConversation.related_products.length - 1})
+                  Sản phẩm khác đã thảo luận ({relatedProducts.length})
                 </h4>
                 <div className="space-y-1">
-                  {currentConversation.related_products
-                    .filter(p => p.id !== currentConversation.product?.id)
-                    .slice(0, 3)
-                    .map(product => (
-                      <p key={product.id} className="text-xs text-blue-600">
-                        • {product.title}
-                      </p>
-                    ))}
-                  {currentConversation.related_products.length > 4 && (
+                  {relatedProducts.slice(0, 3).map(product => (
+                    <p key={product.id} className="text-xs text-blue-600">
+                      • {product.title}
+                    </p>
+                  ))}
+                  {relatedProducts.length > 3 && (
                     <p className="text-xs text-blue-500">
-                      ... và {currentConversation.related_products.length - 4} sản phẩm khác
+                      ... và {relatedProducts.length - 3} sản phẩm khác
                     </p>
                   )}
                 </div>
@@ -301,7 +329,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
           {currentConversation.chat_type === 'product_consultation' && messages.length === 0 && (
             <QuickQuestions 
               onQuestionSelect={handleQuestionSelect}
-              productType={currentConversation.product?.product_type}
+              productType={currentProduct?.product_type}
             />
           )}
 

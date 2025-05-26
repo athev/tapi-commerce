@@ -160,6 +160,12 @@ export const createConversation = async (
 
     if (existingConv) {
       console.log('Found existing product consultation conversation:', existingConv.id);
+      
+      // Update the conversation with the new product context if provided
+      if (productId) {
+        await updateConversationProduct(existingConv.id, productId);
+      }
+      
       return existingConv.id;
     }
   } else {
@@ -206,6 +212,26 @@ export const createConversation = async (
 
   console.log('Created new conversation:', newConv.id);
   return newConv.id;
+};
+
+// New function to update conversation's current product context
+export const updateConversationProduct = async (conversationId: string, productId: string) => {
+  console.log('Updating conversation product context:', { conversationId, productId });
+  
+  const { error } = await supabase
+    .from('conversations')
+    .update({ 
+      product_id: productId,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', conversationId);
+
+  if (error) {
+    console.error('Error updating conversation product:', error);
+    throw error;
+  }
+
+  console.log('Successfully updated conversation product context');
 };
 
 // New function to find valid conversation for a user pair

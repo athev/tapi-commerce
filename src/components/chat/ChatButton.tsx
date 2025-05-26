@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useChat } from "@/hooks/useChat";
 import { useToast } from "@/hooks/use-toast";
-import { findValidConversation } from "@/hooks/chat/conversationService";
+import { findValidConversation, updateConversationProduct } from "@/hooks/chat/conversationService";
 import ChatConfirmationModal from "./ChatConfirmationModal";
 
 interface Product {
@@ -92,7 +92,13 @@ const ChatButton = ({
 
       let conversationId: string;
       
-      if (existingConversationId) {
+      if (existingConversationId && chatType === 'product_consultation') {
+        console.log('Using existing conversation and updating product context:', existingConversationId);
+        conversationId = existingConversationId;
+        
+        // Update the conversation to reflect the current product being discussed
+        await updateConversationProduct(conversationId, product.id);
+      } else if (existingConversationId) {
         console.log('Using existing conversation:', existingConversationId);
         conversationId = existingConversationId;
       } else {
