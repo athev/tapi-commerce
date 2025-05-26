@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import QuickQuestions from "./QuickQuestions";
 import OrderInfoCard from "./OrderInfoCard";
+import ProductInfoCard from "./ProductInfoCard";
 
 interface ChatWindowProps {
   conversationId: string;
@@ -141,6 +143,13 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
         {currentConversation.chat_type === 'order_support' && currentConversation.order && (
           <div className="p-4 border-b bg-gray-50">
             <OrderInfoCard order={currentConversation.order} />
+          </div>
+        )}
+
+        {/* Product Info Card for product consultation chats */}
+        {currentConversation.chat_type === 'product_consultation' && currentConversation.product && (
+          <div className="p-4 border-b bg-gray-50">
+            <ProductInfoCard product={currentConversation.product} />
           </div>
         )}
 
