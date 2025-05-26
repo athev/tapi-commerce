@@ -1,163 +1,174 @@
 
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { MessageCircle, Package, ShoppingCart } from "lucide-react";
 import { useChat, Conversation } from "@/hooks/useChat";
 import { useAuth } from "@/context/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
-import { Package, ShoppingCart } from "lucide-react";
 
 interface ConversationListProps {
-  onConversationSelect: (conversationId: string) => void;
+  onConversationSelect: (id: string) => void;
   selectedConversationId?: string;
 }
 
 const ConversationList = ({ onConversationSelect, selectedConversationId }: ConversationListProps) => {
+  const { user } = useAuth();
   const { conversations, loading } = useChat();
-  const { user, profile } = useAuth();
 
-  console.log('ConversationList - Current user:', user?.id);
-  console.log('ConversationList - User profile:', profile);
-  console.log('ConversationList - Conversations:', conversations);
+  const getUnreadCount = (conversation: Conversation) => {
+    const isBuyer = conversation.buyer_id === user?.id;
+    return isBuyer ? conversation.buyer_unread_count : conversation.seller_unread_count;
+  };
+
+  const getDisplayName = (conversation: Conversation) => {
+    const isBuyer = conversation.buyer_id === user?.id;
+    return isBuyer 
+      ? (conversation.seller_name || 'Người bán')
+      : (conversation.buyer_name || 'Khách hàng');
+  };
+
+  const getChatTypeInfo = (conversation: Conversation) => {
+    if (conversation.chat_type === 'order_support') {
+      return {
+        icon: <Package className="h-3 w-3" />,
+        label: `Đơn hàng #${conversation.order?.id.slice(0, 8)}`,
+        color: 'bg-orange-100 text-orange-800'
+      };
+    } else {
+      return {
+        icon: <MessageCircle className="h-3 w-3" />,
+        label: 'Tư vấn sản phẩm',
+        color: 'bg-blue-100 text-blue-800'
+      };
+    }
+  };
+
+  const getOrderStatus = (status: string) => {
+    const statusMap = {
+      'pending': { label: 'Chờ thanh toán', color: 'bg-yellow-100 text-yellow-800' },
+      'paid': { label: 'Đã thanh toán', color: 'bg-green-100 text-green-800' },
+      'cancelled': { label: 'Đã hủy', color: 'bg-red-100 text-red-800' },
+    };
+    return statusMap[status as keyof typeof statusMap] || { label: status, color: 'bg-gray-100 text-gray-800' };
+  };
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="p-4">
-          <p className="text-center text-gray-500">Đang tải...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (conversations.length === 0) {
-    return (
-      <Card>
+      <Card className="h-full">
         <CardHeader>
-          <CardTitle>Tin nhắn</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <MessageCircle className="h-5 w-5" />
+            Tin nhắn
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-center text-gray-500">Chưa có cuộc trò chuyện nào</p>
+          <p className="text-gray-500">Đang tải...</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
-        <CardTitle>Tin nhắn</CardTitle>
+        <CardTitle className="flex items-center gap-2">
+          <MessageCircle className="h-5 w-5" />
+          Tin nhắn ({conversations.length})
+        </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="space-y-1">
-          {conversations.map((conversation: Conversation) => {
-            const isBuyer = conversation.buyer_id === user?.id;
-            const isSeller = conversation.seller_id === user?.id;
-            const unreadCount = isBuyer ? conversation.buyer_unread_count : conversation.seller_unread_count;
-            const isSelected = conversation.id === selectedConversationId;
-            
-            // Get display name and role label
-            const displayName = isBuyer 
-              ? (conversation.seller_name || conversation.other_user?.full_name || 'Người bán')
-              : (conversation.buyer_name || conversation.other_user?.full_name || 'Khách hàng');
-            
-            const roleLabel = isBuyer ? '(Người bán)' : '(Khách hàng)';
-            
-            console.log('Conversation display info:', {
-              id: conversation.id,
-              chat_type: conversation.chat_type,
-              isBuyer,
-              isSeller,
-              displayName,
-              roleLabel,
-              seller_name: conversation.seller_name,
-              buyer_name: conversation.buyer_name,
-              other_user: conversation.other_user,
-              order: conversation.order,
-              product: conversation.product,
-              related_products: conversation.related_products,
-              related_orders: conversation.related_orders
-            });
-            
-            return (
-              <div
-                key={conversation.id}
-                onClick={() => onConversationSelect(conversation.id)}
-                className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
-                  isSelected ? 'bg-blue-50 border-blue-200' : ''
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <Avatar>
-                    <AvatarFallback>
-                      {displayName?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium text-sm truncate">
-                        {displayName}
-                        <span className={`text-xs ml-2 ${isBuyer ? 'text-green-600' : 'text-blue-600'}`}>
-                          {roleLabel}
-                        </span>
-                      </h3>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs text-gray-500">
-                          {formatDistanceToNow(new Date(conversation.last_message_at), { 
-                            locale: vi,
-                            addSuffix: true 
-                          })}
-                        </span>
+        {conversations.length === 0 ? (
+          <div className="p-4 text-center text-gray-500">
+            Chưa có cuộc trò chuyện nào
+          </div>
+        ) : (
+          <div className="space-y-0">
+            {conversations.map((conversation) => {
+              const unreadCount = getUnreadCount(conversation);
+              const displayName = getDisplayName(conversation);
+              const chatTypeInfo = getChatTypeInfo(conversation);
+              
+              return (
+                <div
+                  key={conversation.id}
+                  onClick={() => onConversationSelect(conversation.id)}
+                  className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
+                    selectedConversationId === conversation.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                  }`}
+                >
+                  <div className="flex items-start space-x-3">
+                    <Avatar className="mt-1">
+                      <AvatarFallback>
+                        {displayName?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-medium truncate">
+                          {displayName}
+                          {conversation.buyer_id !== user?.id && 
+                            <span className="text-sm font-normal text-green-600 ml-2">(Cửa hàng)</span>
+                          }
+                          {conversation.buyer_id === user?.id && 
+                            <span className="text-sm font-normal text-blue-600 ml-2">(Khách hàng)</span>
+                          }
+                        </h3>
                         {unreadCount > 0 && (
-                          <Badge variant="destructive" className="text-xs">
+                          <Badge variant="destructive" className="ml-2">
                             {unreadCount}
                           </Badge>
                         )}
                       </div>
-                    </div>
-                    
-                    {/* Chat type indicator */}
-                    <div className="flex items-center gap-2 mt-1">
-                      {conversation.chat_type === 'order_support' && conversation.order ? (
-                        <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded flex items-center gap-1">
-                          <Package className="w-3 h-3" />
-                          Hỗ trợ đơn hàng #{conversation.order.id.slice(0, 8)}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded flex items-center gap-1">
-                          <ShoppingCart className="w-3 h-3" />
-                          Tư vấn sản phẩm
-                        </span>
+                      
+                      {/* Chat type and status */}
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline" className={`text-xs ${chatTypeInfo.color}`}>
+                          {chatTypeInfo.icon}
+                          <span className="ml-1">{chatTypeInfo.label}</span>
+                        </Badge>
+                        
+                        {conversation.chat_type === 'order_support' && conversation.order && (
+                          <Badge variant="outline" className={`text-xs ${getOrderStatus(conversation.order.status).color}`}>
+                            {getOrderStatus(conversation.order.status).label}
+                          </Badge>
+                        )}
+                      </div>
+                      
+                      {/* Product/Order info */}
+                      {conversation.product && (
+                        <p className="text-sm text-gray-600 truncate mb-1">
+                          {conversation.chat_type === 'order_support' ? '📦 ' : '💬 '}
+                          {conversation.product.title}
+                        </p>
                       )}
+                      
+                      {/* Related items summary */}
+                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                        {conversation.related_products && conversation.related_products.length > 0 && (
+                          <span>+{conversation.related_products.length} sản phẩm</span>
+                        )}
+                        {conversation.related_orders && conversation.related_orders.length > 0 && (
+                          <span>+{conversation.related_orders.length} đơn hàng</span>
+                        )}
+                      </div>
+                      
+                      <p className="text-xs text-gray-500 mt-1">
+                        {formatDistanceToNow(new Date(conversation.last_message_at), { 
+                          addSuffix: true, 
+                          locale: vi 
+                        })}
+                      </p>
                     </div>
-                    
-                    {/* Main product/order info */}
-                    {conversation.product && (
-                      <p className="text-xs text-gray-600 truncate mt-1">
-                        Sản phẩm: {conversation.product.title}
-                      </p>
-                    )}
-                    
-                    {/* Related products/orders summary */}
-                    {conversation.related_products && conversation.related_products.length > 1 && (
-                      <p className="text-xs text-blue-500 mt-1">
-                        +{conversation.related_products.length - 1} sản phẩm khác được hỏi
-                      </p>
-                    )}
-                    
-                    {conversation.related_orders && conversation.related_orders.length > 0 && (
-                      <p className="text-xs text-orange-500 mt-1">
-                        {conversation.related_orders.length} đơn hàng liên quan
-                      </p>
-                    )}
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -1,9 +1,10 @@
+
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send, Image, ArrowLeft } from "lucide-react";
+import { Send, Image, ArrowLeft, ExternalLink } from "lucide-react";
 import { useChat, Message } from "@/hooks/useChat";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate, useParams } from "react-router-dom";
@@ -20,7 +21,7 @@ interface ChatWindowProps {
 const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { productId } = useParams(); // Get productId from URL if available
+  const { productId } = useParams();
   const [newMessage, setNewMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,10 +55,8 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
         console.log('Conversation not found, refreshing...');
         
         if (!hasCheckedRedirect) {
-          // Try refreshing conversations first
           await fetchConversations();
           
-          // Check again after refresh
           const refreshedConv = conversations.find(c => c.id === conversationId);
           if (refreshedConv) {
             console.log('Found conversation after refresh:', refreshedConv);
@@ -65,13 +64,9 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
             setIsLoading(false);
             setHasCheckedRedirect(true);
           } else {
-            // If conversation still not found, try to find an alternative conversation
             console.log('Conversation still not found, looking for alternative...');
             
-            // Look for any conversation with the same participants
             const alternativeConv = conversations.find(c => {
-              // We can't know the exact seller/buyer from URL, but we can look for any conversation
-              // that involves the current user
               return c.buyer_id === user?.id || c.seller_id === user?.id;
             });
             
@@ -95,7 +90,6 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
       if (conversations.length > 0) {
         findAndSetConversation();
       } else {
-        // If no conversations loaded yet, fetch them
         fetchConversations();
       }
     }
@@ -145,19 +139,15 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
     setNewMessage(question);
   };
 
-  // Enhanced logic to get the current product - prioritize URL parameter as main product
   const getCurrentProduct = () => {
     if (!currentConversation) return null;
     
-    // If we have a productId from URL parameter, this is the main product being discussed
     if (productId) {
-      // First, check if URL product matches the conversation's main product
       if (currentConversation.product && currentConversation.product.id === productId) {
         console.log('URL product matches conversation main product:', currentConversation.product);
         return currentConversation.product;
       }
       
-      // Then, check in related products
       if (currentConversation.related_products) {
         const urlProduct = currentConversation.related_products.find(p => p.id === productId);
         if (urlProduct) {
@@ -169,13 +159,11 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
       console.log('URL product not found in conversation context');
     }
     
-    // If no URL parameter or product not found, fall back to conversation's main product
     if (currentConversation.product) {
       console.log('Using conversation main product as fallback:', currentConversation.product);
       return currentConversation.product;
     }
     
-    // Last resort: use first related product
     if (currentConversation.related_products && currentConversation.related_products.length > 0) {
       console.log('Using first related product as last resort:', currentConversation.related_products[0]);
       return currentConversation.related_products[0];
@@ -190,7 +178,6 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
     const currentProduct = getCurrentProduct();
     if (!currentProduct) return currentConversation.related_products;
     
-    // Filter out the current product from related products
     return currentConversation.related_products.filter(p => p.id !== currentProduct.id);
   };
 
@@ -258,11 +245,20 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
               {!isBuyer && <span className="text-sm font-normal text-blue-600 ml-2">(Khách hàng)</span>}
             </CardTitle>
             
-            {/* Enhanced header info showing current product from URL */}
             {currentConversation.chat_type === 'order_support' && currentConversation.order && (
-              <p className="text-sm text-orange-600">
-                Chat hỗ trợ đơn hàng #{currentConversation.order.id.slice(0, 8)}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-orange-600">
+                  Chat hỗ trợ đơn hàng #{currentConversation.order.id.slice(0, 8)}
+                </p>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => navigate(`/my-purchases`)}
+                  className="text-xs p-1 h-auto"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </Button>
+              </div>
             )}
             
             {currentConversation.chat_type === 'product_consultation' && (
@@ -304,7 +300,6 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
           <div className="p-4 border-b bg-gray-50">
             <ProductInfoCard product={currentProduct} />
             
-            {/* Show clear indicator for current product */}
             {productId && currentProduct.id === productId && (
               <div className="mt-2 p-2 bg-blue-100 rounded-lg border-l-4 border-blue-500">
                 <p className="text-xs text-blue-700 font-medium">
@@ -313,7 +308,6 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
               </div>
             )}
             
-            {/* Show related products that were discussed before */}
             {relatedProducts.length > 0 && (
               <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                 <h4 className="text-sm font-medium text-gray-700 mb-2">
@@ -334,7 +328,6 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
               </div>
             )}
             
-            {/* Related orders summary */}
             {currentConversation.related_orders && currentConversation.related_orders.length > 0 && (
               <div className="mt-3 p-3 bg-orange-50 rounded-lg">
                 <h4 className="text-sm font-medium text-orange-800 mb-2">
@@ -359,7 +352,6 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Quick Questions - only show at the beginning of product consultation */}
           {currentConversation.chat_type === 'product_consultation' && messages.length === 0 && (
             <QuickQuestions 
               onQuestionSelect={handleQuestionSelect}

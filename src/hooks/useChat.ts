@@ -133,7 +133,26 @@ export const useChat = () => {
 
   // Create order support conversation
   const createOrderSupportConversation = async (orderId: string, sellerId: string) => {
-    return await createOrGetConversation(sellerId, undefined, orderId, 'order_support');
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Get product info from order
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select('product_id')
+        .eq('id', orderId)
+        .single();
+
+      if (orderError || !order) {
+        throw new Error('Could not find order');
+      }
+
+      return await createOrGetConversation(sellerId, order.product_id, orderId, 'order_support');
+    } catch (error) {
+      console.error('Error creating order support conversation:', error);
+      throw error;
+    }
   };
 
   // Send message

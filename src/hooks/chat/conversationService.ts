@@ -79,11 +79,11 @@ export const processConversations = (conversationsData: any[], profiles: any[], 
     // Sort conversations in group by last message time
     groupConvs.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
     
-    // For each chat type, create separate conversations but with grouped context
+    // Separate by chat type
     const orderChats = groupConvs.filter(c => c.chat_type === 'order_support');
     const productChats = groupConvs.filter(c => c.chat_type === 'product_consultation');
     
-    // Add order support conversations
+    // Add order support conversations (each order gets its own conversation)
     orderChats.forEach(conv => {
       const otherUserProfile = profileMap.get(conv.otherUserId);
       processedConversations.push({
@@ -94,15 +94,13 @@ export const processConversations = (conversationsData: any[], profiles: any[], 
         other_user: otherUserProfile,
         buyer_name: conv.buyerProfile?.full_name || 'Khách hàng',
         seller_name: conv.sellerProfile?.full_name || conv.products?.seller_name || 'Người bán',
-        // Add related context from same user pair
         related_products: productChats.map(pc => pc.products).filter(Boolean),
         related_orders: orderChats.filter(oc => oc.id !== conv.id).map(oc => oc.orders).filter(Boolean)
       });
     });
     
-    // For product consultations, group by user pair
+    // For product consultations, group by user pair (existing logic)
     if (productChats.length > 0) {
-      // Use the most recent product chat as the main conversation
       const mainConv = productChats[0];
       const otherUserProfile = profileMap.get(mainConv.otherUserId);
       
@@ -114,7 +112,6 @@ export const processConversations = (conversationsData: any[], profiles: any[], 
         other_user: otherUserProfile,
         buyer_name: mainConv.buyerProfile?.full_name || 'Khách hàng',
         seller_name: mainConv.sellerProfile?.full_name || mainConv.products?.seller_name || 'Người bán',
-        // Add all products discussed with this user
         related_products: productChats.map(pc => pc.products).filter(Boolean),
         related_orders: orderChats.map(oc => oc.orders).filter(Boolean)
       });
@@ -126,8 +123,59 @@ export const processConversations = (conversationsData: any[], profiles: any[], 
     new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()
   );
 
-  console.log('Processed conversations with grouping:', processedConversations);
+  console.log('Processed conversations with order support:', processedConversations);
   return processedConversations;
+};
+
+// Create order support conversation
+export const createOrderSupportConversation = async (
+  buyerId: string,
+  sellerId: string,
+  orderId: string,
+  productId: string
+) => {
+  console.log('Creating order support conversation:', { 
+    buyerId, 
+    sellerId, 
+    orderId,
+    productId
+  });
+
+  // Check if conversation already exists for this order
+  const { data: existingConv } = await supabase
+    .from('conversations')
+    .select('id')
+    .eq('buyer_id', buyerId)
+    .eq('seller_id', sellerId)
+    .eq('chat_type', 'order_support')
+    .eq('order_id', orderId)
+    .single();
+
+  if (existingConv) {
+    console.log('Found existing order support conversation:', existingConv.id);
+    return existingConv.id;
+  }
+
+  // Create new order support conversation
+  const { data: newConv, error } = await supabase
+    .from('conversations')
+    .insert({
+      buyer_id: buyerId,
+      seller_id: sellerId,
+      product_id: productId,
+      order_id: orderId,
+      chat_type: 'order_support'
+    })
+    .select('id')
+    .single();
+
+  if (error) {
+    console.error('Error creating order support conversation:', error);
+    throw error;
+  }
+
+  console.log('Created new order support conversation:', newConv.id);
+  return newConv.id;
 };
 
 export const createConversation = async (
@@ -145,8 +193,11 @@ export const createConversation = async (
     chatType 
   });
 
+  if (chatType === 'order_support' && orderId) {
+    return createOrderSupportConversation(buyerId, sellerId, orderId, productId!);
+  }
+
   // For product consultations, check if a conversation already exists between these users
-  // and update it with the new product instead of creating a new one
   if (chatType === 'product_consultation') {
     const { data: existingConv } = await supabase
       .from('conversations')
@@ -167,21 +218,6 @@ export const createConversation = async (
         await updateConversationProduct(existingConv.id, productId);
       }
       
-      return existingConv.id;
-    }
-  } else {
-    // For order support, check for specific order
-    const { data: existingConv } = await supabase
-      .from('conversations')
-      .select('id')
-      .eq('buyer_id', buyerId)
-      .eq('seller_id', sellerId)
-      .eq('chat_type', chatType)
-      .eq('order_id', orderId)
-      .single();
-
-    if (existingConv) {
-      console.log('Found existing order support conversation:', existingConv.id);
       return existingConv.id;
     }
   }
@@ -223,7 +259,7 @@ export const updateConversationProduct = async (conversationId: string, productI
     .from('conversations')
     .update({ 
       product_id: productId,
-      last_message_at: new Date().toISOString(), // Update timestamp to bring to top
+      last_message_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })
     .eq('id', conversationId);
@@ -236,13 +272,14 @@ export const updateConversationProduct = async (conversationId: string, productI
   }
 };
 
-// Find conversation between two users for product consultation
+// Find conversation between two users for specific chat type
 export const findValidConversation = async (
   userId: string,
   otherUserId: string,
-  chatType?: 'product_consultation' | 'order_support'
+  chatType?: 'product_consultation' | 'order_support',
+  orderId?: string
 ) => {
-  console.log('Finding valid conversation between users:', { userId, otherUserId, chatType });
+  console.log('Finding valid conversation between users:', { userId, otherUserId, chatType, orderId });
 
   let query = supabase
     .from('conversations')
@@ -252,6 +289,10 @@ export const findValidConversation = async (
 
   if (chatType) {
     query = query.eq('chat_type', chatType);
+  }
+
+  if (chatType === 'order_support' && orderId) {
+    query = query.eq('order_id', orderId);
   }
 
   const { data: conversations, error } = await query.limit(1);
