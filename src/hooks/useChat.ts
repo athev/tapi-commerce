@@ -1,70 +1,24 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Message, Conversation } from './chat/types';
+import { 
+  fetchConversationsData, 
+  fetchUserProfiles, 
+  processConversations,
+  createConversation
+} from './chat/conversationService';
+import { 
+  fetchMessagesData, 
+  fetchMessageSenderProfiles, 
+  processMessages,
+  sendMessageToDb,
+  markConversationMessagesAsRead
+} from './chat/messageService';
+import { uploadImageToStorage } from './chat/imageService';
 
-export interface Message {
-  id: string;
-  conversation_id: string;
-  sender_id: string;
-  content: string;
-  message_type: 'text' | 'image' | 'emoji';
-  image_url?: string;
-  is_read: boolean;
-  created_at: string;
-  sender_name?: string;
-  sender_role?: string;
-}
-
-export interface Conversation {
-  id: string;
-  buyer_id: string;
-  seller_id: string;
-  product_id?: string;
-  order_id?: string;
-  chat_type: 'product_consultation' | 'order_support';
-  last_message_at: string;
-  buyer_unread_count: number;
-  seller_unread_count: number;
-  created_at: string;
-  product?: {
-    id: string;
-    title: string;
-    image?: string;
-    seller_name?: string;
-    product_type?: string;
-  };
-  order?: {
-    id: string;
-    status: string;
-    created_at: string;
-    delivery_status?: string;
-    products?: {
-      title: string;
-      price: number;
-    };
-  };
-  other_user?: {
-    id: string;
-    full_name: string;
-    role?: string;
-  };
-  buyer_name?: string;
-  seller_name?: string;
-  // For grouped conversations
-  related_products?: {
-    id: string;
-    title: string;
-    image?: string;
-  }[];
-  related_orders?: {
-    id: string;
-    status: string;
-    products?: {
-      title: string;
-      price: number;
-    };
-  }[];
-}
+export { Message, Conversation };
 
 export const useChat = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -80,24 +34,7 @@ export const useChat = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      console.log('Fetching conversations for user:', user.id);
-
-      const { data: conversationsData, error } = await supabase
-        .from('conversations')
-        .select(`
-          *,
-          products:product_id (id, title, image, seller_name, product_type),
-          orders:order_id (id, status, created_at, delivery_status, products(title, price))
-        `)
-        .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
-        .order('last_message_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching conversations:', error);
-        throw error;
-      }
-
-      console.log('Raw conversations data:', conversationsData);
+      const conversationsData = await fetchConversationsData(user.id);
 
       // Get user profiles for all participants
       const userIds = new Set<string>();
@@ -106,103 +43,9 @@ export const useChat = () => {
         userIds.add(conv.seller_id);
       });
 
-      console.log('Fetching profiles for users:', Array.from(userIds));
-
       if (userIds.size > 0) {
-        const { data: profiles, error: profileError } = await supabase
-          .from('profiles')
-          .select('id, full_name, role')
-          .in('id', Array.from(userIds));
-
-        if (profileError) {
-          console.error('Error fetching profiles:', profileError);
-        }
-
-        console.log('Fetched profiles:', profiles);
-
-        const profileMap = new Map();
-        profiles?.forEach(profile => {
-          profileMap.set(profile.id, profile);
-        });
-
-        // Group conversations by user pairs and process
-        const conversationGroups = new Map<string, any[]>();
-        
-        conversationsData?.forEach(conv => {
-          const buyerProfile = profileMap.get(conv.buyer_id);
-          const sellerProfile = profileMap.get(conv.seller_id);
-          const otherUserId = conv.buyer_id === user.id ? conv.seller_id : conv.buyer_id;
-          
-          // Create a unique key for each user pair
-          const pairKey = [conv.buyer_id, conv.seller_id].sort().join('-');
-          
-          if (!conversationGroups.has(pairKey)) {
-            conversationGroups.set(pairKey, []);
-          }
-          
-          conversationGroups.get(pairKey)!.push({
-            ...conv,
-            buyerProfile,
-            sellerProfile,
-            otherUserId
-          });
-        });
-
-        const processedConversations: Conversation[] = [];
-
-        // Process each group
-        conversationGroups.forEach((groupConvs, pairKey) => {
-          // Sort conversations in group by last message time
-          groupConvs.sort((a, b) => new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime());
-          
-          // For each chat type, create separate conversations but with grouped context
-          const orderChats = groupConvs.filter(c => c.chat_type === 'order_support');
-          const productChats = groupConvs.filter(c => c.chat_type === 'product_consultation');
-          
-          // Add order support conversations
-          orderChats.forEach(conv => {
-            const otherUserProfile = profileMap.get(conv.otherUserId);
-            processedConversations.push({
-              ...conv,
-              chat_type: 'order_support' as const,
-              product: conv.products,
-              order: conv.orders,
-              other_user: otherUserProfile,
-              buyer_name: conv.buyerProfile?.full_name || 'Khách hàng',
-              seller_name: conv.sellerProfile?.full_name || conv.products?.seller_name || 'Người bán',
-              // Add related context from same user pair
-              related_products: productChats.map(pc => pc.products).filter(Boolean),
-              related_orders: orderChats.filter(oc => oc.id !== conv.id).map(oc => oc.orders).filter(Boolean)
-            });
-          });
-          
-          // For product consultations, group by user pair
-          if (productChats.length > 0) {
-            // Use the most recent product chat as the main conversation
-            const mainConv = productChats[0];
-            const otherUserProfile = profileMap.get(mainConv.otherUserId);
-            
-            processedConversations.push({
-              ...mainConv,
-              chat_type: 'product_consultation' as const,
-              product: mainConv.products,
-              order: mainConv.orders,
-              other_user: otherUserProfile,
-              buyer_name: mainConv.buyerProfile?.full_name || 'Khách hàng',
-              seller_name: mainConv.sellerProfile?.full_name || mainConv.products?.seller_name || 'Người bán',
-              // Add all products discussed with this user
-              related_products: productChats.map(pc => pc.products).filter(Boolean),
-              related_orders: orderChats.map(oc => oc.orders).filter(Boolean)
-            });
-          }
-        });
-
-        // Sort final conversations by last message time
-        processedConversations.sort((a, b) => 
-          new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()
-        );
-
-        console.log('Processed conversations with grouping:', processedConversations);
+        const profiles = await fetchUserProfiles(Array.from(userIds));
+        const processedConversations = processConversations(conversationsData || [], profiles, user.id);
         setConversations(processedConversations);
       } else {
         const processedConversations: Conversation[] = conversationsData?.map(conv => ({
@@ -230,62 +73,15 @@ export const useChat = () => {
   // Get messages for a conversation
   const fetchMessages = useCallback(async (conversationId: string) => {
     try {
-      console.log('Fetching messages for conversation:', conversationId);
-      
-      const { data: messagesData, error } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('conversation_id', conversationId)
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Error fetching messages:', error);
-        throw error;
-      }
-
-      console.log('Raw messages data:', messagesData);
+      const messagesData = await fetchMessagesData(conversationId);
 
       // Get sender names and roles for all message senders
       const senderIds = new Set<string>();
       messagesData?.forEach(msg => senderIds.add(msg.sender_id));
 
-      console.log('Fetching sender profiles for:', Array.from(senderIds));
-
       if (senderIds.size > 0) {
-        const { data: profiles, error: profileError } = await supabase
-          .from('profiles')
-          .select('id, full_name, role')
-          .in('id', Array.from(senderIds));
-
-        if (profileError) {
-          console.error('Error fetching sender profiles:', profileError);
-        }
-
-        console.log('Message sender profiles:', profiles);
-
-        const profileMap = new Map();
-        profiles?.forEach(profile => {
-          profileMap.set(profile.id, profile);
-        });
-
-        const processedMessages: Message[] = messagesData?.map(msg => {
-          const senderProfile = profileMap.get(msg.sender_id);
-          console.log('Processing message:', {
-            id: msg.id,
-            sender_id: msg.sender_id,
-            senderProfile,
-            content: msg.content
-          });
-          
-          return {
-            ...msg,
-            message_type: (msg.message_type as 'text' | 'image' | 'emoji') || 'text',
-            sender_name: senderProfile?.full_name || 'Người dùng',
-            sender_role: senderProfile?.role || 'end-user'
-          };
-        }) || [];
-
-        console.log('Processed messages with sender names:', processedMessages);
+        const profiles = await fetchMessageSenderProfiles(Array.from(senderIds));
+        const processedMessages = processMessages(messagesData || [], profiles);
         setMessages(processedMessages);
       } else {
         const processedMessages: Message[] = messagesData?.map(msg => ({
@@ -317,68 +113,18 @@ export const useChat = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      console.log('Creating/getting conversation:', { 
-        buyerId: user.id, 
-        sellerId, 
-        productId, 
-        orderId, 
-        chatType 
-      });
-
-      // Check if conversation already exists
-      let existingConvQuery = supabase
-        .from('conversations')
-        .select('id')
-        .eq('buyer_id', user.id)
-        .eq('seller_id', sellerId)
-        .eq('chat_type', chatType);
-
-      if (orderId) {
-        existingConvQuery = existingConvQuery.eq('order_id', orderId);
-      } else if (productId) {
-        existingConvQuery = existingConvQuery.eq('product_id', productId);
-      }
-
-      const { data: existingConv } = await existingConvQuery.single();
-
-      if (existingConv) {
-        console.log('Found existing conversation:', existingConv.id);
-        // Make sure conversations are up to date
-        await fetchConversations();
-        return existingConv.id;
-      }
-
-      // Create new conversation
-      const conversationData: any = {
-        buyer_id: user.id,
-        seller_id: sellerId,
-        chat_type: chatType
-      };
-
-      if (orderId) {
-        conversationData.order_id = orderId;
-      }
-      if (productId) {
-        conversationData.product_id = productId;
-      }
-
-      const { data: newConv, error } = await supabase
-        .from('conversations')
-        .insert(conversationData)
-        .select('id')
-        .single();
-
-      if (error) {
-        console.error('Error creating conversation:', error);
-        throw error;
-      }
-
-      console.log('Created new conversation:', newConv.id);
+      const conversationId = await createConversation(
+        user.id,
+        sellerId,
+        productId,
+        orderId,
+        chatType
+      );
       
       // Immediately refresh conversations and wait for it to complete
       await fetchConversations();
       
-      return newConv.id;
+      return conversationId;
     } catch (error) {
       console.error('Error creating conversation:', error);
       throw error;
@@ -396,24 +142,7 @@ export const useChat = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      console.log('Sending message:', { conversationId, content, messageType, sender: user.id });
-
-      const { error } = await supabase
-        .from('messages')
-        .insert({
-          conversation_id: conversationId,
-          sender_id: user.id,
-          content,
-          message_type: messageType,
-          image_url: imageUrl
-        });
-
-      if (error) {
-        console.error('Error sending message:', error);
-        throw error;
-      }
-
-      console.log('Message sent successfully');
+      await sendMessageToDb(conversationId, user.id, content, messageType, imageUrl);
       
       // Refresh messages immediately
       await fetchMessages(conversationId);
@@ -434,25 +163,7 @@ export const useChat = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      console.log('Marking messages as read for conversation:', conversationId);
-
-      const { data: conversation } = await supabase
-        .from('conversations')
-        .select('buyer_id, seller_id')
-        .eq('id', conversationId)
-        .single();
-
-      if (!conversation) return;
-
-      const isBuyer = conversation.buyer_id === user.id;
-      const updateField = isBuyer ? 'buyer_unread_count' : 'seller_unread_count';
-
-      await supabase
-        .from('conversations')
-        .update({ [updateField]: 0 })
-        .eq('id', conversationId);
-
-      console.log('Messages marked as read');
+      await markConversationMessagesAsRead(conversationId, user.id);
     } catch (error) {
       console.error('Error marking messages as read:', error);
     }
@@ -461,24 +172,7 @@ export const useChat = () => {
   // Upload image
   const uploadImage = async (file: File) => {
     try {
-      if (file.size > 2 * 1024 * 1024) {
-        throw new Error('File size must be less than 2MB');
-      }
-
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      
-      const { data, error } = await supabase.storage
-        .from('chat-images')
-        .upload(fileName, file);
-
-      if (error) throw error;
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('chat-images')
-        .getPublicUrl(data.path);
-
-      return publicUrl;
+      return await uploadImageToStorage(file);
     } catch (error) {
       console.error('Error uploading image:', error);
       throw error;
