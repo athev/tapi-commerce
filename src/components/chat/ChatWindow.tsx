@@ -24,6 +24,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   const [newMessage, setNewMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasCheckedRedirect, setHasCheckedRedirect] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -36,7 +37,6 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
     fetchConversations 
   } = useChat();
 
-  // Find conversation and handle loading state
   const [currentConversation, setCurrentConv] = useState<any>(null);
 
   useEffect(() => {
@@ -49,25 +49,49 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
         console.log('Found conversation:', conv);
         setCurrentConv(conv);
         setIsLoading(false);
+        setHasCheckedRedirect(true);
       } else {
         console.log('Conversation not found, refreshing...');
-        // Try refreshing conversations first
-        await fetchConversations();
         
-        // Check again after refresh
-        const refreshedConv = conversations.find(c => c.id === conversationId);
-        if (refreshedConv) {
-          console.log('Found conversation after refresh:', refreshedConv);
-          setCurrentConv(refreshedConv);
-          setIsLoading(false);
+        if (!hasCheckedRedirect) {
+          // Try refreshing conversations first
+          await fetchConversations();
+          
+          // Check again after refresh
+          const refreshedConv = conversations.find(c => c.id === conversationId);
+          if (refreshedConv) {
+            console.log('Found conversation after refresh:', refreshedConv);
+            setCurrentConv(refreshedConv);
+            setIsLoading(false);
+            setHasCheckedRedirect(true);
+          } else {
+            // If conversation still not found, try to find an alternative conversation
+            console.log('Conversation still not found, looking for alternative...');
+            
+            // Look for any conversation with the same participants
+            const alternativeConv = conversations.find(c => {
+              // We can't know the exact seller/buyer from URL, but we can look for any conversation
+              // that involves the current user
+              return c.buyer_id === user?.id || c.seller_id === user?.id;
+            });
+            
+            if (alternativeConv) {
+              console.log('Found alternative conversation, redirecting:', alternativeConv.id);
+              navigate(`/chat/${alternativeConv.id}`, { replace: true });
+              return;
+            }
+            
+            console.log('No alternative conversation found');
+            setIsLoading(false);
+            setHasCheckedRedirect(true);
+          }
         } else {
-          console.log('Conversation still not found after refresh');
           setIsLoading(false);
         }
       }
     };
 
-    if (conversationId) {
+    if (conversationId && user) {
       if (conversations.length > 0) {
         findAndSetConversation();
       } else {
@@ -75,7 +99,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
         fetchConversations();
       }
     }
-  }, [conversationId, conversations, fetchConversations]);
+  }, [conversationId, conversations, fetchConversations, user, navigate, hasCheckedRedirect]);
 
   useEffect(() => {
     setCurrentConversation(conversationId);

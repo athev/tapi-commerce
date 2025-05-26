@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useChat } from "@/hooks/useChat";
 import { useToast } from "@/hooks/use-toast";
+import { findValidConversation } from "@/hooks/chat/conversationService";
 import ChatConfirmationModal from "./ChatConfirmationModal";
 
 interface Product {
@@ -35,7 +36,7 @@ const ChatButton = ({
 }: ChatButtonProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { createOrGetConversation } = useChat();
+  const { createOrGetConversation, fetchConversations } = useChat();
   const { toast } = useToast();
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -80,18 +81,38 @@ const ChatButton = ({
         userId: user?.id
       });
 
-      const conversationId = await createOrGetConversation(
-        product.seller_id, 
-        product.id,
-        orderId,
-        orderId ? 'order_support' : 'product_consultation'
-      );
+      const chatType = orderId ? 'order_support' : 'product_consultation';
       
-      console.log('Conversation created/found:', conversationId);
+      // First, try to find an existing valid conversation
+      const existingConversationId = await findValidConversation(
+        user!.id,
+        product.seller_id,
+        chatType
+      );
+
+      let conversationId: string;
+      
+      if (existingConversationId) {
+        console.log('Using existing conversation:', existingConversationId);
+        conversationId = existingConversationId;
+      } else {
+        console.log('Creating new conversation');
+        conversationId = await createOrGetConversation(
+          product.seller_id, 
+          product.id,
+          orderId,
+          chatType
+        );
+      }
+      
+      console.log('Final conversation ID:', conversationId);
+      
+      // Refresh conversations to ensure the list is updated
+      await fetchConversations();
       
       setShowConfirmModal(false);
       
-      // Navigate directly to chat without delay - the conversation should exist now
+      // Navigate directly to chat
       navigate(`/chat/${conversationId}`);
       
     } catch (error) {

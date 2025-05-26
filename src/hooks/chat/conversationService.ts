@@ -145,25 +145,38 @@ export const createConversation = async (
     chatType 
   });
 
-  // Check if conversation already exists
-  let existingConvQuery = supabase
-    .from('conversations')
-    .select('id')
-    .eq('buyer_id', buyerId)
-    .eq('seller_id', sellerId)
-    .eq('chat_type', chatType);
+  // For product consultations, check if a conversation already exists between these users
+  // regardless of the specific product (since we group by user pairs)
+  if (chatType === 'product_consultation') {
+    const { data: existingConv } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('buyer_id', buyerId)
+      .eq('seller_id', sellerId)
+      .eq('chat_type', 'product_consultation')
+      .order('last_message_at', { ascending: false })
+      .limit(1)
+      .single();
 
-  if (orderId) {
-    existingConvQuery = existingConvQuery.eq('order_id', orderId);
-  } else if (productId) {
-    existingConvQuery = existingConvQuery.eq('product_id', productId);
-  }
+    if (existingConv) {
+      console.log('Found existing product consultation conversation:', existingConv.id);
+      return existingConv.id;
+    }
+  } else {
+    // For order support, check for specific order
+    const { data: existingConv } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('buyer_id', buyerId)
+      .eq('seller_id', sellerId)
+      .eq('chat_type', chatType)
+      .eq('order_id', orderId)
+      .single();
 
-  const { data: existingConv } = await existingConvQuery.single();
-
-  if (existingConv) {
-    console.log('Found existing conversation:', existingConv.id);
-    return existingConv.id;
+    if (existingConv) {
+      console.log('Found existing order support conversation:', existingConv.id);
+      return existingConv.id;
+    }
   }
 
   // Create new conversation
@@ -193,4 +206,38 @@ export const createConversation = async (
 
   console.log('Created new conversation:', newConv.id);
   return newConv.id;
+};
+
+// New function to find valid conversation for a user pair
+export const findValidConversation = async (
+  userId: string,
+  otherUserId: string,
+  chatType?: 'product_consultation' | 'order_support'
+) => {
+  console.log('Finding valid conversation between users:', { userId, otherUserId, chatType });
+
+  let query = supabase
+    .from('conversations')
+    .select('id, chat_type, last_message_at')
+    .or(`and(buyer_id.eq.${userId},seller_id.eq.${otherUserId}),and(buyer_id.eq.${otherUserId},seller_id.eq.${userId})`)
+    .order('last_message_at', { ascending: false });
+
+  if (chatType) {
+    query = query.eq('chat_type', chatType);
+  }
+
+  const { data: conversations, error } = await query.limit(1);
+
+  if (error) {
+    console.error('Error finding valid conversation:', error);
+    return null;
+  }
+
+  if (conversations && conversations.length > 0) {
+    console.log('Found valid conversation:', conversations[0].id);
+    return conversations[0].id;
+  }
+
+  console.log('No valid conversation found');
+  return null;
 };
