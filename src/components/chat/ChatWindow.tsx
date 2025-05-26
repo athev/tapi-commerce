@@ -85,8 +85,12 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
 
   const isBuyer = currentConversation.buyer_id === user?.id;
   const headerDisplayName = isBuyer 
-    ? (currentConversation.seller_name || currentConversation.other_user?.full_name || 'Người bán')
-    : (currentConversation.buyer_name || currentConversation.other_user?.full_name || 'Khách hàng');
+    ? (currentConversation.seller_name || 'Người bán')
+    : (currentConversation.buyer_name || 'Khách hàng');
+
+  console.log('ChatWindow - Current conversation:', currentConversation);
+  console.log('ChatWindow - User role:', isBuyer ? 'buyer' : 'seller');
+  console.log('ChatWindow - Header display name:', headerDisplayName);
 
   return (
     <Card className="h-full flex flex-col">
@@ -128,6 +132,18 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
           {messages.map((message: Message) => {
             const isOwn = message.sender_id === user?.id;
             
+            // Get actual sender name - this should now be populated correctly
+            const senderDisplayName = message.sender_name || 'Người dùng';
+            
+            console.log('Message display info:', {
+              id: message.id,
+              isOwn,
+              sender_id: message.sender_id,
+              sender_name: message.sender_name,
+              sender_role: message.sender_role,
+              senderDisplayName
+            });
+            
             return (
               <div
                 key={message.id}
@@ -153,7 +169,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
                   </div>
                   <div className={`text-xs text-gray-500 mt-1 flex ${isOwn ? 'justify-end' : 'justify-start'} items-center gap-2`}>
                     <span className="font-medium">
-                      {isOwn ? 'Bạn' : (message.sender_name || 'Người dùng')}
+                      {isOwn ? 'Bạn' : senderDisplayName}
                       {!isOwn && message.sender_role === 'seller' && <span className="text-green-600 ml-1">(Cửa hàng)</span>}
                       {!isOwn && message.sender_role !== 'seller' && <span className="text-blue-600 ml-1">(Khách hàng)</span>}
                     </span>
@@ -170,7 +186,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
                 {!isOwn && (
                   <Avatar className="order-0 mr-2">
                     <AvatarFallback className="text-xs">
-                      {(message.sender_name || 'U')?.charAt(0)}
+                      {senderDisplayName?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
                 )}

@@ -78,11 +78,17 @@ export const useChat = () => {
         userIds.add(conv.seller_id);
       });
 
+      console.log('Fetching profiles for users:', Array.from(userIds));
+
       if (userIds.size > 0) {
-        const { data: profiles } = await supabase
+        const { data: profiles, error: profileError } = await supabase
           .from('profiles')
           .select('id, full_name, role')
           .in('id', Array.from(userIds));
+
+        if (profileError) {
+          console.error('Error fetching profiles:', profileError);
+        }
 
         console.log('Fetched profiles:', profiles);
 
@@ -96,6 +102,13 @@ export const useChat = () => {
           const sellerProfile = profileMap.get(conv.seller_id);
           const otherUserId = conv.buyer_id === user.id ? conv.seller_id : conv.buyer_id;
           const otherUserProfile = profileMap.get(otherUserId);
+
+          console.log('Processing conversation:', {
+            id: conv.id,
+            buyerProfile,
+            sellerProfile,
+            otherUserProfile
+          });
 
           return {
             ...conv,
@@ -141,15 +154,21 @@ export const useChat = () => {
 
       console.log('Raw messages data:', messagesData);
 
-      // Get sender names and roles
+      // Get sender names and roles for all message senders
       const senderIds = new Set<string>();
       messagesData?.forEach(msg => senderIds.add(msg.sender_id));
 
+      console.log('Fetching sender profiles for:', Array.from(senderIds));
+
       if (senderIds.size > 0) {
-        const { data: profiles } = await supabase
+        const { data: profiles, error: profileError } = await supabase
           .from('profiles')
           .select('id, full_name, role')
           .in('id', Array.from(senderIds));
+
+        if (profileError) {
+          console.error('Error fetching sender profiles:', profileError);
+        }
 
         console.log('Message sender profiles:', profiles);
 
@@ -158,9 +177,15 @@ export const useChat = () => {
           profileMap.set(profile.id, profile);
         });
 
-        // Fix type casting by ensuring message_type is properly typed
         const processedMessages: Message[] = messagesData?.map(msg => {
           const senderProfile = profileMap.get(msg.sender_id);
+          console.log('Processing message:', {
+            id: msg.id,
+            sender_id: msg.sender_id,
+            senderProfile,
+            content: msg.content
+          });
+          
           return {
             ...msg,
             message_type: (msg.message_type as 'text' | 'image' | 'emoji') || 'text',
@@ -172,7 +197,6 @@ export const useChat = () => {
         console.log('Processed messages with sender names:', processedMessages);
         setMessages(processedMessages);
       } else {
-        // Fix type casting for messages without profiles
         const processedMessages: Message[] = messagesData?.map(msg => ({
           ...msg,
           message_type: (msg.message_type as 'text' | 'image' | 'emoji') || 'text',
