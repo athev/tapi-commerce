@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Send, Image, Smile, ArrowLeft } from "lucide-react";
+import { Send, Image, ArrowLeft } from "lucide-react";
 import { useChat, Message } from "@/hooks/useChat";
 import { useAuth } from "@/context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -83,6 +83,11 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
     );
   }
 
+  const isBuyer = currentConversation.buyer_id === user?.id;
+  const headerDisplayName = isBuyer 
+    ? (currentConversation.seller_name || currentConversation.other_user?.full_name || 'Người bán')
+    : (currentConversation.buyer_name || currentConversation.other_user?.full_name || 'Khách hàng');
+
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="border-b">
@@ -98,13 +103,15 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
           
           <Avatar>
             <AvatarFallback>
-              {currentConversation.other_user?.full_name?.charAt(0) || 'U'}
+              {headerDisplayName?.charAt(0) || 'U'}
             </AvatarFallback>
           </Avatar>
           
           <div className="flex-1">
             <CardTitle className="text-lg">
-              {currentConversation.other_user?.full_name || 'Người dùng'}
+              {headerDisplayName}
+              {isBuyer && <span className="text-sm font-normal text-green-600 ml-2">(Cửa hàng)</span>}
+              {!isBuyer && <span className="text-sm font-normal text-blue-600 ml-2">(Khách hàng)</span>}
             </CardTitle>
             {currentConversation.product && (
               <p className="text-sm text-gray-600">
@@ -144,18 +151,26 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
                       <p className="text-sm">{message.content}</p>
                     )}
                   </div>
-                  <p className={`text-xs text-gray-500 mt-1 ${isOwn ? 'text-right' : 'text-left'}`}>
-                    {formatDistanceToNow(new Date(message.created_at), { 
-                      addSuffix: true, 
-                      locale: vi 
-                    })}
-                  </p>
+                  <div className={`text-xs text-gray-500 mt-1 flex ${isOwn ? 'justify-end' : 'justify-start'} items-center gap-2`}>
+                    <span className="font-medium">
+                      {isOwn ? 'Bạn' : (message.sender_name || 'Người dùng')}
+                      {!isOwn && message.sender_role === 'seller' && <span className="text-green-600 ml-1">(Cửa hàng)</span>}
+                      {!isOwn && message.sender_role !== 'seller' && <span className="text-blue-600 ml-1">(Khách hàng)</span>}
+                    </span>
+                    <span>•</span>
+                    <span>
+                      {formatDistanceToNow(new Date(message.created_at), { 
+                        addSuffix: true, 
+                        locale: vi 
+                      })}
+                    </span>
+                  </div>
                 </div>
                 
                 {!isOwn && (
                   <Avatar className="order-0 mr-2">
                     <AvatarFallback className="text-xs">
-                      {message.sender_name?.charAt(0) || 'U'}
+                      {(message.sender_name || 'U')?.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                 )}

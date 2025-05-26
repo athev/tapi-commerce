@@ -12,6 +12,7 @@ export interface Message {
   is_read: boolean;
   created_at: string;
   sender_name?: string;
+  sender_role?: string;
 }
 
 export interface Conversation {
@@ -27,11 +28,15 @@ export interface Conversation {
     id: string;
     title: string;
     image?: string;
+    seller_name?: string;
   };
   other_user?: {
     id: string;
     full_name: string;
+    role?: string;
   };
+  buyer_name?: string;
+  seller_name?: string;
 }
 
 export const useChat = () => {
@@ -54,7 +59,7 @@ export const useChat = () => {
         .from('conversations')
         .select(`
           *,
-          products:product_id (id, title, image)
+          products:product_id (id, title, image, seller_name)
         `)
         .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`)
         .order('last_message_at', { ascending: false });
@@ -66,31 +71,42 @@ export const useChat = () => {
 
       console.log('Raw conversations data:', conversationsData);
 
-      // Get user profiles for other participants
+      // Get user profiles for all participants (both buyers and sellers)
       const userIds = new Set<string>();
       conversationsData?.forEach(conv => {
-        if (conv.buyer_id !== user.id) userIds.add(conv.buyer_id);
-        if (conv.seller_id !== user.id) userIds.add(conv.seller_id);
+        userIds.add(conv.buyer_id);
+        userIds.add(conv.seller_id);
       });
 
       if (userIds.size > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, full_name')
+          .select('id, full_name, role')
           .in('id', Array.from(userIds));
+
+        console.log('Fetched profiles:', profiles);
 
         const profileMap = new Map();
         profiles?.forEach(profile => {
           profileMap.set(profile.id, profile);
         });
 
-        const processedConversations = conversationsData?.map(conv => ({
-          ...conv,
-          product: conv.products,
-          other_user: profileMap.get(conv.buyer_id === user.id ? conv.seller_id : conv.buyer_id)
-        })) || [];
+        const processedConversations = conversationsData?.map(conv => {
+          const buyerProfile = profileMap.get(conv.buyer_id);
+          const sellerProfile = profileMap.get(conv.seller_id);
+          const otherUserId = conv.buyer_id === user.id ? conv.seller_id : conv.buyer_id;
+          const otherUserProfile = profileMap.get(otherUserId);
 
-        console.log('Processed conversations:', processedConversations);
+          return {
+            ...conv,
+            product: conv.products,
+            other_user: otherUserProfile,
+            buyer_name: buyerProfile?.full_name || 'Khách hàng',
+            seller_name: sellerProfile?.full_name || conv.products?.seller_name || 'Người bán'
+          };
+        }) || [];
+
+        console.log('Processed conversations with names:', processedConversations);
         setConversations(processedConversations);
       } else {
         setConversations(conversationsData || []);
@@ -125,15 +141,17 @@ export const useChat = () => {
 
       console.log('Raw messages data:', messagesData);
 
-      // Get sender names
+      // Get sender names and roles
       const senderIds = new Set<string>();
       messagesData?.forEach(msg => senderIds.add(msg.sender_id));
 
       if (senderIds.size > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, full_name')
+          .select('id, full_name, role')
           .in('id', Array.from(senderIds));
+
+        console.log('Message sender profiles:', profiles);
 
         const profileMap = new Map();
         profiles?.forEach(profile => {
@@ -141,19 +159,25 @@ export const useChat = () => {
         });
 
         // Fix type casting by ensuring message_type is properly typed
-        const processedMessages: Message[] = messagesData?.map(msg => ({
-          ...msg,
-          message_type: (msg.message_type as 'text' | 'image' | 'emoji') || 'text',
-          sender_name: profileMap.get(msg.sender_id)?.full_name
-        })) || [];
+        const processedMessages: Message[] = messagesData?.map(msg => {
+          const senderProfile = profileMap.get(msg.sender_id);
+          return {
+            ...msg,
+            message_type: (msg.message_type as 'text' | 'image' | 'emoji') || 'text',
+            sender_name: senderProfile?.full_name || 'Người dùng',
+            sender_role: senderProfile?.role || 'end-user'
+          };
+        }) || [];
 
-        console.log('Processed messages:', processedMessages);
+        console.log('Processed messages with sender names:', processedMessages);
         setMessages(processedMessages);
       } else {
         // Fix type casting for messages without profiles
         const processedMessages: Message[] = messagesData?.map(msg => ({
           ...msg,
-          message_type: (msg.message_type as 'text' | 'image' | 'emoji') || 'text'
+          message_type: (msg.message_type as 'text' | 'image' | 'emoji') || 'text',
+          sender_name: 'Người dùng',
+          sender_role: 'end-user'
         })) || [];
         setMessages(processedMessages);
       }

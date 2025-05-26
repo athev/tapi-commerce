@@ -14,9 +14,10 @@ interface ConversationListProps {
 
 const ConversationList = ({ onConversationSelect, selectedConversationId }: ConversationListProps) => {
   const { conversations, loading } = useChat();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
 
   console.log('ConversationList - Current user:', user?.id);
+  console.log('ConversationList - User profile:', profile);
   console.log('ConversationList - Conversations:', conversations);
 
   if (loading) {
@@ -55,11 +56,21 @@ const ConversationList = ({ onConversationSelect, selectedConversationId }: Conv
             const unreadCount = isBuyer ? conversation.buyer_unread_count : conversation.seller_unread_count;
             const isSelected = conversation.id === selectedConversationId;
             
-            console.log('Conversation:', {
+            // Get display name and role label
+            const displayName = isBuyer 
+              ? (conversation.seller_name || conversation.other_user?.full_name || 'Người bán')
+              : (conversation.buyer_name || conversation.other_user?.full_name || 'Khách hàng');
+            
+            const roleLabel = isBuyer ? '(Người bán)' : '(Khách hàng)';
+            
+            console.log('Conversation display info:', {
               id: conversation.id,
               isBuyer,
               isSeller,
-              unreadCount,
+              displayName,
+              roleLabel,
+              seller_name: conversation.seller_name,
+              buyer_name: conversation.buyer_name,
               other_user: conversation.other_user
             });
             
@@ -74,16 +85,17 @@ const ConversationList = ({ onConversationSelect, selectedConversationId }: Conv
                 <div className="flex items-center space-x-3">
                   <Avatar>
                     <AvatarFallback>
-                      {conversation.other_user?.full_name?.charAt(0) || 'U'}
+                      {displayName?.charAt(0) || 'U'}
                     </AvatarFallback>
                   </Avatar>
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium text-sm truncate">
-                        {conversation.other_user?.full_name || 'Người dùng'}
-                        {isSeller && <span className="text-xs text-green-600 ml-2">(Khách hàng)</span>}
-                        {isBuyer && <span className="text-xs text-blue-600 ml-2">(Người bán)</span>}
+                        {displayName}
+                        <span className={`text-xs ml-2 ${isBuyer ? 'text-green-600' : 'text-blue-600'}`}>
+                          {roleLabel}
+                        </span>
                       </h3>
                       <div className="flex items-center space-x-2">
                         <span className="text-xs text-gray-500">
