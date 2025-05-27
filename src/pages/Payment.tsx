@@ -294,9 +294,9 @@ const Payment = () => {
                 Đơn hàng của bạn đã được xác nhận và đang được xử lý. 
                 Sản phẩm sẽ được gửi đến bạn trong ít phút.
               </p>
-              {order?.payment_verified_at && (
+              {(order as any)?.payment_verified_at && (
                 <div className="text-sm text-green-600 mb-4">
-                  Thanh toán được xác nhận lúc: {new Date(order.payment_verified_at).toLocaleString('vi-VN')}
+                  Thanh toán được xác nhận lúc: {new Date((order as any).payment_verified_at).toLocaleString('vi-VN')}
                 </div>
               )}
               <div className="space-y-3">
