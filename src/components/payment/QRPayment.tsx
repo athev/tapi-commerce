@@ -18,20 +18,27 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
   const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 minutes in seconds
   const [showManualButton, setShowManualButton] = useState(false);
 
-  // Bank information
+  // Bank information - updated to match requirements
   const bankInfo = {
-    bankName: 'Vietcombank',
-    accountNumber: '1234567890',
-    accountName: 'DIGITALMARKET CO',
+    bankName: 'MB Bank',
+    bankCode: 'MBB',
+    accountNumber: '567068888',
+    accountName: 'LE THI HOAI ANH',
     transferContent: `DH#${orderId}`
   };
 
-  // Generate QR code
+  // Generate QR code using Vietnamese banking QR standard
   useEffect(() => {
     const generateQR = async () => {
       try {
-        // QR content for Vietnamese banking standard
-        const qrContent = `${bankInfo.accountNumber}|${bankInfo.accountName}|${amount}|${bankInfo.transferContent}`;
+        // Vietnamese banking QR format: 
+        // Account number|Bank code|Amount|Transfer content
+        const qrContent = `2|01|${bankInfo.bankCode}|${bankInfo.accountNumber}|${bankInfo.accountName}|${amount}|0|0|${bankInfo.transferContent}`;
+        
+        console.log('Generating QR with content:', qrContent);
+        console.log('Order ID:', orderId);
+        console.log('Amount:', amount);
+        
         const qrUrl = await QRCode.toDataURL(qrContent, {
           width: 256,
           margin: 2,
@@ -46,7 +53,9 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
       }
     };
 
-    generateQR();
+    if (orderId && amount) {
+      generateQR();
+    }
   }, [orderId, amount]);
 
   // Countdown timer
@@ -84,6 +93,10 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
       currency: 'VND',
       maximumFractionDigits: 0 
     }).format(price);
+  };
+
+  const formatAmount = (amount: number) => {
+    return new Intl.NumberFormat('vi-VN').format(amount);
   };
 
   const copyToClipboard = (text: string, label: string) => {
@@ -173,6 +186,21 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
               </div>
               
               <div className="flex justify-between items-center">
+                <span className="text-sm font-medium">Số tiền:</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-mono">{formatAmount(amount)} VND</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => copyToClipboard(amount.toString(), "Số tiền")}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center">
                 <span className="text-sm font-medium">Nội dung CK:</span>
                 <div className="flex items-center gap-2">
                   <code className="text-sm bg-white px-2 py-1 rounded border">{bankInfo.transferContent}</code>
@@ -208,7 +236,7 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
 
       <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
         <p className="text-blue-700 text-sm">
-          <span className="font-medium">Lưu ý:</span> Hệ thống sẽ tự động xác nhận thanh toán trong vòng 1-2 phút sau khi bạn chuyển khoản thành công với đúng nội dung.
+          <span className="font-medium">Lưu ý:</span> Hệ thống sẽ tự động xác nhận thanh toán trong vòng 1-2 phút sau khi bạn chuyển khoản thành công với đúng nội dung chuyển khoản.
         </p>
       </div>
     </div>
