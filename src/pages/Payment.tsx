@@ -7,7 +7,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Check, ArrowLeft, Clock } from "lucide-react";
+import { Check, ArrowLeft, Clock, Copy } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -19,7 +19,17 @@ const formatPrice = (price: number) => {
   }).format(price);
 };
 
-const PaymentInstructions = () => {
+const PaymentInstructions = ({ orderId }: { orderId: string }) => {
+  const { toast } = useToast();
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "Đã sao chép",
+      description: `${label} đã được sao chép vào clipboard`,
+    });
+  };
+
   return (
     <div className="space-y-4 mt-6">
       <h3 className="text-lg font-semibold">Hướng dẫn thanh toán</h3>
@@ -36,13 +46,33 @@ const PaymentInstructions = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm space-y-2">
-            <p><span className="font-medium">Số điện thoại:</span> 0987 654 321</p>
+            <div className="flex items-center justify-between">
+              <span className="font-medium">Số điện thoại:</span>
+              <div className="flex items-center gap-2">
+                <span>0987 654 321</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={() => copyToClipboard("0987654321", "Số điện thoại MoMo")}
+                >
+                  <Copy className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
             <p><span className="font-medium">Tên:</span> Công ty DigitalMarket</p>
-            <p><span className="font-medium">Nội dung chuyển khoản:</span> DH [Mã đơn hàng]</p>
-            <div className="border border-dashed border-gray-300 p-3 mt-3 rounded">
-              <p className="font-medium text-center mb-2">Quét mã QR</p>
-              <div className="bg-gray-100 h-32 flex items-center justify-center">
-                [Mã QR MoMo]
+            <div className="flex items-center justify-between">
+              <span className="font-medium">Nội dung:</span>
+              <div className="flex items-center gap-2">
+                <code className="bg-gray-100 px-2 py-1 rounded text-xs">DH#{orderId}</code>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={() => copyToClipboard(`DH#${orderId}`, "Nội dung chuyển khoản")}
+                >
+                  <Copy className="h-3 w-3" />
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -59,23 +89,96 @@ const PaymentInstructions = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="text-sm space-y-2">
-            <p><span className="font-medium">Số điện thoại:</span> 0987 654 321</p>
+            <div className="flex items-center justify-between">
+              <span className="font-medium">Số điện thoại:</span>
+              <div className="flex items-center gap-2">
+                <span>0987 654 321</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={() => copyToClipboard("0987654321", "Số điện thoại ZaloPay")}
+                >
+                  <Copy className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
             <p><span className="font-medium">Tên:</span> Công ty DigitalMarket</p>
-            <p><span className="font-medium">Nội dung chuyển khoản:</span> DH [Mã đơn hàng]</p>
-            <div className="border border-dashed border-gray-300 p-3 mt-3 rounded">
-              <p className="font-medium text-center mb-2">Quét mã QR</p>
-              <div className="bg-gray-100 h-32 flex items-center justify-center">
-                [Mã QR ZaloPay]
+            <div className="flex items-center justify-between">
+              <span className="font-medium">Nội dung:</span>
+              <div className="flex items-center gap-2">
+                <code className="bg-gray-100 px-2 py-1 rounded text-xs">DH#{orderId}</code>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={() => copyToClipboard(`DH#${orderId}`, "Nội dung chuyển khoản")}
+                >
+                  <Copy className="h-3 w-3" />
+                </Button>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Banking Information */}
+      <Card className="border-2 border-green-200 bg-green-50">
+        <CardHeader>
+          <CardTitle className="text-base text-green-800">
+            Chuyển khoản ngân hàng (Tự động xác nhận)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Ngân hàng:</span>
+                <span>Vietcombank</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Số tài khoản:</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono">1234567890</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => copyToClipboard("1234567890", "Số tài khoản")}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Tên tài khoản:</span>
+                <span>DIGITALMARKET CO</span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Nội dung CK:</span>
+                <div className="flex items-center gap-2">
+                  <code className="bg-white px-2 py-1 rounded text-xs border">DH#{orderId}</code>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0"
+                    onClick={() => copyToClipboard(`DH#${orderId}`, "Nội dung chuyển khoản")}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       
-      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
-        <p className="text-yellow-700">
-          <span className="font-medium">Lưu ý:</span> Sau khi chuyển khoản thành công, vui lòng bấm nút 
-          "Tôi đã thanh toán" bên dưới. Đơn hàng sẽ được xác nhận và xử lý trong 1-3 phút.
+      <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
+        <p className="text-blue-700">
+          <span className="font-medium">Thanh toán tự động:</span> Khi bạn chuyển khoản với đúng nội dung, 
+          hệ thống sẽ tự động xác nhận thanh toán trong vòng 1-2 phút. Bạn không cần bấm nút "Tôi đã thanh toán".
         </p>
       </div>
     </div>
@@ -90,28 +193,50 @@ const Payment = () => {
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'confirming' | 'completed'>('pending');
 
-  // Fetch product details for the payment page
-  const { data: product } = useQuery({
-    queryKey: ['payment-product', orderId],
+  // Query để kiểm tra trạng thái thanh toán real-time
+  const { data: order, isLoading } = useQuery({
+    queryKey: ['order-status', orderId],
     queryFn: async () => {
       if (!orderId) return null;
       const { data, error } = await supabase
-        .from('products')
-        .select('*')
+        .from('orders')
+        .select(`
+          *,
+          products (
+            id,
+            title,
+            price,
+            image,
+            seller_name,
+            product_type
+          )
+        `)
         .eq('id', orderId)
         .single();
       
       if (error) throw error;
       return data;
     },
-    enabled: !!orderId
+    enabled: !!orderId,
+    refetchInterval: 5000, // Kiểm tra mỗi 5 giây
   });
 
   useEffect(() => {
     document.title = "Thanh toán đơn hàng | DigitalMarket";
   }, []);
 
-  const handlePaymentConfirmation = async () => {
+  // Tự động chuyển sang trạng thái completed khi order đã paid
+  useEffect(() => {
+    if (order?.status === 'paid' && paymentStatus !== 'completed') {
+      setPaymentStatus('completed');
+      toast({
+        title: "Thanh toán thành công!",
+        description: "Đơn hàng của bạn đã được xác nhận thanh toán tự động.",
+      });
+    }
+  }, [order?.status, paymentStatus, toast]);
+
+  const handleManualPaymentConfirmation = async () => {
     setIsConfirmingPayment(true);
     setPaymentStatus('confirming');
 
@@ -119,7 +244,7 @@ const Payment = () => {
       // Simulate payment confirmation process
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Update order status to paid
+      // Update order status to paid (fallback for manual confirmation)
       if (orderId && user?.id) {
         const { error } = await supabase
           .from('orders')
@@ -127,7 +252,7 @@ const Payment = () => {
             status: 'paid',
             delivery_status: 'pending' 
           })
-          .eq('product_id', orderId)
+          .eq('id', orderId)
           .eq('user_id', user.id);
         
         if (error) throw error;
@@ -153,7 +278,7 @@ const Payment = () => {
   };
 
   // Payment completed screen
-  if (paymentStatus === 'completed') {
+  if (paymentStatus === 'completed' || order?.status === 'paid') {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
@@ -169,10 +294,15 @@ const Payment = () => {
                 Đơn hàng của bạn đã được xác nhận và đang được xử lý. 
                 Sản phẩm sẽ được gửi đến bạn trong ít phút.
               </p>
+              {order?.payment_verified_at && (
+                <div className="text-sm text-green-600 mb-4">
+                  Thanh toán được xác nhận lúc: {new Date(order.payment_verified_at).toLocaleString('vi-VN')}
+                </div>
+              )}
               <div className="space-y-3">
                 <Button 
                   className="bg-marketplace-primary hover:bg-marketplace-primary/90" 
-                  onClick={() => navigate(`/product/${orderId}`)}
+                  onClick={() => navigate(`/product/${order?.product_id}`)}
                 >
                   Về trang sản phẩm
                 </Button>
@@ -218,6 +348,23 @@ const Payment = () => {
     );
   }
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <main className="flex-1 container py-12">
+          <div className="max-w-3xl mx-auto">
+            <div className="animate-pulse space-y-4">
+              <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+              <div className="h-64 bg-gray-200 rounded"></div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   // Main payment screen
   return (
     <div className="flex flex-col min-h-screen">
@@ -248,15 +395,15 @@ const Payment = () => {
                 <div className="flex items-center gap-4 pb-4 border-b">
                   <div className="h-16 w-16 bg-gray-100 rounded overflow-hidden">
                     <img 
-                      src={product?.image || '/placeholder.svg'} 
-                      alt={product?.title}
+                      src={order?.products?.image || '/placeholder.svg'} 
+                      alt={order?.products?.title}
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-medium">{product?.title}</h3>
+                    <h3 className="font-medium">{order?.products?.title}</h3>
                     <p className="text-sm text-gray-500">
-                      Người bán: {product?.seller_name}
+                      Người bán: {order?.products?.seller_name}
                     </p>
                   </div>
                 </div>
@@ -267,10 +414,14 @@ const Payment = () => {
                     <span className="font-medium">{user?.email}</span>
                   </div>
                   <div className="flex justify-between items-center">
+                    <span>Mã đơn hàng:</span>
+                    <code className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{orderId}</code>
+                  </div>
+                  <div className="flex justify-between items-center">
                     <span>Loại sản phẩm:</span>
                     <span className="font-medium">
-                      {product?.product_type === 'file_download' ? 'File tải về' : 
-                       product?.product_type === 'license_key_delivery' ? 'Mã kích hoạt' :
+                      {order?.products?.product_type === 'file_download' ? 'File tải về' : 
+                       order?.products?.product_type === 'license_key_delivery' ? 'Mã kích hoạt' :
                        'Dịch vụ khác'}
                     </span>
                   </div>
@@ -278,28 +429,29 @@ const Payment = () => {
                 
                 <div className="flex justify-between items-center text-lg font-bold py-2 border-t">
                   <span>Tổng thanh toán:</span>
-                  <span className="text-marketplace-primary">{formatPrice(product?.price || 0)}</span>
+                  <span className="text-marketplace-primary">{formatPrice(order?.products?.price || 0)}</span>
                 </div>
               </div>
             </CardContent>
             <CardFooter>
               <Button 
-                className="w-full bg-green-600 hover:bg-green-700" 
-                onClick={handlePaymentConfirmation}
+                variant="outline"
+                className="w-full" 
+                onClick={handleManualPaymentConfirmation}
                 disabled={isConfirmingPayment}
               >
                 {isConfirmingPayment ? (
                   <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600 mr-2"></div>
                     Đang xác nhận...
                   </>
-                ) : "Tôi đã thanh toán"}
+                ) : "Tôi đã thanh toán (Xác nhận thủ công)"}
               </Button>
             </CardFooter>
           </Card>
           
           {/* Payment Instructions */}
-          <PaymentInstructions />
+          <PaymentInstructions orderId={orderId || ''} />
         </div>
       </main>
       
