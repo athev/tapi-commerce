@@ -1,5 +1,5 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateAlternativeQRUrl } from './utils/vietqrGenerator';
@@ -14,9 +14,18 @@ const QRCodeDisplay = ({ qrCodeUrl, orderId, amount }: QRCodeDisplayProps) => {
   const [qrImageError, setQrImageError] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [currentQrUrl, setCurrentQrUrl] = useState(qrCodeUrl);
-  const [hasRetried, setHasRetried] = useState(false);
+  const [hasTriedFallback, setHasTriedFallback] = useState(false);
   const [primaryQrLoaded, setPrimaryQrLoaded] = useState(false);
   const hasLoggedError = useRef(false);
+  const retryCount = useRef(0);
+
+  // Memoize alternative QR URL to prevent regeneration
+  const alternativeQrUrl = useMemo(() => {
+    if (orderId && amount) {
+      return generateAlternativeQRUrl(orderId, amount);
+    }
+    return null;
+  }, [orderId, amount]);
 
   console.log('QRCodeDisplay rendered with URL:', currentQrUrl);
 
@@ -24,12 +33,16 @@ const QRCodeDisplay = ({ qrCodeUrl, orderId, amount }: QRCodeDisplayProps) => {
   useEffect(() => {
     setCurrentQrUrl(qrCodeUrl);
     setQrImageError(false);
-    setHasRetried(false);
+    setHasTriedFallback(false);
     setPrimaryQrLoaded(false);
     hasLoggedError.current = false;
+    retryCount.current = 0;
   }, [qrCodeUrl]);
 
   const handleQrImageError = (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    // Prevent infinite retries
+    retryCount.current += 1;
+    
     // Only log error once to prevent infinite console logs
     if (!hasLoggedError.current) {
       console.error('QR code failed to load:', currentQrUrl);
@@ -38,26 +51,28 @@ const QRCodeDisplay = ({ qrCodeUrl, orderId, amount }: QRCodeDisplayProps) => {
     
     setQrImageError(true);
     
-    // Only auto-switch if we haven't retried yet and we have fallback data
-    if (!hasRetried && !primaryQrLoaded && orderId && amount) {
+    // Only auto-switch if we haven't tried fallback yet, haven't exceeded retry limit, and we have fallback data
+    if (!hasTriedFallback && retryCount.current <= 1 && !primaryQrLoaded && alternativeQrUrl) {
       console.log('Switching to alternative QR generator (one time only)...');
-      const alternativeUrl = generateAlternativeQRUrl(orderId, amount);
-      if (alternativeUrl) {
-        setCurrentQrUrl(alternativeUrl);
-        setHasRetried(true);
-        setQrImageError(false);
-      }
+      setCurrentQrUrl(alternativeQrUrl);
+      setHasTriedFallback(true);
+      setQrImageError(false);
+      hasLoggedError.current = false; // Allow logging for alternative URL
     }
   };
 
   const handleQrImageLoad = () => {
-    console.log('QR code loaded successfully:', currentQrUrl);
+    // Only log if not already logged to prevent spam
+    if (!primaryQrLoaded || currentQrUrl !== qrCodeUrl) {
+      console.log('QR code loaded successfully:', currentQrUrl);
+    }
+    
     setQrImageError(false);
     setIsRetrying(false);
-    setPrimaryQrLoaded(true);
     
-    // If primary QR loads successfully, prevent any fallback attempts
+    // Mark primary QR as loaded if it's the original URL
     if (currentQrUrl === qrCodeUrl) {
+      setPrimaryQrLoaded(true);
       console.log('Primary VietQR template loaded successfully - no fallback needed');
     }
   };
@@ -67,10 +82,11 @@ const QRCodeDisplay = ({ qrCodeUrl, orderId, amount }: QRCodeDisplayProps) => {
     setIsRetrying(true);
     setQrImageError(false);
     hasLoggedError.current = false;
+    retryCount.current = 0;
     
     // Reset to original URL and try again
     setCurrentQrUrl(qrCodeUrl);
-    setHasRetried(false);
+    setHasTriedFallback(false);
     setPrimaryQrLoaded(false);
     
     setTimeout(() => {
@@ -139,14 +155,15 @@ const QRCodeDisplay = ({ qrCodeUrl, orderId, amount }: QRCodeDisplayProps) => {
                   size="sm"
                   onClick={handleRetryQR}
                   className="text-xs"
-                  disabled={hasRetried}
+                  disabled={retryCount.current > 2}
                 >
                   <RefreshCw className="h-3 w-3 mr-1" />
-                  {hasRetried ? 'Đã thử lại' : 'Thử lại'}
+                  {retryCount.current > 2 ? 'Đã thử quá nhiều' : 'Thử lại'}
                 </Button>
                 {process.env.NODE_ENV === 'development' && (
                   <div className="mt-2 text-xs text-gray-400">
-                    <div>Retry: {hasRetried ? 'Yes' : 'No'}</div>
+                    <div>Fallback tried: {hasTriedFallback ? 'Yes' : 'No'}</div>
+                    <div>Retry count: {retryCount.current}</div>
                     <div>Primary Loaded: {primaryQrLoaded ? 'Yes' : 'No'}</div>
                     <div>URL: {currentQrUrl?.substring(0, 50)}...</div>
                   </div>

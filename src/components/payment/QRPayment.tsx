@@ -1,12 +1,13 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
-import { generateVietQRUrl, generateAlternativeQRUrl } from './utils/vietqrGenerator';
+import { generateVietQRUrl } from './utils/vietqrGenerator';
 import { usePaymentTimer } from '@/hooks/usePaymentTimer';
 import PaymentTimer from './PaymentTimer';
 import QRCodeDisplay from './QRCodeDisplay';
 import BankInformation from './BankInformation';
 import ManualConfirmation from './ManualConfirmation';
+import { useMemo } from 'react';
 
 interface QRPaymentProps {
   orderId: string;
@@ -19,16 +20,12 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
   
   const { timeLeft, showManualButton, formatTime } = usePaymentTimer();
   
-  // Generate primary QR code URL
-  const qrCodeUrl = generateVietQRUrl(orderId, amount);
+  // Memoize QR code URL to prevent regeneration on every render
+  const qrCodeUrl = useMemo(() => {
+    return generateVietQRUrl(orderId, amount);
+  }, [orderId, amount]);
   
-  // Generate alternative QR if primary fails
-  const alternativeQRUrl = generateAlternativeQRUrl(orderId, amount);
-  
-  console.log('QR URLs generated:', {
-    primary: qrCodeUrl,
-    alternative: alternativeQRUrl
-  });
+  console.log('QR URL generated:', qrCodeUrl);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', { 
@@ -107,9 +104,7 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
           <div className="space-y-1">
             <div>Order ID: {orderId}</div>
             <div>Amount: {amount}</div>
-            <div>Template ID: {qrCodeUrl?.includes('templateId') ? 'Used' : 'Not used'}</div>
-            <div>Primary QR URL: {qrCodeUrl}</div>
-            <div>Alt QR URL: {alternativeQRUrl}</div>
+            <div>QR URL: {qrCodeUrl}</div>
           </div>
         </div>
       )}
