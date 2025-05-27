@@ -21,22 +21,27 @@ export const generateVietQRUrl = (orderId: string, amount: number): string | nul
     return null;
   }
 
+  console.log('Bank info used:', bankInfo);
+  
+  // Priority 1: Use Template ID if available (VietQR Dashboard format)
+  if (bankInfo.templateId) {
+    const templateUrl = `https://api.vietqr.io/image/${bankInfo.partnerId || bankInfo.bankCode}-${bankInfo.accountNumber}-${bankInfo.templateId}.jpg?amount=${amount}`;
+    console.log('Generated Template ID URL:', templateUrl);
+    console.log('=== VietQR URL Generation End ===');
+    return templateUrl;
+  }
+
+  // Priority 2: Fallback to standard VietQR format
   const baseUrl = 'https://img.vietqr.io/image';
   const bankCode = bankInfo.bankCode;
   const accountNumber = bankInfo.accountNumber;
   const transferContent = `DH#${orderId}`;
   
-  console.log('Bank info used:', {
-    bankCode,
-    accountNumber,
-    accountName: bankInfo.accountName
-  });
-  
   // Use proper encoding for URL parameters
   const encodedTransferContent = encodeURIComponent(transferContent);
   const encodedAccountName = encodeURIComponent(bankInfo.accountName);
   
-  // Try different QR URL formats
+  // Standard QR URL formats
   const qrUrls = [
     // Format 1: Standard compact format
     `${baseUrl}/${bankCode}-${accountNumber}-compact.png?amount=${amount}&addInfo=${encodedTransferContent}&accountName=${encodedAccountName}`,
@@ -50,7 +55,7 @@ export const generateVietQRUrl = (orderId: string, amount: number): string | nul
   
   const selectedUrl = qrUrls[0]; // Use the first format
   
-  console.log('Generated VietQR URLs:', qrUrls);
+  console.log('Generated Standard QR URLs:', qrUrls);
   console.log('Selected URL:', selectedUrl);
   console.log('URL components:', {
     baseUrl,

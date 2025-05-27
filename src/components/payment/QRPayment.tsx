@@ -68,8 +68,12 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* QR Code Display */}
-          <QRCodeDisplay qrCodeUrl={qrCodeUrl} />
+          {/* QR Code Display with orderId and amount for fallback */}
+          <QRCodeDisplay 
+            qrCodeUrl={qrCodeUrl} 
+            orderId={orderId}
+            amount={amount}
+          />
 
           {/* Payment Amount */}
           <div className="text-center">
@@ -103,7 +107,8 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
           <div className="space-y-1">
             <div>Order ID: {orderId}</div>
             <div>Amount: {amount}</div>
-            <div>QR URL: {qrCodeUrl}</div>
+            <div>Template ID: {qrCodeUrl?.includes('templateId') ? 'Used' : 'Not used'}</div>
+            <div>Primary QR URL: {qrCodeUrl}</div>
             <div>Alt QR URL: {alternativeQRUrl}</div>
           </div>
         </div>
