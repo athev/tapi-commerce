@@ -175,9 +175,9 @@ serve(async (req) => {
           continue
         }
 
-        // Verify amount matches
+        // Verify amount matches (allow equal or greater)
         const expectedAmount = order.products?.price || 0
-        if (transaction.amount !== expectedAmount) {
+        if (transaction.amount < expectedAmount) {
           await supabase
             .from('unmatched_transactions')
             .insert({
@@ -186,10 +186,10 @@ serve(async (req) => {
               description: transaction.description,
               when_occurred: transaction.when,
               account_number: transaction.account_number,
-              reason: `Amount mismatch. Expected: ${expectedAmount}, Received: ${transaction.amount}`
+              reason: `Amount insufficient. Expected: ${expectedAmount}, Received: ${transaction.amount}`
             })
           
-          console.log(`Amount mismatch for order ${orderId}. Expected: ${expectedAmount}, Received: ${transaction.amount}`)
+          console.log(`Amount insufficient for order ${orderId}. Expected: ${expectedAmount}, Received: ${transaction.amount}`)
           continue
         }
 

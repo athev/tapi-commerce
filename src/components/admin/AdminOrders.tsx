@@ -6,7 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import ManualPaymentOrders from "./ManualPaymentOrders";
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { 
@@ -119,87 +121,105 @@ const AdminOrders = () => {
     <div>
       <h2 className="text-2xl font-semibold mb-6">Quản lý đơn hàng</h2>
       
-      <div className="flex justify-end mb-6">
-        <Select value={filter} onValueChange={setFilter}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Lọc theo trạng thái" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả</SelectItem>
-            <SelectItem value="pending">Chờ thanh toán</SelectItem>
-            <SelectItem value="paid">Đã thanh toán</SelectItem>
-            <SelectItem value="cancelled">Đã hủy</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      {filteredOrders && filteredOrders.length > 0 ? (
-        <div className="space-y-4">
-          {filteredOrders.map((order) => (
-            <Card key={order.id}>
-              <CardContent className="p-4">
-                <div className="flex flex-col md:flex-row md:items-center gap-4">
-                  <div className="h-16 w-16 bg-gray-100 rounded overflow-hidden shrink-0">
-                    <img 
-                      src={order.product.image || '/placeholder.svg'} 
-                      alt={order.product.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="font-medium">{order.product.title}</div>
-                    <div className="text-sm text-gray-500">
-                      Mã đơn hàng: {order.id.substring(0, 8).toUpperCase()} | 
-                      Ngày đặt: {formatDate(order.created_at)}
-                    </div>
-                  </div>
-                  
-                  <div className="text-right">
-                    <div className="font-medium text-marketplace-primary">
-                      {formatPrice(order.product.price)}
-                    </div>
-                    <div className="mb-2">
-                      <Badge className={
-                        order.status === 'paid' ? 'bg-green-500' : 
-                        order.status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'
-                      }>
-                        {order.status === 'paid' ? 'Đã thanh toán' : 
-                         order.status === 'pending' ? 'Chờ thanh toán' : 'Đã hủy'}
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex space-x-2 justify-end">
-                      <Select
-                        value={order.status}
-                        disabled={isUpdating === order.id}
-                        onValueChange={(value) => handleUpdateStatus(
-                          order.id, 
-                          value as 'pending' | 'paid' | 'cancelled'
+      <Tabs defaultValue="all-orders" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="all-orders">Tất cả đơn hàng</TabsTrigger>
+          <TabsTrigger value="manual-payment">Chờ xác nhận thủ công</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="all-orders" className="space-y-6">
+          <div className="flex justify-end">
+            <Select value={filter} onValueChange={setFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Lọc theo trạng thái" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tất cả</SelectItem>
+                <SelectItem value="pending">Chờ thanh toán</SelectItem>
+                <SelectItem value="paid">Đã thanh toán</SelectItem>
+                <SelectItem value="cancelled">Đã hủy</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          {filteredOrders && filteredOrders.length > 0 ? (
+            <div className="space-y-4">
+              {filteredOrders.map((order) => (
+                <Card key={order.id}>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col md:flex-row md:items-center gap-4">
+                      <div className="h-16 w-16 bg-gray-100 rounded overflow-hidden shrink-0">
+                        <img 
+                          src={order.product.image || '/placeholder.svg'} 
+                          alt={order.product.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      
+                      <div className="flex-1">
+                        <div className="font-medium">{order.product.title}</div>
+                        <div className="text-sm text-gray-500">
+                          Mã đơn hàng: {order.id.substring(0, 8).toUpperCase()} | 
+                          Ngày đặt: {formatDate(order.created_at)}
+                        </div>
+                        {order.manual_payment_requested && (
+                          <Badge variant="outline" className="text-orange-600 border-orange-600 mt-1">
+                            Yêu cầu xác nhận thủ công
+                          </Badge>
                         )}
-                      >
-                        <SelectTrigger className="h-8 text-xs w-32">
-                          <SelectValue placeholder="Cập nhật" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Chờ thanh toán</SelectItem>
-                          <SelectItem value="paid">Đã thanh toán</SelectItem>
-                          <SelectItem value="cancelled">Đã hủy</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className="font-medium text-marketplace-primary">
+                          {formatPrice(order.product.price)}
+                        </div>
+                        <div className="mb-2">
+                          <Badge className={
+                            order.status === 'paid' ? 'bg-green-500' : 
+                            order.status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'
+                          }>
+                            {order.status === 'paid' ? 'Đã thanh toán' : 
+                             order.status === 'pending' ? 'Chờ thanh toán' : 'Đã hủy'}
+                          </Badge>
+                        </div>
+                        
+                        <div className="flex space-x-2 justify-end">
+                          <Select
+                            value={order.status}
+                            disabled={isUpdating === order.id}
+                            onValueChange={(value) => handleUpdateStatus(
+                              order.id, 
+                              value as 'pending' | 'paid' | 'cancelled'
+                            )}
+                          >
+                            <SelectTrigger className="h-8 text-xs w-32">
+                              <SelectValue placeholder="Cập nhật" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Chờ thanh toán</SelectItem>
+                              <SelectItem value="paid">Đã thanh toán</SelectItem>
+                              <SelectItem value="cancelled">Đã hủy</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <h3 className="text-lg font-medium mb-2">Không tìm thấy đơn hàng</h3>
-          <p className="text-gray-500">Thử thay đổi bộ lọc hoặc kiểm tra lại sau</p>
-        </div>
-      )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <h3 className="text-lg font-medium mb-2">Không tìm thấy đơn hàng</h3>
+              <p className="text-gray-500">Thử thay đổi bộ lọc hoặc kiểm tra lại sau</p>
+            </div>
+          )}
+        </TabsContent>
+        
+        <TabsContent value="manual-payment">
+          <ManualPaymentOrders />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

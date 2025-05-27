@@ -7,9 +7,10 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Check, ArrowLeft, Clock, Copy, AlertCircle } from "lucide-react";
+import { Check, ArrowLeft, Clock, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import QRPayment from "@/components/payment/QRPayment";
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { 
@@ -17,172 +18,6 @@ const formatPrice = (price: number) => {
     currency: 'VND',
     maximumFractionDigits: 0 
   }).format(price);
-};
-
-const PaymentInstructions = ({ orderId }: { orderId: string }) => {
-  const { toast } = useToast();
-
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Đã sao chép",
-      description: `${label} đã được sao chép vào clipboard`,
-    });
-  };
-
-  return (
-    <div className="space-y-4 mt-6">
-      <h3 className="text-lg font-semibold">Hướng dẫn thanh toán</h3>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* MoMo */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center">
-              <div className="bg-pink-600 h-6 w-6 rounded-full flex items-center justify-center mr-2">
-                <span className="text-white text-xs font-bold">M</span>
-              </div>
-              Thanh toán qua MoMo
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-medium">Số điện thoại:</span>
-              <div className="flex items-center gap-2">
-                <span>0987 654 321</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                  onClick={() => copyToClipboard("0987654321", "Số điện thoại MoMo")}
-                >
-                  <Copy className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
-            <p><span className="font-medium">Tên:</span> Công ty DigitalMarket</p>
-            <div className="flex items-center justify-between">
-              <span className="font-medium">Nội dung:</span>
-              <div className="flex items-center gap-2">
-                <code className="bg-gray-100 px-2 py-1 rounded text-xs">DH#{orderId}</code>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                  onClick={() => copyToClipboard(`DH#${orderId}`, "Nội dung chuyển khoản")}
-                >
-                  <Copy className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        
-        {/* ZaloPay */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base flex items-center">
-              <div className="bg-blue-600 h-6 w-6 rounded-full flex items-center justify-center mr-2">
-                <span className="text-white text-xs font-bold">Z</span>
-              </div>
-              Thanh toán qua ZaloPay
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-medium">Số điện thoại:</span>
-              <div className="flex items-center gap-2">
-                <span>0987 654 321</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                  onClick={() => copyToClipboard("0987654321", "Số điện thoại ZaloPay")}
-                >
-                  <Copy className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
-            <p><span className="font-medium">Tên:</span> Công ty DigitalMarket</p>
-            <div className="flex items-center justify-between">
-              <span className="font-medium">Nội dung:</span>
-              <div className="flex items-center gap-2">
-                <code className="bg-gray-100 px-2 py-1 rounded text-xs">DH#{orderId}</code>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                  onClick={() => copyToClipboard(`DH#${orderId}`, "Nội dung chuyển khoản")}
-                >
-                  <Copy className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Banking Information */}
-      <Card className="border-2 border-green-200 bg-green-50">
-        <CardHeader>
-          <CardTitle className="text-base text-green-800">
-            Chuyển khoản ngân hàng (Tự động xác nhận)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="text-sm space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Ngân hàng:</span>
-                <span>Vietcombank</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Số tài khoản:</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono">1234567890</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={() => copyToClipboard("1234567890", "Số tài khoản")}
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Tên tài khoản:</span>
-                <span>DIGITALMARKET CO</span>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Nội dung CK:</span>
-                <div className="flex items-center gap-2">
-                  <code className="bg-white px-2 py-1 rounded text-xs border">DH#{orderId}</code>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={() => copyToClipboard(`DH#${orderId}`, "Nội dung chuyển khoản")}
-                  >
-                    <Copy className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-        <p className="text-blue-700">
-          <span className="font-medium">Thanh toán tự động:</span> Khi bạn chuyển khoản với đúng nội dung, 
-          hệ thống sẽ tự động xác nhận thanh toán trong vòng 1-2 phút. Bạn không cần bấm nút "Tôi đã thanh toán".
-        </p>
-      </div>
-    </div>
-  );
 };
 
 const Payment = () => {
@@ -238,19 +73,14 @@ const Payment = () => {
 
   const handleManualPaymentConfirmation = async () => {
     setIsConfirmingPayment(true);
-    setPaymentStatus('confirming');
 
     try {
-      // Simulate payment confirmation process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Update order status to paid (fallback for manual confirmation)
       if (orderId && user?.id) {
         const { error } = await supabase
           .from('orders')
           .update({ 
-            status: 'paid',
-            delivery_status: 'pending' 
+            manual_payment_requested: true,
+            updated_at: new Date().toISOString()
           })
           .eq('id', orderId)
           .eq('user_id', user.id);
@@ -258,17 +88,14 @@ const Payment = () => {
         if (error) throw error;
       }
 
-      setPaymentStatus('completed');
-      
       toast({
-        title: "Thanh toán đã được xác nhận",
-        description: "Đơn hàng của bạn đang được xử lý. Cảm ơn bạn đã mua hàng!",
+        title: "Yêu cầu đã được gửi",
+        description: "Chúng tôi đã nhận được yêu cầu xác nhận thanh toán của bạn. Admin sẽ xử lý trong ít phút.",
       });
     } catch (error) {
-      console.error('Payment confirmation error:', error);
-      setPaymentStatus('pending');
+      console.error('Manual payment confirmation error:', error);
       toast({
-        title: "Lỗi xác nhận thanh toán",
+        title: "Lỗi gửi yêu cầu",
         description: "Có lỗi xảy ra. Vui lòng thử lại hoặc liên hệ hỗ trợ.",
         variant: "destructive"
       });
@@ -294,9 +121,9 @@ const Payment = () => {
                 Đơn hàng của bạn đã được xác nhận và đang được xử lý. 
                 Sản phẩm sẽ được gửi đến bạn trong ít phút.
               </p>
-              {(order as any)?.payment_verified_at && (
+              {order?.payment_verified_at && (
                 <div className="text-sm text-green-600 mb-4">
-                  Thanh toán được xác nhận lúc: {new Date((order as any).payment_verified_at).toLocaleString('vi-VN')}
+                  Thanh toán được xác nhận lúc: {new Date(order.payment_verified_at).toLocaleString('vi-VN')}
                 </div>
               )}
               <div className="space-y-3">
@@ -310,34 +137,6 @@ const Payment = () => {
                 <Button variant="outline" onClick={() => navigate('/my-purchases')}>
                   Xem đơn hàng của tôi
                 </Button>
-              </div>
-            </div>
-          </div>
-        </main>
-        
-        <Footer />
-      </div>
-    );
-  }
-
-  // Payment confirming screen
-  if (paymentStatus === 'confirming') {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        
-        <main className="flex-1 container py-12">
-          <div className="max-w-3xl mx-auto">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Clock className="h-8 w-8 text-blue-600 animate-pulse" />
-              </div>
-              <h2 className="text-xl font-bold text-blue-800 mb-2">Đang xác nhận thanh toán...</h2>
-              <p className="text-blue-700 mb-4">
-                Vui lòng chờ trong giây lát. Chúng tôi đang xác nhận thanh toán của bạn.
-              </p>
-              <div className="animate-pulse text-blue-600">
-                Thời gian xử lý: 1-3 phút
               </div>
             </div>
           </div>
@@ -474,25 +273,14 @@ const Payment = () => {
                 </div>
               </div>
             </CardContent>
-            <CardFooter>
-              <Button 
-                variant="outline"
-                className="w-full" 
-                onClick={handleManualPaymentConfirmation}
-                disabled={isConfirmingPayment}
-              >
-                {isConfirmingPayment ? (
-                  <>
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-gray-600 mr-2"></div>
-                    Đang xác nhận...
-                  </>
-                ) : "Tôi đã thanh toán (Xác nhận thủ công)"}
-              </Button>
-            </CardFooter>
           </Card>
           
-          {/* Payment Instructions */}
-          <PaymentInstructions orderId={orderId || ''} />
+          {/* QR Payment Component */}
+          <QRPayment
+            orderId={orderId || ''}
+            amount={order.products?.price || 0}
+            onManualConfirmation={handleManualPaymentConfirmation}
+          />
         </div>
       </main>
       

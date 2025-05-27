@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      casso_transactions: {
+        Row: {
+          account_number: string | null
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          matched_at: string | null
+          order_id: string | null
+          processed: boolean | null
+          transaction_id: string
+          when_occurred: string
+        }
+        Insert: {
+          account_number?: string | null
+          amount: number
+          created_at?: string
+          description: string
+          id?: string
+          matched_at?: string | null
+          order_id?: string | null
+          processed?: boolean | null
+          transaction_id: string
+          when_occurred: string
+        }
+        Update: {
+          account_number?: string | null
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          matched_at?: string | null
+          order_id?: string | null
+          processed?: boolean | null
+          transaction_id?: string
+          when_occurred?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           count: number | null
@@ -222,36 +261,51 @@ export type Database = {
       }
       orders: {
         Row: {
+          bank_amount: number | null
+          bank_transaction_id: string | null
           buyer_data: Json | null
           buyer_email: string | null
+          casso_transaction_id: string | null
           created_at: string
           delivery_notes: string | null
           delivery_status: string | null
           id: string
+          manual_payment_requested: boolean | null
+          payment_verified_at: string | null
           product_id: string
           status: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          bank_amount?: number | null
+          bank_transaction_id?: string | null
           buyer_data?: Json | null
           buyer_email?: string | null
+          casso_transaction_id?: string | null
           created_at?: string
           delivery_notes?: string | null
           delivery_status?: string | null
           id?: string
+          manual_payment_requested?: boolean | null
+          payment_verified_at?: string | null
           product_id: string
           status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          bank_amount?: number | null
+          bank_transaction_id?: string | null
           buyer_data?: Json | null
           buyer_email?: string | null
+          casso_transaction_id?: string | null
           created_at?: string
           delivery_notes?: string | null
           delivery_status?: string | null
           id?: string
+          manual_payment_requested?: boolean | null
+          payment_verified_at?: string | null
           product_id?: string
           status?: string
           updated_at?: string
@@ -375,6 +429,39 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      unmatched_transactions: {
+        Row: {
+          account_number: string | null
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          reason: string | null
+          transaction_id: string
+          when_occurred: string
+        }
+        Insert: {
+          account_number?: string | null
+          amount: number
+          created_at?: string
+          description: string
+          id?: string
+          reason?: string | null
+          transaction_id: string
+          when_occurred: string
+        }
+        Update: {
+          account_number?: string | null
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          reason?: string | null
+          transaction_id?: string
+          when_occurred?: string
         }
         Relationships: []
       }
