@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Clock } from "lucide-react";
+import { Copy, Clock, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface QRPaymentProps {
@@ -15,6 +15,7 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
   const { toast } = useToast();
   const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 minutes in seconds
   const [showManualButton, setShowManualButton] = useState(false);
+  const [qrImageError, setQrImageError] = useState(false);
 
   // Bank information - static configuration for Casso
   const bankInfo = {
@@ -30,21 +31,20 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
     const baseUrl = 'https://img.vietqr.io/image';
     const bankCode = bankInfo.bankCode;
     const accountNumber = bankInfo.accountNumber;
+    
+    // Use URLSearchParams to properly encode the parameters
     const params = new URLSearchParams({
       amount: amount.toString(),
       addInfo: bankInfo.transferContent,
       accountName: bankInfo.accountName
     });
     
-    return `${baseUrl}/${bankCode}-${accountNumber}-compact.png?${params.toString()}`;
+    const qrUrl = `${baseUrl}/${bankCode}-${accountNumber}-compact.png?${params.toString()}`;
+    console.log('Generated VietQR URL:', qrUrl);
+    return qrUrl;
   };
 
   const qrCodeUrl = generateVietQRUrl();
-
-  console.log('VietQR URL:', qrCodeUrl);
-  console.log('Order ID:', orderId);
-  console.log('Amount:', amount);
-  console.log('Transfer content:', bankInfo.transferContent);
 
   // Countdown timer
   useEffect(() => {
@@ -58,7 +58,7 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
       });
     }, 1000);
 
-    // Show manual button after 5 minutes (instead of 3)
+    // Show manual button after 5 minutes
     const manualButtonTimer = setTimeout(() => {
       setShowManualButton(true);
     }, 5 * 60 * 1000);
@@ -95,6 +95,11 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
     });
   };
 
+  const handleQrImageError = () => {
+    console.error('QR code failed to load:', qrCodeUrl);
+    setQrImageError(true);
+  };
+
   return (
     <div className="space-y-6">
       {/* Payment Timer */}
@@ -120,19 +125,31 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Static VietQR Code */}
+          {/* QR Code Display */}
           <div className="flex justify-center">
-            <img 
-              src={qrCodeUrl} 
-              alt="QR Code thanh toán VietQR" 
-              className="w-64 h-64 border-2 border-gray-200 rounded-lg"
-              onError={(e) => {
-                console.error('QR code failed to load:', qrCodeUrl);
-                // Fallback to a placeholder or manual transfer info
-                const target = e.target as HTMLImageElement;
-                target.style.display = 'none';
-              }}
-            />
+            {!qrImageError ? (
+              <div className="relative">
+                <img 
+                  src={qrCodeUrl} 
+                  alt="QR Code thanh toán VietQR" 
+                  className="w-64 h-64 border-2 border-gray-200 rounded-lg bg-white p-2"
+                  onError={handleQrImageError}
+                  onLoad={() => console.log('QR code loaded successfully')}
+                />
+              </div>
+            ) : (
+              <div className="w-64 h-64 border-2 border-gray-200 rounded-lg bg-gray-100 flex items-center justify-center">
+                <div className="text-center p-4">
+                  <AlertCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">
+                    Không thể tải mã QR
+                  </p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Vui lòng sử dụng thông tin chuyển khoản bên dưới
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Payment Amount */}
