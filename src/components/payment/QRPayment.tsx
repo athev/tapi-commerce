@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
-import { generateVietQRUrl } from './utils/vietqrGenerator';
+import { generateVietQRUrl, generateAlternativeQRUrl } from './utils/vietqrGenerator';
 import { usePaymentTimer } from '@/hooks/usePaymentTimer';
 import PaymentTimer from './PaymentTimer';
 import QRCodeDisplay from './QRCodeDisplay';
@@ -15,8 +15,20 @@ interface QRPaymentProps {
 }
 
 const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) => {
+  console.log('QRPayment component rendered with:', { orderId, amount });
+  
   const { timeLeft, showManualButton, formatTime } = usePaymentTimer();
+  
+  // Generate primary QR code URL
   const qrCodeUrl = generateVietQRUrl(orderId, amount);
+  
+  // Generate alternative QR if primary fails
+  const alternativeQRUrl = generateAlternativeQRUrl(orderId, amount);
+  
+  console.log('QR URLs generated:', {
+    primary: qrCodeUrl,
+    alternative: alternativeQRUrl
+  });
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', { 
@@ -28,6 +40,7 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
 
   // Don't render if missing required data
   if (!orderId || !amount) {
+    console.warn('QRPayment: Missing required data', { orderId, amount });
     return (
       <Card className="border-2 border-yellow-200">
         <CardContent className="p-4">
@@ -82,6 +95,19 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
           <span className="font-medium">Lưu ý:</span> Hệ thống sẽ tự động xác nhận thanh toán qua Casso trong vòng 1-2 phút sau khi bạn chuyển khoản thành công với đúng nội dung chuyển khoản. Webhook sẽ tự động cập nhật trạng thái đơn hàng.
         </p>
       </div>
+
+      {/* Debug Info - Remove in production */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-gray-100 border border-gray-300 p-3 rounded text-xs">
+          <h4 className="font-bold mb-2">Debug Info:</h4>
+          <div className="space-y-1">
+            <div>Order ID: {orderId}</div>
+            <div>Amount: {amount}</div>
+            <div>QR URL: {qrCodeUrl}</div>
+            <div>Alt QR URL: {alternativeQRUrl}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
