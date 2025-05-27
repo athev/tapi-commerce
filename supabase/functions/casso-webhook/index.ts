@@ -19,6 +19,29 @@ interface CassoWebhookPayload {
   data: CassoTransaction[]
 }
 
+// Hàm normalize order ID từ 32 ký tự thành UUID chuẩn
+function normalizeOrderId(id: string): string {
+  console.log('Normalizing order ID:', id)
+  
+  // Nếu đã có dấu gạch ngang hoặc không phải 32 ký tự, trả về nguyên
+  if (id.includes('-') || id.length !== 32) {
+    console.log('Order ID already normalized or invalid length:', id)
+    return id
+  }
+  
+  // Chuyển đổi 32 ký tự thành UUID chuẩn
+  const normalized = [
+    id.slice(0, 8),
+    id.slice(8, 12),
+    id.slice(12, 16),
+    id.slice(16, 20),
+    id.slice(20, 32)
+  ].join('-')
+  
+  console.log('Normalized order ID from', id, 'to', normalized)
+  return normalized
+}
+
 // Hàm extract order ID từ description - cải thiện để xử lý nhiều format hơn
 function extractOrderId(description: string): string | null {
   console.log('Extracting order ID from description:', description)
@@ -43,20 +66,13 @@ function extractOrderId(description: string): string | null {
     const match = description.match(pattern)
     if (match) {
       let extractedId = match[1]
+      console.log('Raw extracted ID:', extractedId)
       
-      // Nếu UUID không có dấu gạch ngang, thêm vào
-      if (extractedId.length === 32 && !extractedId.includes('-')) {
-        extractedId = [
-          extractedId.slice(0, 8),
-          extractedId.slice(8, 12),
-          extractedId.slice(12, 16),
-          extractedId.slice(16, 20),
-          extractedId.slice(20, 32)
-        ].join('-')
-      }
+      // Normalize UUID (thêm dấu gạch ngang nếu cần)
+      const normalizedId = normalizeOrderId(extractedId)
       
-      console.log('Successfully extracted order ID:', extractedId)
-      return extractedId
+      console.log('Successfully extracted and normalized order ID:', normalizedId)
+      return normalizedId
     }
   }
   
@@ -147,9 +163,9 @@ serve(async (req) => {
           continue
         }
 
-        // Extract order ID from description
+        // Extract and normalize order ID from description
         const orderId = extractOrderId(transaction.description)
-        console.log(`Extracted order ID: ${orderId} from description: ${transaction.description}`)
+        console.log(`Final processed order ID: ${orderId} from description: ${transaction.description}`)
 
         if (!orderId) {
           // Save to unmatched transactions
@@ -168,7 +184,7 @@ serve(async (req) => {
           continue
         }
 
-        // Find matching order
+        // Find matching order with normalized order ID
         const { data: order, error: orderError } = await supabase
           .from('orders')
           .select(`
