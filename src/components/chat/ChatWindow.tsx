@@ -360,10 +360,10 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
           )}
         </div>
 
-        {/* Messages Area with Better Height Management */}
-        <div className="flex-1 min-h-0 relative">
-          <ScrollArea className="absolute inset-0">
-            <div className="p-3 space-y-3">
+        {/* Messages Area with Fixed Height and Internal Scroll */}
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="p-4 space-y-4">
               {currentConversation.chat_type === 'product_consultation' && messages.length === 0 && (
                 <QuickQuestions 
                   onQuestionSelect={handleQuestionSelect}
@@ -378,11 +378,19 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
                 return (
                   <div
                     key={message.id}
-                    className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                    className={`flex ${isOwn ? 'justify-end' : 'justify-start'} gap-2`}
                   >
-                    <div className={`max-w-[80%] lg:max-w-[70%] ${isOwn ? 'order-2' : 'order-1'}`}>
+                    {!isOwn && (
+                      <Avatar className="h-8 w-8 mt-1 flex-shrink-0">
+                        <AvatarFallback className="text-xs">
+                          {senderDisplayName?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                    
+                    <div className={`max-w-[75%] lg:max-w-[65%] ${isOwn ? 'order-2' : 'order-1'}`}>
                       <div
-                        className={`rounded-2xl px-3 py-2 ${
+                        className={`rounded-2xl px-4 py-3 break-words ${
                           isOwn
                             ? 'bg-blue-500 text-white'
                             : 'bg-gray-100 text-gray-900'
@@ -395,7 +403,9 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
                             className="max-w-full rounded-lg"
                           />
                         ) : (
-                          <p className="text-sm leading-relaxed">{message.content}</p>
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                            {message.content}
+                          </p>
                         )}
                       </div>
                       <div className={`text-xs text-gray-500 mt-1 px-2 ${isOwn ? 'text-right' : 'text-left'}`}>
@@ -407,14 +417,6 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
                         </span>
                       </div>
                     </div>
-                    
-                    {!isOwn && (
-                      <Avatar className="order-0 mr-2 h-7 w-7 mt-1">
-                        <AvatarFallback className="text-xs">
-                          {senderDisplayName?.charAt(0) || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                    )}
                   </div>
                 );
               })}
@@ -423,8 +425,8 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
           </ScrollArea>
         </div>
 
-        {/* Compact Message Input */}
-        <div className="flex-shrink-0 border-t p-3">
+        {/* Message Input - Fixed at Bottom */}
+        <div className="flex-shrink-0 border-t p-3 bg-white">
           <div className="flex space-x-2">
             <Button
               variant="outline"
@@ -432,7 +434,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
               title="Gửi hình ảnh"
-              className="h-9 w-9 p-0"
+              className="h-10 w-10 p-0 flex-shrink-0"
             >
               <Image className="h-4 w-4" />
             </Button>
@@ -442,14 +444,14 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Nhập tin nhắn..."
-              className="flex-1 h-9"
+              className="flex-1 h-10 min-w-0"
             />
             
             <Button
               onClick={handleSendMessage}
               disabled={!newMessage.trim() || isUploading}
               size="sm"
-              className="h-9 w-9 p-0"
+              className="h-10 w-10 p-0 flex-shrink-0"
             >
               <Send className="h-4 w-4" />
             </Button>
