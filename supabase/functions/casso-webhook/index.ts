@@ -19,23 +19,48 @@ interface CassoWebhookPayload {
   data: CassoTransaction[]
 }
 
-// Hàm extract order ID từ description
+// Hàm extract order ID từ description - cải thiện để xử lý nhiều format hơn
 function extractOrderId(description: string): string | null {
-  // Tìm pattern DH#order_id hoặc Order#order_id
+  console.log('Extracting order ID from description:', description)
+  
+  // Tìm pattern DH#order_id hoặc DHorder_id (có thể có hoặc không có dấu #)
   const patterns = [
-    /DH#([a-f0-9-]{36})/i,
-    /Order#([a-f0-9-]{36})/i,
-    /DH([a-f0-9-]{36})/i,
-    /([a-f0-9-]{36})/i
+    // Pattern có dấu # và dấu gạch ngang
+    /DH#([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
+    // Pattern có DH nhưng không có dấu #, có dấu gạch ngang
+    /DH([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
+    // Pattern chỉ có UUID với dấu gạch ngang
+    /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
+    // Pattern có DH# nhưng UUID không có dấu gạch ngang (32 ký tự liền)
+    /DH#([a-f0-9]{32})/i,
+    // Pattern có DH nhưng UUID không có dấu gạch ngang (32 ký tự liền)
+    /DH([a-f0-9]{32})/i,
+    // Pattern chỉ có UUID không dấu gạch ngang (32 ký tự liền)
+    /([a-f0-9]{32})/i
   ]
   
   for (const pattern of patterns) {
     const match = description.match(pattern)
     if (match) {
-      return match[1]
+      let extractedId = match[1]
+      
+      // Nếu UUID không có dấu gạch ngang, thêm vào
+      if (extractedId.length === 32 && !extractedId.includes('-')) {
+        extractedId = [
+          extractedId.slice(0, 8),
+          extractedId.slice(8, 12),
+          extractedId.slice(12, 16),
+          extractedId.slice(16, 20),
+          extractedId.slice(20, 32)
+        ].join('-')
+      }
+      
+      console.log('Successfully extracted order ID:', extractedId)
+      return extractedId
     }
   }
   
+  console.log('No order ID found in description')
   return null
 }
 
@@ -90,6 +115,8 @@ serve(async (req) => {
     for (const transaction of payload.data) {
       try {
         console.log(`Processing transaction: ${transaction.transaction_id}`)
+        console.log(`Transaction description: ${transaction.description}`)
+        console.log(`Transaction amount: ${transaction.amount}`)
         
         // Check if transaction already exists
         const { data: existingTransaction } = await supabase
@@ -160,6 +187,9 @@ serve(async (req) => {
           .single()
 
         if (orderError || !order) {
+          console.log(`Order query error:`, orderError)
+          console.log(`Order not found or not pending for ID: ${orderId}`)
+          
           await supabase
             .from('unmatched_transactions')
             .insert({
@@ -175,8 +205,12 @@ serve(async (req) => {
           continue
         }
 
+        console.log(`Found matching order:`, order)
+
         // Verify amount matches (allow equal or greater)
         const expectedAmount = order.products?.price || 0
+        console.log(`Comparing amounts - Expected: ${expectedAmount}, Received: ${transaction.amount}`)
+        
         if (transaction.amount < expectedAmount) {
           await supabase
             .from('unmatched_transactions')
@@ -210,6 +244,8 @@ serve(async (req) => {
           errors.push(`Failed to update order ${orderId}`)
           continue
         }
+
+        console.log(`Successfully updated order ${orderId} to paid status`)
 
         // Update casso_transactions with matched order_id
         await supabase
