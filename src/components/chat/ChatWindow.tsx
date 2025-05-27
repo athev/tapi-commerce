@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +12,7 @@ import { vi } from "date-fns/locale";
 import QuickQuestions from "./QuickQuestions";
 import OrderInfoCard from "./OrderInfoCard";
 import ProductInfoCard from "./ProductInfoCard";
+import OrderManagementActions from "./OrderManagementActions";
 
 interface ChatWindowProps {
   conversationId: string;
@@ -207,6 +207,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   }
 
   const isBuyer = currentConversation.buyer_id === user?.id;
+  const isSeller = currentConversation.seller_id === user?.id;
   const headerDisplayName = isBuyer 
     ? (currentConversation.seller_name || 'Người bán')
     : (currentConversation.buyer_name || 'Khách hàng');
@@ -288,8 +289,18 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
       </CardHeader>
 
       <CardContent className="flex-1 flex flex-col p-0">
-        {/* Order Info Card for order support chats */}
-        {currentConversation.chat_type === 'order_support' && currentConversation.order && (
+        {/* Order Management for Sellers */}
+        {currentConversation.chat_type === 'order_support' && currentConversation.order && isSeller && (
+          <div className="p-4 border-b bg-gray-50">
+            <OrderManagementActions 
+              order={currentConversation.order} 
+              onStatusUpdate={() => fetchConversations()}
+            />
+          </div>
+        )}
+
+        {/* Order Info Card for Buyers */}
+        {currentConversation.chat_type === 'order_support' && currentConversation.order && isBuyer && (
           <div className="p-4 border-b bg-gray-50">
             <OrderInfoCard order={currentConversation.order} />
           </div>
