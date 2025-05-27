@@ -309,8 +309,8 @@ const OrderManagementActions = ({ order, onStatusUpdate }: OrderManagementAction
                   Hủy
                 </Button>
               </div>
-            </Card>
-          </CardContent>
+            </CardContent>
+          </Card>
         )}
 
         {/* Status indicator */}
