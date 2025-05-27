@@ -30,10 +30,10 @@ const ProductInfoCard = ({ product }: ProductInfoCardProps) => {
   const productTypeBadge = product.product_type ? getProductTypeBadge(product.product_type) : null;
 
   return (
-    <Card className="border-l-4 border-l-green-500 mb-4">
-      <CardContent className="p-4">
-        <div className="flex items-start gap-3">
-          <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
+    <Card className="border-l-4 border-l-green-500 mb-2">
+      <CardContent className="p-3">
+        <div className="flex items-start gap-2">
+          <div className="w-12 h-12 bg-gray-100 rounded flex items-center justify-center overflow-hidden flex-shrink-0">
             {product.image ? (
               <img 
                 src={product.image} 
@@ -41,29 +41,29 @@ const ProductInfoCard = ({ product }: ProductInfoCardProps) => {
                 className="w-full h-full object-cover"
               />
             ) : (
-              <ShoppingCart className="h-6 w-6 text-gray-500" />
+              <ShoppingCart className="h-4 w-4 text-gray-500" />
             )}
           </div>
           
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2 mb-2">
-              <h3 className="font-medium text-sm leading-tight line-clamp-2">
+            <div className="flex items-start justify-between gap-1 mb-1">
+              <h3 className="font-medium text-xs leading-tight line-clamp-2">
                 {product.title}
               </h3>
               {productTypeBadge && (
-                <Badge variant={productTypeBadge.variant} className="text-xs whitespace-nowrap">
+                <Badge variant={productTypeBadge.variant} className="text-xs px-1 py-0 whitespace-nowrap">
                   {productTypeBadge.label}
                 </Badge>
               )}
             </div>
             
-            <div className="flex items-center gap-2 text-xs text-gray-600">
-              <span>Người bán: {product.seller_name || 'Không rõ'}</span>
-            </div>
+            <p className="text-xs text-gray-600 truncate">
+              {product.seller_name || 'Không rõ'}
+            </p>
             
             <div className="flex items-center gap-1 text-xs text-yellow-600 mt-1">
               <Star className="h-3 w-3 fill-current" />
-              <span>Sản phẩm đang được tư vấn</span>
+              <span>Đang tư vấn</span>
             </div>
           </div>
         </div>

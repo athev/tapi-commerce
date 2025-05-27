@@ -44,21 +44,21 @@ const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
   const deliveryBadge = order.delivery_status ? getDeliveryStatusBadge(order.delivery_status) : null;
 
   return (
-    <Card className="border-l-4 border-l-blue-500 mb-4">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Package className="h-4 w-4 text-blue-600" />
-            <span className="font-medium text-sm">
-              Đơn hàng: #{order.id.slice(0, 8)}
+    <Card className="border-l-4 border-l-blue-500 mb-2">
+      <CardContent className="p-3">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-1">
+            <Package className="h-3 w-3 text-blue-600" />
+            <span className="font-medium text-xs">
+              #{order.id.slice(0, 8)}
             </span>
           </div>
-          <div className="flex gap-2">
-            <Badge variant={statusBadge.variant}>
+          <div className="flex gap-1">
+            <Badge variant={statusBadge.variant} className="text-xs px-1 py-0">
               {statusBadge.label}
             </Badge>
             {deliveryBadge && (
-              <Badge variant={deliveryBadge.variant}>
+              <Badge variant={deliveryBadge.variant} className="text-xs px-1 py-0">
                 {deliveryBadge.label}
               </Badge>
             )}
@@ -66,13 +66,13 @@ const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
         </div>
 
         {order.products && (
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span>Sản phẩm: {order.products.title}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
+          <div className="space-y-1">
+            <p className="text-xs text-gray-600 line-clamp-1">
+              {order.products.title}
+            </p>
+            <div className="flex items-center gap-1">
               <DollarSign className="h-3 w-3 text-green-600" />
-              <span className="font-medium text-green-600">
+              <span className="text-xs font-medium text-green-600">
                 {new Intl.NumberFormat('vi-VN', {
                   style: 'currency',
                   currency: 'VND'
@@ -82,10 +82,10 @@ const OrderInfoCard = ({ order }: OrderInfoCardProps) => {
           </div>
         )}
 
-        <div className="flex items-center gap-2 text-xs text-gray-500 mt-3">
+        <div className="flex items-center gap-1 text-xs text-gray-500 mt-2">
           <Calendar className="h-3 w-3" />
           <span>
-            Đặt hàng {formatDistanceToNow(new Date(order.created_at), { 
+            {formatDistanceToNow(new Date(order.created_at), { 
               addSuffix: true, 
               locale: vi 
             })}

@@ -28,8 +28,8 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasCheckedRedirect, setHasCheckedRedirect] = useState(false);
-  const [isOrderInfoExpanded, setIsOrderInfoExpanded] = useState(true);
-  const [isProductInfoExpanded, setIsProductInfoExpanded] = useState(true);
+  const [isOrderInfoExpanded, setIsOrderInfoExpanded] = useState(false);
+  const [isProductInfoExpanded, setIsProductInfoExpanded] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -226,8 +226,8 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
 
   return (
     <div className="h-[calc(100vh-120px)] flex flex-col bg-white rounded-lg border shadow-sm">
-      {/* Header */}
-      <div className="flex-shrink-0 border-b p-4">
+      {/* Header - Compact */}
+      <div className="flex-shrink-0 border-b p-3">
         <div className="flex items-center space-x-3">
           <Button
             variant="ghost"
@@ -238,56 +238,44 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           
-          <Avatar>
-            <AvatarFallback>
+          <Avatar className="h-8 w-8">
+            <AvatarFallback className="text-sm">
               {headerDisplayName?.charAt(0) || 'U'}
             </AvatarFallback>
           </Avatar>
           
-          <div className="flex-1">
-            <h3 className="text-lg font-semibold">
-              {headerDisplayName}
-              {isBuyer && <span className="text-sm font-normal text-green-600 ml-2">(Cửa hàng)</span>}
-              {!isBuyer && <span className="text-sm font-normal text-blue-600 ml-2">(Khách hàng)</span>}
-            </h3>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-semibold truncate">
+                {headerDisplayName}
+              </h3>
+              {isBuyer && <span className="text-xs font-normal text-green-600">(Cửa hàng)</span>}
+              {!isBuyer && <span className="text-xs font-normal text-blue-600">(Khách hàng)</span>}
+            </div>
             
             {currentConversation.chat_type === 'order_support' && currentConversation.order && (
-              <div className="flex items-center gap-2">
-                <p className="text-sm text-orange-600">
-                  Chat hỗ trợ đơn hàng #{currentConversation.order.id.slice(0, 8)}
-                </p>
+              <div className="flex items-center gap-1 mt-1">
+                <span className="text-xs text-orange-600">
+                  #{currentConversation.order.id.slice(0, 8)} • {currentConversation.order.status}
+                </span>
                 <Button 
                   variant="ghost" 
                   size="sm"
                   onClick={() => navigate(`/my-purchases`)}
-                  className="text-xs p-1 h-auto"
+                  className="text-xs p-0 h-auto ml-1"
                 >
                   <ExternalLink className="h-3 w-3" />
                 </Button>
               </div>
             )}
             
-            {currentConversation.chat_type === 'product_consultation' && (
-              <div className="space-y-1">
-                {currentProduct && (
-                  <p className="text-sm text-gray-600">
-                    Đang tư vấn: {currentProduct.title}
-                    {productId && currentProduct.id === productId && (
-                      <span className="text-blue-600 ml-2 font-medium">⭐ Hiện tại</span>
-                    )}
-                  </p>
+            {currentConversation.chat_type === 'product_consultation' && currentProduct && (
+              <p className="text-xs text-gray-600 truncate mt-1">
+                {currentProduct.title}
+                {productId && currentProduct.id === productId && (
+                  <span className="text-blue-600 ml-1 font-medium">⭐</span>
                 )}
-                {relatedProducts.length > 0 && (
-                  <p className="text-xs text-blue-500">
-                    +{relatedProducts.length} sản phẩm khác đã thảo luận
-                  </p>
-                )}
-                {currentConversation.related_orders && currentConversation.related_orders.length > 0 && (
-                  <p className="text-xs text-orange-500">
-                    {currentConversation.related_orders.length} đơn hàng đã mua
-                  </p>
-                )}
-              </div>
+              </p>
             )}
           </div>
         </div>
@@ -295,184 +283,148 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
 
       {/* Content Area with Internal Scroll */}
       <div className="flex-1 flex flex-col min-h-0">
-        {/* Info Cards with Collapsible */}
-        <div className="flex-shrink-0 border-b bg-gray-50 max-h-80 overflow-y-auto">
+        {/* Compact Info Cards */}
+        <div className="flex-shrink-0 border-b bg-gray-50">
           {/* Order Management for Sellers */}
           {currentConversation.chat_type === 'order_support' && currentConversation.order && isSeller && (
-            <Collapsible open={isOrderInfoExpanded} onOpenChange={setIsOrderInfoExpanded}>
-              <div className="p-4">
+            <div className="p-2">
+              <Collapsible open={isOrderInfoExpanded} onOpenChange={setIsOrderInfoExpanded}>
                 <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-between p-0 h-auto">
-                    <div className="flex items-center gap-2">
-                      <Package2 className="h-4 w-4 text-orange-600" />
-                      <span className="font-medium">Quản lý đơn hàng #{currentConversation.order.id.slice(0, 8)}</span>
+                  <Button variant="ghost" className="w-full justify-between p-2 h-auto text-xs">
+                    <div className="flex items-center gap-1">
+                      <Package2 className="h-3 w-3 text-orange-600" />
+                      <span className="font-medium">Quản lý đơn #{currentConversation.order.id.slice(0, 8)}</span>
                     </div>
-                    {isOrderInfoExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    {isOrderInfoExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                   </Button>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2">
+                <CollapsibleContent>
                   <OrderManagementActions 
                     order={currentConversation.order} 
                     onStatusUpdate={() => fetchConversations()}
                   />
                 </CollapsibleContent>
-              </div>
-            </Collapsible>
+              </Collapsible>
+            </div>
           )}
 
           {/* Order Info Card for Buyers */}
           {currentConversation.chat_type === 'order_support' && currentConversation.order && isBuyer && (
-            <Collapsible open={isOrderInfoExpanded} onOpenChange={setIsOrderInfoExpanded}>
-              <div className="p-4">
+            <div className="p-2">
+              <Collapsible open={isOrderInfoExpanded} onOpenChange={setIsOrderInfoExpanded}>
                 <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-between p-0 h-auto">
-                    <div className="flex items-center gap-2">
-                      <Package2 className="h-4 w-4 text-blue-600" />
-                      <span className="font-medium">Thông tin đơn hàng #{currentConversation.order.id.slice(0, 8)}</span>
+                  <Button variant="ghost" className="w-full justify-between p-2 h-auto text-xs">
+                    <div className="flex items-center gap-1">
+                      <Package2 className="h-3 w-3 text-blue-600" />
+                      <span className="font-medium">Đơn hàng #{currentConversation.order.id.slice(0, 8)}</span>
                     </div>
-                    {isOrderInfoExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    {isOrderInfoExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                   </Button>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2">
+                <CollapsibleContent>
                   <OrderInfoCard order={currentConversation.order} />
                 </CollapsibleContent>
-              </div>
-            </Collapsible>
+              </Collapsible>
+            </div>
           )}
 
           {/* Product Info Card */}
           {currentConversation.chat_type === 'product_consultation' && currentProduct && (
-            <Collapsible open={isProductInfoExpanded} onOpenChange={setIsProductInfoExpanded}>
-              <div className="p-4">
+            <div className="p-2">
+              <Collapsible open={isProductInfoExpanded} onOpenChange={setIsProductInfoExpanded}>
                 <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="w-full justify-between p-0 h-auto">
-                    <div className="flex items-center gap-2">
-                      <Package2 className="h-4 w-4 text-green-600" />
-                      <span className="font-medium">Thông tin sản phẩm</span>
+                  <Button variant="ghost" className="w-full justify-between p-2 h-auto text-xs">
+                    <div className="flex items-center gap-1">
+                      <Package2 className="h-3 w-3 text-green-600" />
+                      <span className="font-medium">Sản phẩm: {currentProduct.title.slice(0, 30)}...</span>
                       {productId && currentProduct.id === productId && (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Đang tư vấn</span>
+                        <span className="text-xs bg-blue-100 text-blue-700 px-1 py-0.5 rounded">Hiện tại</span>
                       )}
                     </div>
-                    {isProductInfoExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    {isProductInfoExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                   </Button>
                 </CollapsibleTrigger>
-                <CollapsibleContent className="mt-2">
+                <CollapsibleContent>
                   <ProductInfoCard product={currentProduct} />
                   
                   {relatedProducts.length > 0 && (
-                    <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">
-                        Sản phẩm khác đã thảo luận ({relatedProducts.length})
-                      </h4>
-                      <div className="space-y-1">
-                        {relatedProducts.slice(0, 3).map(product => (
-                          <p key={product.id} className="text-xs text-gray-600">
-                            • {product.title}
-                          </p>
-                        ))}
-                        {relatedProducts.length > 3 && (
-                          <p className="text-xs text-gray-500">
-                            ... và {relatedProducts.length - 3} sản phẩm khác
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {currentConversation.related_orders && currentConversation.related_orders.length > 0 && (
-                    <div className="mt-3 p-3 bg-orange-50 rounded-lg">
-                      <h4 className="text-sm font-medium text-orange-800 mb-2">
-                        Đơn hàng đã mua ({currentConversation.related_orders.length})
-                      </h4>
-                      <div className="space-y-1">
-                        {currentConversation.related_orders.slice(0, 3).map(order => (
-                          <p key={order.id} className="text-xs text-orange-600">
-                            • #{order.id.slice(0, 8)} - {order.status} - {order.products?.title}
-                          </p>
-                        ))}
-                        {currentConversation.related_orders.length > 3 && (
-                          <p className="text-xs text-orange-500">
-                            ... và {currentConversation.related_orders.length - 3} đơn khác
-                          </p>
-                        )}
-                      </div>
+                    <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
+                      <span className="font-medium text-gray-700">
+                        +{relatedProducts.length} sản phẩm khác đã thảo luận
+                      </span>
                     </div>
                   )}
                 </CollapsibleContent>
-              </div>
-            </Collapsible>
+              </Collapsible>
+            </div>
           )}
         </div>
 
-        {/* Messages Area with Internal Scroll */}
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-4">
-            {currentConversation.chat_type === 'product_consultation' && messages.length === 0 && (
-              <QuickQuestions 
-                onQuestionSelect={handleQuestionSelect}
-                productType={currentProduct?.product_type}
-              />
-            )}
+        {/* Messages Area with Better Height Management */}
+        <div className="flex-1 min-h-0 relative">
+          <ScrollArea className="absolute inset-0">
+            <div className="p-3 space-y-3">
+              {currentConversation.chat_type === 'product_consultation' && messages.length === 0 && (
+                <QuickQuestions 
+                  onQuestionSelect={handleQuestionSelect}
+                  productType={currentProduct?.product_type}
+                />
+              )}
 
-            {messages.map((message: Message) => {
-              const isOwn = message.sender_id === user?.id;
-              const senderDisplayName = message.sender_name || 'Người dùng';
-              
-              return (
-                <div
-                  key={message.id}
-                  className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className={`max-w-xs lg:max-w-md ${isOwn ? 'order-2' : 'order-1'}`}>
-                    <div
-                      className={`rounded-lg px-4 py-2 ${
-                        isOwn
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-100 text-gray-900'
-                      }`}
-                    >
-                      {message.message_type === 'image' && message.image_url ? (
-                        <img
-                          src={message.image_url}
-                          alt="Sent image"
-                          className="max-w-full rounded"
-                        />
-                      ) : (
-                        <p className="text-sm">{message.content}</p>
-                      )}
+              {messages.map((message: Message) => {
+                const isOwn = message.sender_id === user?.id;
+                const senderDisplayName = message.sender_name || 'Người dùng';
+                
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div className={`max-w-[80%] lg:max-w-[70%] ${isOwn ? 'order-2' : 'order-1'}`}>
+                      <div
+                        className={`rounded-2xl px-3 py-2 ${
+                          isOwn
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-100 text-gray-900'
+                        }`}
+                      >
+                        {message.message_type === 'image' && message.image_url ? (
+                          <img
+                            src={message.image_url}
+                            alt="Sent image"
+                            className="max-w-full rounded-lg"
+                          />
+                        ) : (
+                          <p className="text-sm leading-relaxed">{message.content}</p>
+                        )}
+                      </div>
+                      <div className={`text-xs text-gray-500 mt-1 px-2 ${isOwn ? 'text-right' : 'text-left'}`}>
+                        <span>
+                          {formatDistanceToNow(new Date(message.created_at), { 
+                            addSuffix: true, 
+                            locale: vi 
+                          })}
+                        </span>
+                      </div>
                     </div>
-                    <div className={`text-xs text-gray-500 mt-1 flex ${isOwn ? 'justify-end' : 'justify-start'} items-center gap-2`}>
-                      <span className="font-medium">
-                        {isOwn ? 'Bạn' : senderDisplayName}
-                        {!isOwn && message.sender_role === 'seller' && <span className="text-green-600 ml-1">(Cửa hàng)</span>}
-                        {!isOwn && message.sender_role !== 'seller' && <span className="text-blue-600 ml-1">(Khách hàng)</span>}
-                      </span>
-                      <span>•</span>
-                      <span>
-                        {formatDistanceToNow(new Date(message.created_at), { 
-                          addSuffix: true, 
-                          locale: vi 
-                        })}
-                      </span>
-                    </div>
+                    
+                    {!isOwn && (
+                      <Avatar className="order-0 mr-2 h-7 w-7 mt-1">
+                        <AvatarFallback className="text-xs">
+                          {senderDisplayName?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
                   </div>
-                  
-                  {!isOwn && (
-                    <Avatar className="order-0 mr-2">
-                      <AvatarFallback className="text-xs">
-                        {senderDisplayName?.charAt(0) || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                </div>
-              );
-            })}
-            <div ref={messagesEndRef} />
-          </div>
-        </ScrollArea>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+          </ScrollArea>
+        </div>
 
-        {/* Message Input */}
-        <div className="flex-shrink-0 border-t p-4">
+        {/* Compact Message Input */}
+        <div className="flex-shrink-0 border-t p-3">
           <div className="flex space-x-2">
             <Button
               variant="outline"
@@ -480,6 +432,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
               title="Gửi hình ảnh"
+              className="h-9 w-9 p-0"
             >
               <Image className="h-4 w-4" />
             </Button>
@@ -489,12 +442,14 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder="Nhập tin nhắn..."
-              className="flex-1"
+              className="flex-1 h-9"
             />
             
             <Button
               onClick={handleSendMessage}
               disabled={!newMessage.trim() || isUploading}
+              size="sm"
+              className="h-9 w-9 p-0"
             >
               <Send className="h-4 w-4" />
             </Button>
