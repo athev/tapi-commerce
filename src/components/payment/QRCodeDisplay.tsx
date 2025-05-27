@@ -1,8 +1,8 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { generateAlternativeQRUrl, validateQRUrl } from './utils/vietqrGenerator';
+import { generateAlternativeQRUrl } from './utils/vietqrGenerator';
 
 interface QRCodeDisplayProps {
   qrCodeUrl: string | null;
@@ -14,93 +14,68 @@ const QRCodeDisplay = ({ qrCodeUrl, orderId, amount }: QRCodeDisplayProps) => {
   const [qrImageError, setQrImageError] = useState(false);
   const [isRetrying, setIsRetrying] = useState(false);
   const [currentQrUrl, setCurrentQrUrl] = useState(qrCodeUrl);
-  const [hasValidated, setHasValidated] = useState(false);
-  const [isUsingTemplate, setIsUsingTemplate] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
+  const [hasRetried, setHasRetried] = useState(false);
+  const [primaryQrLoaded, setPrimaryQrLoaded] = useState(false);
+  const hasLoggedError = useRef(false);
 
   console.log('QRCodeDisplay rendered with URL:', currentQrUrl);
 
-  // Check if using VietQR template
+  // Reset states when qrCodeUrl changes
   useEffect(() => {
-    if (qrCodeUrl?.includes('api.vietqr.io') && qrCodeUrl?.includes('gziC5bl')) {
-      setIsUsingTemplate(true);
-      console.log('Using VietQR Template ID');
-    } else {
-      setIsUsingTemplate(false);
-    }
+    setCurrentQrUrl(qrCodeUrl);
+    setQrImageError(false);
+    setHasRetried(false);
+    setPrimaryQrLoaded(false);
+    hasLoggedError.current = false;
   }, [qrCodeUrl]);
 
-  // Validate QR URL on mount (only once)
-  useEffect(() => {
-    const validateInitialQR = async () => {
-      if (qrCodeUrl && !hasValidated && isUsingTemplate) {
-        console.log('Validating initial template QR URL...');
-        const isValid = await validateQRUrl(qrCodeUrl);
-        
-        if (!isValid && retryCount === 0) {
-          console.log('Template QR validation failed, switching to alternative');
-          handleSwitchToAlternative();
-        }
-        
-        setHasValidated(true);
-      }
-    };
-
-    validateInitialQR();
-  }, [qrCodeUrl, hasValidated, isUsingTemplate, retryCount]);
-
-  const handleSwitchToAlternative = () => {
-    if (orderId && amount && retryCount < 1) {
-      console.log('Switching to alternative QR generator...');
-      const alternativeUrl = generateAlternativeQRUrl(orderId, amount);
-      if (alternativeUrl) {
-        setCurrentQrUrl(alternativeUrl);
-        setRetryCount(1);
-        setIsUsingTemplate(false);
-        setQrImageError(false);
-      }
-    }
-  };
-
   const handleQrImageError = (event: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    console.error('QR code failed to load:', currentQrUrl);
-    console.error('Retry count:', retryCount);
+    // Only log error once to prevent infinite console logs
+    if (!hasLoggedError.current) {
+      console.error('QR code failed to load:', currentQrUrl);
+      hasLoggedError.current = true;
+    }
     
     setQrImageError(true);
     
-    // Only auto-switch if using template and haven't retried yet
-    if (isUsingTemplate && retryCount === 0 && orderId && amount) {
-      console.log('Template QR failed, auto-switching to alternative...');
-      handleSwitchToAlternative();
-      return;
+    // Only auto-switch if we haven't retried yet and we have fallback data
+    if (!hasRetried && !primaryQrLoaded && orderId && amount) {
+      console.log('Switching to alternative QR generator (one time only)...');
+      const alternativeUrl = generateAlternativeQRUrl(orderId, amount);
+      if (alternativeUrl) {
+        setCurrentQrUrl(alternativeUrl);
+        setHasRetried(true);
+        setQrImageError(false);
+      }
     }
-    
-    console.log('QR load failed, showing error state');
-  };
-
-  const handleRetryQR = () => {
-    console.log('Manually retrying QR code load');
-    setIsRetrying(true);
-    setQrImageError(false);
-    
-    if (retryCount < 1 && orderId && amount) {
-      handleSwitchToAlternative();
-    } else {
-      // Reset to original URL
-      setCurrentQrUrl(qrCodeUrl);
-      setRetryCount(0);
-      setIsUsingTemplate(qrCodeUrl?.includes('api.vietqr.io') || false);
-    }
-    
-    setTimeout(() => {
-      setIsRetrying(false);
-    }, 1000);
   };
 
   const handleQrImageLoad = () => {
     console.log('QR code loaded successfully:', currentQrUrl);
     setQrImageError(false);
     setIsRetrying(false);
+    setPrimaryQrLoaded(true);
+    
+    // If primary QR loads successfully, prevent any fallback attempts
+    if (currentQrUrl === qrCodeUrl) {
+      console.log('Primary VietQR template loaded successfully - no fallback needed');
+    }
+  };
+
+  const handleRetryQR = () => {
+    console.log('Manually retrying QR code load');
+    setIsRetrying(true);
+    setQrImageError(false);
+    hasLoggedError.current = false;
+    
+    // Reset to original URL and try again
+    setCurrentQrUrl(qrCodeUrl);
+    setHasRetried(false);
+    setPrimaryQrLoaded(false);
+    
+    setTimeout(() => {
+      setIsRetrying(false);
+    }, 1000);
   };
 
   return (
@@ -127,10 +102,17 @@ const QRCodeDisplay = ({ qrCodeUrl, orderId, amount }: QRCodeDisplayProps) => {
               Tải lại QR
             </Button>
           </div>
-          {isUsingTemplate && (
+          {currentQrUrl === qrCodeUrl && (
             <div className="mt-1 text-center">
               <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
                 VietQR Template
+              </span>
+            </div>
+          )}
+          {currentQrUrl !== qrCodeUrl && (
+            <div className="mt-1 text-center">
+              <span className="text-xs text-yellow-600 bg-yellow-50 px-2 py-1 rounded">
+                QR Dự phòng
               </span>
             </div>
           )}
@@ -157,15 +139,15 @@ const QRCodeDisplay = ({ qrCodeUrl, orderId, amount }: QRCodeDisplayProps) => {
                   size="sm"
                   onClick={handleRetryQR}
                   className="text-xs"
-                  disabled={retryCount >= 2}
+                  disabled={hasRetried}
                 >
                   <RefreshCw className="h-3 w-3 mr-1" />
-                  {retryCount >= 2 ? 'Đã thử lại' : 'Thử lại'}
+                  {hasRetried ? 'Đã thử lại' : 'Thử lại'}
                 </Button>
                 {process.env.NODE_ENV === 'development' && (
                   <div className="mt-2 text-xs text-gray-400">
-                    <div>Retry: {retryCount}/1</div>
-                    <div>Template: {isUsingTemplate ? 'Yes' : 'No'}</div>
+                    <div>Retry: {hasRetried ? 'Yes' : 'No'}</div>
+                    <div>Primary Loaded: {primaryQrLoaded ? 'Yes' : 'No'}</div>
                     <div>URL: {currentQrUrl?.substring(0, 50)}...</div>
                   </div>
                 )}

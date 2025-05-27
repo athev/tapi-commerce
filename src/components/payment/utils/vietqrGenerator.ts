@@ -25,7 +25,7 @@ export const generateVietQRUrl = (orderId: string, amount: number): string | nul
   
   // Priority 1: Use Template ID if available (VietQR Dashboard format)
   if (bankInfo.templateId) {
-    // Correct VietQR template format from dashboard
+    // Correct VietQR template format from dashboard - must be .jpg format
     const templateUrl = `https://api.vietqr.io/image/${bankInfo.partnerId || bankInfo.bankCode}-${bankInfo.accountNumber}-${bankInfo.templateId}.jpg?amount=${amount}`;
     console.log('Generated Template ID URL:', templateUrl);
     console.log('=== VietQR URL Generation End ===');
@@ -49,7 +49,7 @@ export const generateVietQRUrl = (orderId: string, amount: number): string | nul
   return fallbackUrl;
 };
 
-// Validate QR URL by checking HTTP status
+// Validate QR URL by checking HTTP status with preload
 export const validateQRUrl = async (url: string): Promise<boolean> => {
   try {
     console.log('Validating QR URL:', url);
@@ -67,10 +67,8 @@ export const validateQRUrl = async (url: string): Promise<boolean> => {
   }
 };
 
-// Alternative QR generator (only used if template fails validation)
+// Alternative QR generator using QRServer (only used once as fallback)
 export const generateAlternativeQRUrl = (orderId: string, amount: number): string | null => {
-  console.log('Generating alternative QR URL');
-  
   if (!orderId || !amount) {
     return null;
   }
@@ -80,6 +78,5 @@ export const generateAlternativeQRUrl = (orderId: string, amount: number): strin
   
   const alternativeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(qrData)}`;
   
-  console.log('Alternative QR URL:', alternativeUrl);
   return alternativeUrl;
 };
