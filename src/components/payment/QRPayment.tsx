@@ -16,16 +16,13 @@ interface QRPaymentProps {
 }
 
 const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) => {
-  console.log('QRPayment component rendered with:', { orderId, amount });
-  
   const { timeLeft, showManualButton, formatTime } = usePaymentTimer();
   
-  // Memoize QR code URL to prevent regeneration on every render
+  // Stable QR URL generation with proper memoization
   const qrCodeUrl = useMemo(() => {
+    if (!orderId || !amount) return null;
     return generateVietQRUrl(orderId, amount);
   }, [orderId, amount]);
-  
-  console.log('QR URL generated:', qrCodeUrl);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', { 
@@ -35,9 +32,8 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
     }).format(price);
   };
 
-  // Don't render if missing required data
+  // Early return for missing data
   if (!orderId || !amount) {
-    console.warn('QRPayment: Missing required data', { orderId, amount });
     return (
       <Card className="border-2 border-yellow-200">
         <CardContent className="p-4">
@@ -54,10 +50,8 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
 
   return (
     <div className="space-y-6">
-      {/* Payment Timer */}
       <PaymentTimer timeLeft={timeLeft} formatTime={formatTime} />
 
-      {/* QR Code Payment */}
       <Card className="border-2 border-green-200">
         <CardHeader className="text-center">
           <CardTitle className="text-green-800">
@@ -65,14 +59,12 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* QR Code Display with orderId and amount for fallback */}
           <QRCodeDisplay 
             qrCodeUrl={qrCodeUrl} 
             orderId={orderId}
             amount={amount}
           />
 
-          {/* Payment Amount */}
           <div className="text-center">
             <div className="text-2xl font-bold text-green-700">
               {formatPrice(amount)}
@@ -80,10 +72,7 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
             <p className="text-sm text-gray-600">Số tiền cần thanh toán</p>
           </div>
 
-          {/* Bank Information */}
           <BankInformation amount={amount} orderId={orderId} />
-
-          {/* Manual Confirmation Button */}
           <ManualConfirmation 
             showManualButton={showManualButton} 
             onManualConfirmation={onManualConfirmation} 
@@ -93,21 +82,9 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
 
       <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
         <p className="text-blue-700 text-sm">
-          <span className="font-medium">Lưu ý:</span> Hệ thống sẽ tự động xác nhận thanh toán qua Casso trong vòng 1-2 phút sau khi bạn chuyển khoản thành công với đúng nội dung chuyển khoản. Webhook sẽ tự động cập nhật trạng thái đơn hàng.
+          <span className="font-medium">Lưu ý:</span> Hệ thống sẽ tự động xác nhận thanh toán qua Casso trong vòng 1-2 phút sau khi bạn chuyển khoản thành công với đúng nội dung chuyển khoản.
         </p>
       </div>
-
-      {/* Debug Info - Remove in production */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="bg-gray-100 border border-gray-300 p-3 rounded text-xs">
-          <h4 className="font-bold mb-2">Debug Info:</h4>
-          <div className="space-y-1">
-            <div>Order ID: {orderId}</div>
-            <div>Amount: {amount}</div>
-            <div>QR URL: {qrCodeUrl}</div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

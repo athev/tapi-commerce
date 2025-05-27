@@ -6,5 +6,5 @@ export const bankInfo = {
   accountName: 'LE THI HOAI ANH',
   // VietQR Template ID từ dashboard
   templateId: 'gziC5bl',
-  partnerId: 'MBB' // Có thể khác với bankCode tùy vào VietQR setup
+  partnerId: '970422' // Đúng partnerId từ VietQR dashboard (không phải MBB)
 };
