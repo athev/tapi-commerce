@@ -9,7 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Check, ArrowLeft, Clock, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import QRPayment from "@/components/payment/QRPayment";
 
 const formatPrice = (price: number) => {
@@ -32,7 +32,13 @@ const Payment = () => {
   const { data: order, isLoading, error } = useQuery({
     queryKey: ['order-status', orderId],
     queryFn: async () => {
-      if (!orderId) return null;
+      if (!orderId) {
+        console.log('No orderId provided');
+        return null;
+      }
+      
+      console.log('Fetching order:', orderId);
+      
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -49,11 +55,18 @@ const Payment = () => {
         .eq('id', orderId)
         .maybeSingle();
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching order:', error);
+        throw error;
+      }
+      
+      console.log('Fetched order data:', data);
       return data;
     },
     enabled: !!orderId,
     refetchInterval: 5000, // Kiểm tra mỗi 5 giây
+    retry: 3,
+    retryDelay: 1000,
   });
 
   useEffect(() => {
@@ -166,6 +179,8 @@ const Payment = () => {
 
   // Error handling - order not found
   if (error || !order) {
+    console.error('Order error or not found:', { error, order, orderId });
+    
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
@@ -178,7 +193,10 @@ const Payment = () => {
               </div>
               <h2 className="text-2xl font-bold text-red-800 mb-2">Không tìm thấy đơn hàng</h2>
               <p className="text-red-700 mb-6">
-                Đơn hàng với ID <code className="bg-red-100 px-2 py-1 rounded">{orderId}</code> không tồn tại hoặc đã bị xóa.
+                {error ? 
+                  `Có lỗi xảy ra khi tải đơn hàng: ${error.message}` :
+                  `Đơn hàng với ID ${orderId} không tồn tại hoặc đã bị xóa.`
+                }
               </p>
               <div className="space-y-3">
                 <Button 
