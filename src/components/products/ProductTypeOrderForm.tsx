@@ -77,17 +77,24 @@ const ProductTypeOrderForm = ({
     setShowConfirmModal(false);
     
     try {
-      // Create new order and get the order ID
+      console.log('Starting order creation with buyer data:', buyerData);
+      
+      // Create new order and wait for the response
       const newOrder = await onPurchase(buyerData);
       
+      console.log('Order creation response:', newOrder);
+      
       if (newOrder && newOrder.id) {
+        console.log('Navigating to payment page with order ID:', newOrder.id);
         // Redirect to payment page with the new order ID
         navigate(`/payment/${newOrder.id}`);
       } else {
-        console.error('No order ID returned from onPurchase');
+        console.error('No order ID returned from onPurchase:', newOrder);
+        throw new Error('Không thể tạo đơn hàng. Vui lòng thử lại.');
       }
     } catch (error) {
       console.error('Order creation failed:', error);
+      // You might want to show an error toast here
     }
   };
 

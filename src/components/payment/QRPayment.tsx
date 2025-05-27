@@ -28,19 +28,32 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
 
   // Generate VietQR URL for static QR code
   const generateVietQRUrl = () => {
+    // Validate required parameters
+    if (!orderId || !amount) {
+      console.error('Missing required parameters for QR generation:', { orderId, amount });
+      return null;
+    }
+
     const baseUrl = 'https://img.vietqr.io/image';
     const bankCode = bankInfo.bankCode;
     const accountNumber = bankInfo.accountNumber;
+    const transferContent = `DH#${orderId}`;
     
-    // Use URLSearchParams to properly encode the parameters
-    const params = new URLSearchParams({
-      amount: amount.toString(),
-      addInfo: bankInfo.transferContent,
-      accountName: bankInfo.accountName
+    // Use proper encoding for URL parameters
+    const encodedTransferContent = encodeURIComponent(transferContent);
+    const encodedAccountName = encodeURIComponent(bankInfo.accountName);
+    
+    const qrUrl = `${baseUrl}/${bankCode}-${accountNumber}-compact.png?amount=${amount}&addInfo=${encodedTransferContent}&accountName=${encodedAccountName}`;
+    
+    console.log('Generated VietQR URL:', qrUrl);
+    console.log('Parameters:', {
+      orderId,
+      amount,
+      transferContent,
+      bankCode,
+      accountNumber
     });
     
-    const qrUrl = `${baseUrl}/${bankCode}-${accountNumber}-compact.png?${params.toString()}`;
-    console.log('Generated VietQR URL:', qrUrl);
     return qrUrl;
   };
 
@@ -100,6 +113,22 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
     setQrImageError(true);
   };
 
+  // Don't render if missing required data
+  if (!orderId || !amount) {
+    return (
+      <Card className="border-2 border-yellow-200">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-center space-x-2">
+            <AlertCircle className="h-5 w-5 text-yellow-600" />
+            <span className="text-yellow-700">
+              Đang tải thông tin đơn hàng...
+            </span>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Payment Timer */}
@@ -127,7 +156,7 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
         <CardContent className="space-y-4">
           {/* QR Code Display */}
           <div className="flex justify-center">
-            {!qrImageError ? (
+            {qrCodeUrl && !qrImageError ? (
               <div className="relative">
                 <img 
                   src={qrCodeUrl} 
