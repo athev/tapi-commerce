@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import QRCode from 'qrcode';
 
 interface QRPaymentProps {
   orderId: string;
@@ -14,11 +13,10 @@ interface QRPaymentProps {
 
 const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) => {
   const { toast } = useToast();
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const [timeLeft, setTimeLeft] = useState(15 * 60); // 15 minutes in seconds
   const [showManualButton, setShowManualButton] = useState(false);
 
-  // Bank information - updated to match requirements
+  // Bank information - static configuration for Casso
   const bankInfo = {
     bankName: 'MB Bank',
     bankCode: 'MBB',
@@ -27,36 +25,26 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
     transferContent: `DH#${orderId}`
   };
 
-  // Generate QR code using Vietnamese banking QR standard
-  useEffect(() => {
-    const generateQR = async () => {
-      try {
-        // Vietnamese banking QR format: 
-        // Account number|Bank code|Amount|Transfer content
-        const qrContent = `2|01|${bankInfo.bankCode}|${bankInfo.accountNumber}|${bankInfo.accountName}|${amount}|0|0|${bankInfo.transferContent}`;
-        
-        console.log('Generating QR with content:', qrContent);
-        console.log('Order ID:', orderId);
-        console.log('Amount:', amount);
-        
-        const qrUrl = await QRCode.toDataURL(qrContent, {
-          width: 256,
-          margin: 2,
-          color: {
-            dark: '#000000',
-            light: '#FFFFFF'
-          }
-        });
-        setQrCodeUrl(qrUrl);
-      } catch (error) {
-        console.error('Error generating QR code:', error);
-      }
-    };
+  // Generate VietQR URL for static QR code
+  const generateVietQRUrl = () => {
+    const baseUrl = 'https://img.vietqr.io/image';
+    const bankCode = bankInfo.bankCode;
+    const accountNumber = bankInfo.accountNumber;
+    const params = new URLSearchParams({
+      amount: amount.toString(),
+      addInfo: bankInfo.transferContent,
+      accountName: bankInfo.accountName
+    });
+    
+    return `${baseUrl}/${bankCode}-${accountNumber}-compact.png?${params.toString()}`;
+  };
 
-    if (orderId && amount) {
-      generateQR();
-    }
-  }, [orderId, amount]);
+  const qrCodeUrl = generateVietQRUrl();
+
+  console.log('VietQR URL:', qrCodeUrl);
+  console.log('Order ID:', orderId);
+  console.log('Amount:', amount);
+  console.log('Transfer content:', bankInfo.transferContent);
 
   // Countdown timer
   useEffect(() => {
@@ -70,10 +58,10 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
       });
     }, 1000);
 
-    // Show manual button after 3 minutes
+    // Show manual button after 5 minutes (instead of 3)
     const manualButtonTimer = setTimeout(() => {
       setShowManualButton(true);
-    }, 3 * 60 * 1000);
+    }, 5 * 60 * 1000);
 
     return () => {
       clearInterval(timer);
@@ -132,19 +120,19 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* QR Code */}
+          {/* Static VietQR Code */}
           <div className="flex justify-center">
-            {qrCodeUrl ? (
-              <img 
-                src={qrCodeUrl} 
-                alt="QR Code thanh toán" 
-                className="w-64 h-64 border-2 border-gray-200 rounded-lg"
-              />
-            ) : (
-              <div className="w-64 h-64 bg-gray-100 border-2 border-gray-200 rounded-lg flex items-center justify-center">
-                <span className="text-gray-500">Đang tạo QR code...</span>
-              </div>
-            )}
+            <img 
+              src={qrCodeUrl} 
+              alt="QR Code thanh toán VietQR" 
+              className="w-64 h-64 border-2 border-gray-200 rounded-lg"
+              onError={(e) => {
+                console.error('QR code failed to load:', qrCodeUrl);
+                // Fallback to a placeholder or manual transfer info
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+              }}
+            />
           </div>
 
           {/* Payment Amount */}
@@ -217,7 +205,7 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
             </div>
           </div>
 
-          {/* Manual Confirmation Button */}
+          {/* Manual Confirmation Button - Show after 5 minutes */}
           {showManualButton && (
             <div className="pt-4 border-t">
               <Button 
@@ -227,7 +215,7 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
                 Tôi đã chuyển khoản - Xác nhận thủ công
               </Button>
               <p className="text-xs text-gray-500 text-center mt-2">
-                Nếu đã chuyển khoản nhưng chưa được xác nhận tự động, vui lòng bấm nút trên
+                Nếu đã chuyển khoản nhưng chưa được xác nhận tự động trong 5 phút, vui lòng bấm nút trên
               </p>
             </div>
           )}
@@ -236,7 +224,7 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
 
       <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
         <p className="text-blue-700 text-sm">
-          <span className="font-medium">Lưu ý:</span> Hệ thống sẽ tự động xác nhận thanh toán trong vòng 1-2 phút sau khi bạn chuyển khoản thành công với đúng nội dung chuyển khoản.
+          <span className="font-medium">Lưu ý:</span> Hệ thống sẽ tự động xác nhận thanh toán qua Casso trong vòng 1-2 phút sau khi bạn chuyển khoản thành công với đúng nội dung chuyển khoản. Webhook sẽ tự động cập nhật trạng thái đơn hàng.
         </p>
       </div>
     </div>
