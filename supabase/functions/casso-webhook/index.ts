@@ -1,10 +1,9 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-casso-signature',
 }
 
 interface CassoTransaction {
@@ -80,6 +79,46 @@ function extractOrderId(description: string): string | null {
   return null
 }
 
+// Hàm verify CASSO signature theo HMAC-SHA256
+async function verifyCassoSignature(payload: string, signature: string, secret: string): Promise<boolean> {
+  if (!signature || !secret) {
+    console.error('Missing signature or secret for verification')
+    return false
+  }
+
+  try {
+    console.log('Verifying CASSO signature...')
+    
+    // Tạo HMAC-SHA256 signature
+    const encoder = new TextEncoder()
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    )
+    
+    const signatureBytes = await crypto.subtle.sign('HMAC', key, encoder.encode(payload))
+    const expectedSignature = Array.from(new Uint8Array(signatureBytes))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('')
+    
+    // So sánh signature (remove prefix nếu có)
+    const receivedSignature = signature.replace(/^sha256=/, '')
+    const isValid = expectedSignature === receivedSignature
+    
+    console.log('Signature verification result:', isValid)
+    console.log('Expected signature:', expectedSignature)
+    console.log('Received signature:', receivedSignature)
+    
+    return isValid
+  } catch (error) {
+    console.error('Error verifying CASSO signature:', error)
+    return false
+  }
+}
+
 serve(async (req) => {
   // Handle CORS
   if (req.method === 'OPTIONS') {
@@ -87,29 +126,54 @@ serve(async (req) => {
   }
 
   try {
-    // Verify authorization header
-    const authHeader = req.headers.get('Authorization')
-    const expectedToken = Deno.env.get('CASSO_WEBHOOK_TOKEN')
-    
-    if (!authHeader || !expectedToken) {
-      console.error('Missing authorization header or token configuration')
-      return new Response('Unauthorized', { 
+    // Get CASSO webhook secret from environment
+    const cassoSecret = Deno.env.get('CASSO_WEBHOOK_SECRET')
+    if (!cassoSecret) {
+      console.error('CASSO_WEBHOOK_SECRET not configured')
+      return new Response('Server configuration error', { 
+        status: 500, 
+        headers: corsHeaders 
+      })
+    }
+
+    // Get signature from header
+    const signature = req.headers.get('x-casso-signature')
+    if (!signature) {
+      console.error('Missing x-casso-signature header')
+      return new Response('Missing signature', { 
         status: 401, 
         headers: corsHeaders 
       })
     }
 
-    const bearerToken = authHeader.replace('Bearer ', '')
-    if (bearerToken !== expectedToken) {
-      console.error('Invalid authorization token')
-      return new Response('Unauthorized', { 
+    // Get raw body text for signature verification
+    const rawBody = await req.text()
+    console.log('Received webhook payload:', rawBody)
+
+    // Verify CASSO signature
+    const isValidSignature = await verifyCassoSignature(rawBody, signature, cassoSecret)
+    if (!isValidSignature) {
+      console.error('Invalid CASSO signature')
+      return new Response('Invalid signature', { 
         status: 401, 
         headers: corsHeaders 
       })
     }
 
-    // Parse request body
-    const payload: CassoWebhookPayload = await req.json()
+    console.log('CASSO signature verified successfully')
+
+    // Parse JSON payload after verification
+    let payload: CassoWebhookPayload
+    try {
+      payload = JSON.parse(rawBody)
+    } catch (error) {
+      console.error('Invalid JSON payload:', error)
+      return new Response('Invalid JSON payload', { 
+        status: 400, 
+        headers: corsHeaders 
+      })
+    }
+
     console.log('Received Casso webhook:', payload)
 
     if (!payload.data || !Array.isArray(payload.data)) {
