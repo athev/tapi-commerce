@@ -21,11 +21,15 @@ export const generateVietQRUrl = (orderId: string, amount: number): string | nul
     return null;
   }
 
-  // Use exact VietQR dashboard format
-  const encodedAccountName = encodeURIComponent(bankInfo.accountName);
-  const generatedUrl = `https://api.vietqr.io/image/${bankInfo.partnerId}-${bankInfo.accountNumber}-${bankInfo.templateId}.jpg?accountName=${encodedAccountName}&amount=${amount}`;
+  // Tạo nội dung chuyển khoản
+  const transferContent = `DH#${orderId}`;
   
-  console.log('Generated VietQR URL:', generatedUrl);
+  // Use exact VietQR dashboard format with addInfo parameter
+  const encodedAccountName = encodeURIComponent(bankInfo.accountName);
+  const encodedTransferContent = encodeURIComponent(transferContent);
+  const generatedUrl = `https://api.vietqr.io/image/${bankInfo.partnerId}-${bankInfo.accountNumber}-${bankInfo.templateId}.jpg?accountName=${encodedAccountName}&amount=${amount}&addInfo=${encodedTransferContent}`;
+  
+  console.log('Generated VietQR URL with transfer content:', generatedUrl);
   
   qrUrlCache.set(cacheKey, generatedUrl);
   return generatedUrl;
