@@ -7,7 +7,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Check, ArrowLeft, Clock, Copy } from "lucide-react";
+import { Check, ArrowLeft, Clock, Copy, AlertCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -194,7 +194,7 @@ const Payment = () => {
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'confirming' | 'completed'>('pending');
 
   // Query để kiểm tra trạng thái thanh toán real-time
-  const { data: order, isLoading } = useQuery({
+  const { data: order, isLoading, error } = useQuery({
     queryKey: ['order-status', orderId],
     queryFn: async () => {
       if (!orderId) return null;
@@ -212,7 +212,7 @@ const Payment = () => {
           )
         `)
         .eq('id', orderId)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;
@@ -365,6 +365,47 @@ const Payment = () => {
     );
   }
 
+  // Error handling - order not found
+  if (error || !order) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        
+        <main className="flex-1 container py-12">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <AlertCircle className="h-8 w-8 text-red-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-red-800 mb-2">Không tìm thấy đơn hàng</h2>
+              <p className="text-red-700 mb-6">
+                Đơn hàng với ID <code className="bg-red-100 px-2 py-1 rounded">{orderId}</code> không tồn tại hoặc đã bị xóa.
+              </p>
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => navigate('/')}
+                  variant="outline"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Về trang chủ
+                </Button>
+                <br />
+                <Button 
+                  onClick={() => navigate('/my-purchases')}
+                  className="bg-marketplace-primary hover:bg-marketplace-primary/90"
+                >
+                  Xem đơn hàng của tôi
+                </Button>
+              </div>
+            </div>
+          </div>
+        </main>
+        
+        <Footer />
+      </div>
+    );
+  }
+
   // Main payment screen
   return (
     <div className="flex flex-col min-h-screen">
@@ -376,7 +417,7 @@ const Payment = () => {
           <div className="flex items-center mb-8">
             <Button 
               variant="ghost" 
-              onClick={() => navigate(`/product/${orderId}`)}
+              onClick={() => navigate(`/product/${order.product_id}`)}
               className="mr-4"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -395,15 +436,15 @@ const Payment = () => {
                 <div className="flex items-center gap-4 pb-4 border-b">
                   <div className="h-16 w-16 bg-gray-100 rounded overflow-hidden">
                     <img 
-                      src={order?.products?.image || '/placeholder.svg'} 
-                      alt={order?.products?.title}
+                      src={order.products?.image || '/placeholder.svg'} 
+                      alt={order.products?.title}
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-medium">{order?.products?.title}</h3>
+                    <h3 className="font-medium">{order.products?.title}</h3>
                     <p className="text-sm text-gray-500">
-                      Người bán: {order?.products?.seller_name}
+                      Người bán: {order.products?.seller_name}
                     </p>
                   </div>
                 </div>
@@ -420,8 +461,8 @@ const Payment = () => {
                   <div className="flex justify-between items-center">
                     <span>Loại sản phẩm:</span>
                     <span className="font-medium">
-                      {order?.products?.product_type === 'file_download' ? 'File tải về' : 
-                       order?.products?.product_type === 'license_key_delivery' ? 'Mã kích hoạt' :
+                      {order.products?.product_type === 'file_download' ? 'File tải về' : 
+                       order.products?.product_type === 'license_key_delivery' ? 'Mã kích hoạt' :
                        'Dịch vụ khác'}
                     </span>
                   </div>
@@ -429,7 +470,7 @@ const Payment = () => {
                 
                 <div className="flex justify-between items-center text-lg font-bold py-2 border-t">
                   <span>Tổng thanh toán:</span>
-                  <span className="text-marketplace-primary">{formatPrice(order?.products?.price || 0)}</span>
+                  <span className="text-marketplace-primary">{formatPrice(order.products?.price || 0)}</span>
                 </div>
               </div>
             </CardContent>
