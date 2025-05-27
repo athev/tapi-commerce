@@ -38,6 +38,7 @@ export type Order = {
   product_id: string;
   status: 'pending' | 'paid' | 'cancelled';
   created_at: string;
+  delivery_status?: string;
   product?: Product;
 };
 
