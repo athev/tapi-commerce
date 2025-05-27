@@ -138,6 +138,7 @@ const ProductDetail = () => {
         setHasPurchased(true);
       }
 
+      // Return the created order so it can be used for navigation
       return order;
     } catch (error) {
       console.error('Error creating order:', error);

@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +9,7 @@ import { useNavigate } from "react-router-dom";
 
 interface ProductTypeOrderFormProps {
   productType: string;
-  onPurchase: (buyerData?: any) => void;
+  onPurchase: (buyerData?: any) => Promise<any>;
   isProcessing: boolean;
   hasPurchased: boolean;
   product: any;
@@ -77,11 +76,16 @@ const ProductTypeOrderForm = ({
   const handleConfirmPurchase = async () => {
     setShowConfirmModal(false);
     
-    // Create order and redirect to payment page
     try {
-      await onPurchase(buyerData);
-      // After successful order creation, redirect to payment page
-      navigate(`/payment/${product?.id || 'temp'}`);
+      // Create new order and get the order ID
+      const newOrder = await onPurchase(buyerData);
+      
+      if (newOrder && newOrder.id) {
+        // Redirect to payment page with the new order ID
+        navigate(`/payment/${newOrder.id}`);
+      } else {
+        console.error('No order ID returned from onPurchase');
+      }
     } catch (error) {
       console.error('Order creation failed:', error);
     }

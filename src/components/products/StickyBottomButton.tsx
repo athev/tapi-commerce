@@ -2,10 +2,9 @@
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, Heart, Zap } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useNavigate } from "react-router-dom";
 
 interface StickyBottomButtonProps {
-  onPurchase: () => void;
+  onPurchase: () => Promise<any>;
   isProcessing: boolean;
   hasPurchased: boolean;
   productType: string;
@@ -30,17 +29,14 @@ const StickyBottomButton = ({
   productId
 }: StickyBottomButtonProps) => {
   const isMobile = useIsMobile();
-  const navigate = useNavigate();
 
   if (!isMobile || (hasPurchased && productType === 'file_download')) {
     return null;
   }
 
   const handlePurchase = async () => {
+    // The onPurchase function will handle order creation and navigation
     await onPurchase();
-    if (productId) {
-      navigate(`/payment/${productId}`);
-    }
   };
 
   return (
