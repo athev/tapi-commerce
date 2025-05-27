@@ -46,6 +46,7 @@ const OrderSupportChatButton = ({
         description: "Vui lòng đăng nhập để chat hỗ trợ đơn hàng",
         variant: "destructive"
       });
+      navigate('/login');
       return;
     }
 
@@ -55,25 +56,28 @@ const OrderSupportChatButton = ({
       console.log('Creating order support conversation:', {
         orderId: order.id,
         sellerId,
-        buyerId: user.id
+        buyerId: user.id,
+        orderDetails: order
       });
 
+      // Create or get existing order support conversation
       const conversationId = await createOrderSupportConversation(order.id, sellerId);
       
-      console.log('Order support conversation created:', conversationId);
+      console.log('Order support conversation created/found:', conversationId);
       
+      // Navigate to the chat with the specific conversation
       navigate(`/chat/${conversationId}`);
       
       toast({
-        title: "Chat hỗ trợ",
-        description: "Đã tạo cuộc trò chuyện hỗ trợ đơn hàng",
+        title: "Chat hỗ trợ đơn hàng",
+        description: `Đã mở cuộc trò chuyện hỗ trợ cho đơn hàng #${order.id.slice(0, 8)}`,
         variant: "default"
       });
     } catch (error) {
       console.error('Error creating order support conversation:', error);
       toast({
         title: "Lỗi",
-        description: "Không thể tạo cuộc trò chuyện hỗ trợ",
+        description: "Không thể tạo cuộc trò chuyện hỗ trợ đơn hàng. Vui lòng thử lại.",
         variant: "destructive"
       });
     } finally {
@@ -89,7 +93,7 @@ const OrderSupportChatButton = ({
       className={className}
     >
       <MessageCircle className="h-4 w-4 mr-2" />
-      {isLoading ? "Đang tạo..." : "Chat hỗ trợ đơn hàng"}
+      {isLoading ? "Đang tạo..." : "Chat với người bán"}
     </Button>
   );
 };

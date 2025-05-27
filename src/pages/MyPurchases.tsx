@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Download, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
+import OrderSupportChatButton from "@/components/chat/OrderSupportChatButton";
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { 
@@ -41,7 +42,11 @@ const MyPurchases = () => {
       product_id: '1',
       status: 'paid' as const,
       created_at: '2025-01-15T10:30:00Z',
-      product: mockProducts[0]
+      delivery_status: 'delivered',
+      product: {
+        ...mockProducts[0],
+        seller_id: 'seller1'
+      }
     },
     {
       id: '2',
@@ -49,7 +54,11 @@ const MyPurchases = () => {
       product_id: '2',
       status: 'paid' as const,
       created_at: '2025-01-10T14:20:00Z',
-      product: mockProducts[1]
+      delivery_status: 'processing',
+      product: {
+        ...mockProducts[1],
+        seller_id: 'seller2'
+      }
     },
     {
       id: '3',
@@ -57,7 +66,11 @@ const MyPurchases = () => {
       product_id: '3', 
       status: 'pending' as const,
       created_at: '2025-01-20T09:15:00Z',
-      product: mockProducts[2]
+      delivery_status: 'pending',
+      product: {
+        ...mockProducts[2],
+        seller_id: 'seller3'
+      }
     }
   ];
 
@@ -178,6 +191,9 @@ const MyPurchases = () => {
                             <p className="text-sm text-gray-500">
                               Ngày mua: {formatDate(purchase.created_at)}
                             </p>
+                            <p className="text-sm text-gray-500">
+                              Đơn hàng: #{purchase.id.slice(0, 8)}
+                            </p>
                           </div>
                           
                           <div className="text-right">
@@ -191,6 +207,19 @@ const MyPurchases = () => {
                               {purchase.status === 'paid' ? 'Đã thanh toán' : 
                                purchase.status === 'pending' ? 'Chờ thanh toán' : 'Đã hủy'}
                             </Badge>
+                            {purchase.delivery_status && (
+                              <div className="mt-1">
+                                <Badge variant="outline" className={
+                                  purchase.delivery_status === 'delivered' ? 'border-green-500 text-green-700' :
+                                  purchase.delivery_status === 'processing' ? 'border-blue-500 text-blue-700' :
+                                  'border-gray-500 text-gray-700'
+                                }>
+                                  {purchase.delivery_status === 'delivered' ? 'Đã giao' :
+                                   purchase.delivery_status === 'processing' ? 'Đang xử lý' :
+                                   'Chờ xử lý'}
+                                </Badge>
+                              </div>
+                            )}
                           </div>
                         </div>
                         
@@ -200,7 +229,7 @@ const MyPurchases = () => {
                         </p>
                         
                         {/* Actions */}
-                        <div className="flex gap-3">
+                        <div className="flex flex-wrap gap-3">
                           <Button asChild variant="outline">
                             <Link to={`/product/${purchase.product.id}`}>
                               <Eye className="h-4 w-4 mr-2" />
@@ -225,6 +254,23 @@ const MyPurchases = () => {
                               </Link>
                             </Button>
                           )}
+
+                          {/* Order Support Chat Button */}
+                          <OrderSupportChatButton 
+                            order={{
+                              id: purchase.id,
+                              status: purchase.status,
+                              created_at: purchase.created_at,
+                              delivery_status: purchase.delivery_status,
+                              products: {
+                                title: purchase.product.title,
+                                price: purchase.product.price
+                              },
+                              user_id: purchase.user_id
+                            }}
+                            sellerId={purchase.product.seller_id || 'default-seller'}
+                            variant="outline"
+                          />
                         </div>
                       </div>
                     </div>
