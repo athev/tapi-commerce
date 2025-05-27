@@ -15,8 +15,8 @@ export const createOrderSupportConversation = async (
     productId
   });
 
-  // Check if conversation already exists for this order
-  const { data: existingConv } = await supabase
+  // First, check if conversation already exists for this specific order
+  const { data: existingOrderConv } = await supabase
     .from('conversations')
     .select('id')
     .eq('buyer_id', buyerId)
@@ -25,9 +25,40 @@ export const createOrderSupportConversation = async (
     .eq('order_id', orderId)
     .single();
 
-  if (existingConv) {
-    console.log('Found existing order support conversation:', existingConv.id);
-    return existingConv.id;
+  if (existingOrderConv) {
+    console.log('Found existing order support conversation for this order:', existingOrderConv.id);
+    return existingOrderConv.id;
+  }
+
+  // If no order-specific conversation, check for existing conversation between buyer and seller for this product
+  const { data: existingProductConv } = await supabase
+    .from('conversations')
+    .select('id')
+    .eq('buyer_id', buyerId)
+    .eq('seller_id', sellerId)
+    .eq('product_id', productId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (existingProductConv) {
+    console.log('Found existing conversation for this product, updating it for order support:', existingProductConv.id);
+    
+    // Update the existing conversation to be an order support conversation
+    const { error: updateError } = await supabase
+      .from('conversations')
+      .update({
+        chat_type: 'order_support',
+        order_id: orderId,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', existingProductConv.id);
+
+    if (updateError) {
+      console.error('Error updating existing conversation:', updateError);
+    }
+
+    return existingProductConv.id;
   }
 
   // Create new order support conversation
@@ -67,8 +98,8 @@ export const createConversation = async (
     chatType 
   });
 
-  if (chatType === 'order_support' && orderId) {
-    return createOrderSupportConversation(buyerId, sellerId, orderId, productId!);
+  if (chatType === 'order_support' && orderId && productId) {
+    return createOrderSupportConversation(buyerId, sellerId, orderId, productId);
   }
 
   // For product consultations, check if a conversation already exists between these users
