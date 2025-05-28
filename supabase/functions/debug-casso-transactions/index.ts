@@ -19,7 +19,7 @@ function extractOrderId(description: string): string | null {
   const cleanDesc = description.trim()
   console.log('🔧 Cleaned description:', cleanDesc)
   
-  // Các pattern để tìm order ID theo thứ tự ưu tiên
+  // FIXED: Các pattern để tìm order ID - bao gồm hex ngắn
   const patterns = [
     // Pattern chính: DH + 32 ký tự hex (không có dấu gạch ngang)
     /DH([A-F0-9]{32})/i,
@@ -32,10 +32,19 @@ function extractOrderId(description: string): string | null {
     // Pattern UUID đầy đủ với dấu gạch ngang
     /DH([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
     /DH\s+([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
+    
+    // CRITICAL: Pattern cho hex ngắn (8-24 ký tự) - để xử lý DH4D3D37EDEC53
+    /DH([A-F0-9]{8,24})/i,
+    /DH\s+([A-F0-9]{8,24})/i,
+    /DH#([A-F0-9]{8,24})/i,
+    /DH#\s+([A-F0-9]{8,24})/i,
+    
     // Pattern chỉ có hex string 32 ký tự
     /([A-F0-9]{32})/i,
     // Pattern chỉ có UUID đầy đủ
-    /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i
+    /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
+    // Pattern hex ngắn
+    /([A-F0-9]{8,24})/i
   ]
   
   for (let i = 0; i < patterns.length; i++) {
@@ -90,30 +99,40 @@ function normalizeOrderId(hexId: string): string {
   return normalized
 }
 
-// Hàm tạo các pattern tìm kiếm cho order ID
-function generateSearchPatterns(orderId: string): string[] {
-  console.log('🔍 Generating search patterns for order ID:', orderId)
+// FIXED: Hàm kiểm tra match với prefix matching
+function isOrderMatch(orderId: string, extractedId: string): boolean {
+  console.log('🔍 Checking order match:', { orderId, extractedId })
   
-  // Lấy hex version (bỏ dấu gạch ngang)
-  const hexVersion = orderId.replace(/-/g, '').toUpperCase()
+  // Chuẩn hóa order ID
+  const orderHex = orderId.replace(/-/g, '').toLowerCase()
+  const extracted = extractedId.toLowerCase()
   
-  const patterns = [
-    // Exact UUID match
-    orderId,
-    // Hex version patterns
-    `DH${hexVersion}`,
-    `DH ${hexVersion}`,
-    `DH#${hexVersion}`,
-    `DH# ${hexVersion}`,
-    // Just hex string
-    hexVersion,
-    // Mixed case patterns
-    `dh${hexVersion.toLowerCase()}`,
-    `DH${hexVersion.toLowerCase()}`,
-  ]
+  console.log('🔍 Normalized for comparison:', { orderHex, extracted })
   
-  console.log('✅ Generated search patterns:', patterns)
-  return patterns
+  // Exact match with UUID
+  if (orderId === extracted) {
+    console.log('✅ Exact UUID match')
+    return true
+  }
+  
+  // Match với hex đầy đủ
+  if (orderHex === extracted) {
+    console.log('✅ Full hex match')
+    return true
+  }
+  
+  // CRITICAL: Match với prefix (từ 8 ký tự trở lên)
+  if (extracted.length >= 8 && orderHex.startsWith(extracted)) {
+    console.log('✅ Prefix hex match', { 
+      orderPrefix: orderHex.slice(0, extracted.length), 
+      extracted,
+      matches: orderHex.slice(0, extracted.length) === extracted
+    })
+    return true
+  }
+  
+  console.log('❌ No match found')
+  return false
 }
 
 serve(async (req) => {
@@ -129,10 +148,10 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Get query parameters
+    // FIXED: Get query parameters - default to user's real case
     const url = new URL(req.url)
-    const testDescription = url.searchParams.get('description') || 'DH42A7FC87'
-    const testOrderId = url.searchParams.get('order_id') || '42a7fc87-0f86-49de-b4bc-3d1ae2008946'
+    const testDescription = url.searchParams.get('description') || 'DH4D3D37EDEC53'
+    const testOrderId = url.searchParams.get('order_id') || '4d3d37ed-ec53-4878-9efe-0cf94bbd41b'
     
     console.log('Testing with description:', testDescription)
     console.log('Testing with order ID:', testOrderId)
@@ -141,20 +160,32 @@ serve(async (req) => {
     const extractedId = extractOrderId(testDescription)
     console.log('Extracted order ID:', extractedId)
 
-    // Test flexible matching
+    // FIXED: Test flexible matching with detailed logging
     const orderHex = testOrderId.replace(/-/g, '').toLowerCase()
     const extracted = extractedId?.toLowerCase() || ''
+    
+    console.log('🔍 Detailed matching analysis:', {
+      testOrderId,
+      orderHex,
+      extractedId,
+      extracted,
+      orderHexPrefix12: orderHex.slice(0, 12),
+      orderHexPrefix13: orderHex.slice(0, 13),
+      extractedLength: extracted.length,
+      prefixMatch: orderHex.startsWith(extracted),
+      exactMatch: orderHex === extracted
+    })
     
     const matchResults = {
       exact_uuid: testOrderId === extracted,
       full_hex: orderHex === extracted,
       prefix_match: extracted.length >= 8 && orderHex.startsWith(extracted),
-      description_analysis: {
-        original: testDescription,
-        extracted: extractedId,
-        order_hex_prefix: orderHex.slice(0, 8),
-        matches_prefix: orderHex.slice(0, 8) === extracted
-      }
+      prefix_analysis: {
+        order_hex_prefix: orderHex.slice(0, extracted.length),
+        extracted_id: extracted,
+        matches: orderHex.slice(0, extracted.length) === extracted
+      },
+      is_order_match_result: isOrderMatch(testOrderId, extractedId || '')
     }
 
     // Check recent transactions
@@ -177,7 +208,7 @@ serve(async (req) => {
       .eq('id', testOrderId)
       .maybeSingle()
 
-    // Check recent orders for comparison
+    // FIXED: Check recent orders that COULD match with prefix
     const { data: recentOrders, error: recentOrderError } = await supabase
       .from('orders')
       .select(`
@@ -191,8 +222,10 @@ serve(async (req) => {
 
     console.log('Recent pending orders:', recentOrders?.map(o => ({
       id: o.id,
-      hex_prefix: o.id.replace(/-/g, '').slice(0, 8).toUpperCase(),
-      status: o.status
+      hex_prefix_12: o.id.replace(/-/g, '').slice(0, 12).toUpperCase(),
+      hex_prefix_13: o.id.replace(/-/g, '').slice(0, 13).toUpperCase(),
+      status: o.status,
+      would_match_with_extracted: isOrderMatch(o.id, extractedId || '')
     })))
 
     // Check unmatched transactions
@@ -226,12 +259,14 @@ serve(async (req) => {
       },
       debugging_info: {
         order_hex_full: testOrderId.replace(/-/g, '').toLowerCase(),
-        order_hex_prefix: testOrderId.replace(/-/g, '').slice(0, 8).toUpperCase(),
-        extracted_matches_prefix: extracted === testOrderId.replace(/-/g, '').slice(0, 8).toLowerCase(),
+        order_hex_prefix_12: testOrderId.replace(/-/g, '').slice(0, 12).toUpperCase(),
+        order_hex_prefix_13: testOrderId.replace(/-/g, '').slice(0, 13).toUpperCase(),
+        extracted_matches_prefix: extracted === testOrderId.replace(/-/g, '').slice(0, extracted.length).toLowerCase(),
         recent_pending_orders: recentOrders?.map(o => ({
           id: o.id,
-          hex_prefix: o.id.replace(/-/g, '').slice(0, 8).toUpperCase(),
-          would_match: o.id.replace(/-/g, '').toLowerCase().startsWith(extracted)
+          hex_prefix_12: o.id.replace(/-/g, '').slice(0, 12).toUpperCase(),
+          hex_prefix_13: o.id.replace(/-/g, '').slice(0, 13).toUpperCase(),
+          would_match: isOrderMatch(o.id, extractedId || '')
         })) || []
       }
     }

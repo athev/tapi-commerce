@@ -26,18 +26,18 @@ export function extractOrderId(description: string): string | null {
     /DH([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
     /DH\s+([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
     
-    // NEW: Pattern cho hex ngắn (8-16 ký tự) - để xử lý trường hợp như DH42A7FC87
-    /DH([A-F0-9]{8,16})/i,
-    /DH\s+([A-F0-9]{8,16})/i,
-    /DH#([A-F0-9]{8,16})/i,
-    /DH#\s+([A-F0-9]{8,16})/i,
+    // FIXED: Pattern cho hex ngắn (8-24 ký tự) - để xử lý trường hợp như DH4D3D37EDEC53
+    /DH([A-F0-9]{8,24})/i,
+    /DH\s+([A-F0-9]{8,24})/i,
+    /DH#([A-F0-9]{8,24})/i,
+    /DH#\s+([A-F0-9]{8,24})/i,
     
     // Pattern chỉ có hex string 32 ký tự
     /([A-F0-9]{32})/i,
     // Pattern chỉ có UUID đầy đủ
     /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
     // Pattern hex ngắn
-    /([A-F0-9]{8,16})/i
+    /([A-F0-9]{8,24})/i
   ]
   
   for (let i = 0; i < patterns.length; i++) {
@@ -105,11 +105,12 @@ export function generateSearchPatterns(extractedId: string): string[] {
       extractedId, // UUID gốc
       hexVersion,  // Hex đầy đủ
       hexVersion.slice(0, 8), // 8 ký tự đầu
+      hexVersion.slice(0, 12), // 12 ký tự đầu  
       hexVersion.slice(0, 16)  // 16 ký tự đầu
     )
   }
-  // Nếu là hex ngắn (8-16 ký tự)
-  else if (extractedId.length >= 8 && extractedId.length <= 16) {
+  // Nếu là hex ngắn (8-24 ký tự)
+  else if (extractedId.length >= 8 && extractedId.length <= 24) {
     patterns.push(extractedId.toLowerCase())
   }
   // Nếu là hex dài (32 ký tự)
@@ -119,6 +120,7 @@ export function generateSearchPatterns(extractedId: string): string[] {
       normalized,  // UUID chuẩn
       extractedId, // Hex gốc
       extractedId.slice(0, 8), // 8 ký tự đầu
+      extractedId.slice(0, 12), // 12 ký tự đầu
       extractedId.slice(0, 16)  // 16 ký tự đầu
     )
   }
@@ -127,13 +129,15 @@ export function generateSearchPatterns(extractedId: string): string[] {
   return [...new Set(patterns)] // Remove duplicates
 }
 
-// NEW: Hàm kiểm tra match linh hoạt
+// FIXED: Hàm kiểm tra match linh hoạt - cải thiện để xử lý prefix matching
 export function isOrderMatch(orderId: string, extractedId: string): boolean {
   console.log('🔍 Checking order match:', { orderId, extractedId })
   
-  // Chuẩn hóa order ID
+  // Chuẩn hóa order ID (bỏ dấu gạch ngang, chuyển thường)
   const orderHex = orderId.replace(/-/g, '').toLowerCase()
   const extracted = extractedId.toLowerCase()
+  
+  console.log('🔍 Normalized comparison:', { orderHex, extracted })
   
   // Exact match with UUID
   if (orderId === extracted) {
@@ -147,9 +151,15 @@ export function isOrderMatch(orderId: string, extractedId: string): boolean {
     return true
   }
   
-  // Match với prefix (8-16 ký tự đầu)
+  // CRITICAL FIX: Match với prefix (từ 8 ký tự trở lên)
   if (extracted.length >= 8 && orderHex.startsWith(extracted)) {
-    console.log('✅ Prefix hex match')
+    console.log('✅ Prefix hex match', { orderPrefix: orderHex.slice(0, extracted.length), extracted })
+    return true
+  }
+  
+  // ADDITIONAL: Reverse check - extracted có thể là UUID đầy đủ mà order ID là prefix
+  if (extracted.length >= 32 && extracted.startsWith(orderHex.slice(0, 12))) {
+    console.log('✅ Reverse prefix match')
     return true
   }
   
