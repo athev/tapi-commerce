@@ -19,10 +19,11 @@ serve(async (req) => {
     console.log('Request URL:', req.url)
     console.log('All headers:', Object.fromEntries(req.headers))
 
-    // Get CASSO webhook secret - using correct environment variable name
-    const cassoSecret = Deno.env.get('CASSO_WEBHOOK_TOKEN') || Deno.env.get('CASSO_WEBHOOK_SECRET')
+    // Get CASSO webhook secret - use the "Key bảo mật" from CASSO dashboard
+    const cassoSecret = Deno.env.get('CASSO_WEBHOOK_SECRET') || Deno.env.get('CASSO_WEBHOOK_TOKEN')
     if (!cassoSecret) {
-      console.error('❌ CASSO_WEBHOOK_TOKEN not configured')
+      console.error('❌ CASSO_WEBHOOK_SECRET not configured')
+      console.error('❌ Please set CASSO_WEBHOOK_SECRET to the "Key bảo mật" value from CASSO dashboard')
       return createErrorResponse('Server configuration error', undefined, 500)
     }
 
@@ -82,13 +83,16 @@ serve(async (req) => {
     }
 
     console.log('🔐 Starting signature verification...')
+    console.log('🔍 Using rawBody for signature calculation')
+    console.log('🔍 Secret length:', cassoSecret.length)
+    
     try {
       const isValidSignature = await verifyCassoSignature(rawBody, signature, cassoSecret)
       
       if (!isValidSignature) {
         console.error('❌ SIGNATURE VERIFICATION FAILED')
         console.error('Raw body for debug:', rawBody)
-        console.error('Expected vs Received signature logged above')
+        console.error('Make sure CASSO_WEBHOOK_SECRET matches the "Key bảo mật" from CASSO dashboard')
         return createErrorResponse('Invalid signature', undefined, 403)
       }
       console.log('✅ CASSO signature verified successfully')

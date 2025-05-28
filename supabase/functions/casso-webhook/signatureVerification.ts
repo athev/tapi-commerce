@@ -30,14 +30,11 @@ export async function verifyCassoSignature(payload: string, signature: string, s
     
     console.log('Expected signature (hex):', expectedSignature)
     
-    // Extract signature from header (remove v1= prefix if present)
-    let receivedSignature = signature.trim().toLowerCase()
-    if (receivedSignature.startsWith('v1=')) {
-      receivedSignature = receivedSignature.substring(3)
-      console.log('Removed v1= prefix, signature:', receivedSignature)
-    }
+    // CASSO sends signature directly without any prefix
+    const receivedSignature = signature.trim().toLowerCase()
+    console.log('Received signature (cleaned):', receivedSignature)
     
-    // Compare signatures using timing-safe comparison
+    // Compare signatures directly - CASSO doesn't use v1= prefix
     const isValid = expectedSignature === receivedSignature
     console.log('Signature verification result:', isValid)
     
@@ -48,6 +45,8 @@ export async function verifyCassoSignature(payload: string, signature: string, s
       console.log('❌ CASSO signature verification failed')
       console.log('Expected:', expectedSignature)
       console.log('Received:', receivedSignature)
+      console.log('Expected length:', expectedSignature.length)
+      console.log('Received length:', receivedSignature.length)
       return false
     }
     
