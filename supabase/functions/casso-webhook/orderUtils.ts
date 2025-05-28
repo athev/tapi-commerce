@@ -14,11 +14,11 @@ export function extractOrderId(description: string): string | null {
   
   // Các pattern để tìm order ID theo thứ tự ưu tiên
   const patterns = [
-    // Pattern với DH# + UUID đầy đủ (ví dụ: DH#51ae934e-85db-430a-a13f-13c29ce51c60)
+    // Pattern với DH# + UUID đầy đủ (ví dụ: DH#e8d2edb3-ade5-48e1-9662-dd2b82109582)
     /DH#([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
     // Pattern với DH + UUID đầy đủ (không có #)
     /DH([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
-    // Pattern mới từ CASSO: DH + 12 ký tự hex (ví dụ: DH51AE934E85DB)
+    // Pattern mới từ CASSO: DH + 12 ký tự hex (ví dụ: DHE8D2EDB3ADE5)
     /DH([A-F0-9]{12})/i,
     // Pattern chỉ có UUID đầy đủ
     /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,

@@ -25,6 +25,7 @@ const BankInformation = ({ amount, orderId, actualDescription }: BankInformation
     });
   };
 
+  // Sử dụng format đơn giản: DH# + UUID đầy đủ
   const transferContent = `DH#${orderId}`;
 
   return (
@@ -75,7 +76,7 @@ const BankInformation = ({ amount, orderId, actualDescription }: BankInformation
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium">Nội dung CK:</span>
           <div className="flex items-center gap-2">
-            <code className="text-sm bg-white px-2 py-1 rounded border">{transferContent}</code>
+            <code className="text-sm bg-white px-2 py-1 rounded border font-mono">{transferContent}</code>
             <Button
               variant="ghost"
               size="sm"
@@ -112,6 +113,12 @@ const BankInformation = ({ amount, orderId, actualDescription }: BankInformation
             </p>
           </div>
         )}
+      </div>
+
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-3">
+        <p className="text-xs text-yellow-700">
+          <strong>Lưu ý quan trọng:</strong> Vui lòng nhập chính xác nội dung chuyển khoản <code className="bg-white px-1 rounded">{transferContent}</code> để hệ thống tự động xác nhận thanh toán.
+        </p>
       </div>
     </div>
   );

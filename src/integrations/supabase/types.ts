@@ -46,7 +46,15 @@ export type Database = {
           transaction_id?: string
           when_occurred?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_casso_transactions_order_id"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       categories: {
         Row: {
