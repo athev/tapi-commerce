@@ -1,7 +1,6 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { CassoTransactionData } from './types.ts'
-import { extractOrderId } from './orderUtils.ts'
+import { extractOrderId, generateSearchPatterns } from './orderUtils.ts'
 import { sendPaymentConfirmationEmail, sendSellerNotificationEmail } from './emailService.ts'
 import { processAutomaticDelivery } from './deliveryService.ts'
 
@@ -65,10 +64,10 @@ export async function processTransaction(transaction: CassoTransactionData, supa
 
 async function processOrder(transaction: CassoTransactionData, transactionId: string, supabase: any) {
   // Extract order ID with improved patterns
-  const orderIdPattern = extractOrderId(transaction.description)
-  console.log(`🔍 Extracted order pattern: "${orderIdPattern}"`)
+  const extractedOrderId = extractOrderId(transaction.description)
+  console.log(`🔍 Extracted order ID: "${extractedOrderId}"`)
 
-  if (!orderIdPattern) {
+  if (!extractedOrderId) {
     await saveUnmatchedTransaction(transaction, transactionId, 'Could not extract order ID from description', supabase)
     return {
       transaction_id: transactionId,
@@ -77,25 +76,35 @@ async function processOrder(transaction: CassoTransactionData, transactionId: st
     }
   }
 
-  // Find matching order with better error handling
-  const order = await findMatchingOrder(orderIdPattern, supabase)
+  // Generate multiple search patterns for the order
+  const searchPatterns = generateSearchPatterns(extractedOrderId)
+  console.log(`🔍 Will search for order using patterns:`, searchPatterns)
+
+  // Find matching order with multiple pattern attempts
+  const order = await findMatchingOrder(searchPatterns, supabase)
   
   if (!order) {
-    console.log(`⚠️ Order not found for pattern: ${orderIdPattern}`)
+    console.log(`⚠️ Order not found for extracted ID: ${extractedOrderId}`)
     
-    // Try to find any order with similar ID (for debugging)
-    const { data: allOrders } = await supabase
+    // Debug: show recent orders
+    const { data: recentOrders } = await supabase
       .from('orders')
-      .select('id, status')
-      .limit(10)
+      .select('id, status, created_at')
+      .order('created_at', { ascending: false })
+      .limit(5)
     
-    console.log('Recent orders for debugging:', allOrders?.map(o => ({ id: o.id.slice(0, 8), status: o.status })))
+    console.log('Recent orders for debugging:', recentOrders?.map(o => ({ 
+      id: o.id, 
+      short_id: o.id.slice(0, 8), 
+      status: o.status 
+    })))
     
-    await saveUnmatchedTransaction(transaction, transactionId, `Order not found or not pending: ${orderIdPattern}`, supabase)
+    await saveUnmatchedTransaction(transaction, transactionId, `Order not found for ID: ${extractedOrderId}`, supabase)
     return {
       transaction_id: transactionId,
       status: 'order_not_found',
-      order_pattern: orderIdPattern
+      extracted_order_id: extractedOrderId,
+      search_patterns: searchPatterns
     }
   }
 
@@ -103,7 +112,8 @@ async function processOrder(transaction: CassoTransactionData, transactionId: st
   console.log(`📋 Order details:`, {
     status: order.status,
     product_type: order.products?.product_type,
-    price: order.products?.price
+    price: order.products?.price,
+    created_at: order.created_at
   })
 
   // Verify amount with tolerance for small differences
@@ -140,15 +150,14 @@ async function processOrder(transaction: CassoTransactionData, transactionId: st
   return await updateOrderAndProcess(order, transaction, transactionId, supabase)
 }
 
-async function findMatchingOrder(orderIdPattern: string, supabase: any) {
-  let order, orderError
+async function findMatchingOrder(searchPatterns: string[], supabase: any) {
+  console.log(`🔍 Searching for order with ${searchPatterns.length} patterns...`)
   
-  console.log(`🔍 Searching for order with pattern: ${orderIdPattern}`)
-  
-  if (orderIdPattern.includes('%')) {
-    // Pattern matching for new format
-    console.log('🔍 Using ILIKE pattern matching for order search...')
-    const { data: orderData, error: orderErr } = await supabase
+  for (const pattern of searchPatterns) {
+    console.log(`🔍 Trying pattern: "${pattern}"`)
+    
+    // Try exact match first
+    const { data: exactOrder, error: exactError } = await supabase
       .from('orders')
       .select(`
         id,
@@ -157,6 +166,7 @@ async function findMatchingOrder(orderIdPattern: string, supabase: any) {
         product_id,
         buyer_email,
         created_at,
+        payment_verified_at,
         products (
           id,
           title,
@@ -166,60 +176,60 @@ async function findMatchingOrder(orderIdPattern: string, supabase: any) {
           file_url
         )
       `)
-      .ilike('id', orderIdPattern)
+      .eq('id', pattern)
       .eq('status', 'pending')
+      .is('payment_verified_at', null)
+      .maybeSingle()
+    
+    if (exactError) {
+      console.log(`⚠️ Error in exact search for pattern "${pattern}":`, exactError.message)
+      continue
+    }
+    
+    if (exactOrder) {
+      console.log(`✅ Found order by exact match with pattern: "${pattern}"`)
+      return exactOrder
+    }
+    
+    // If no exact match, try ILIKE search for partial matches
+    const { data: likeOrders, error: likeError } = await supabase
+      .from('orders')
+      .select(`
+        id,
+        status,
+        user_id,
+        product_id,
+        buyer_email,
+        created_at,
+        payment_verified_at,
+        products (
+          id,
+          title,
+          price,
+          seller_id,
+          product_type,
+          file_url
+        )
+      `)
+      .ilike('id', `%${pattern}%`)
+      .eq('status', 'pending')
+      .is('payment_verified_at', null)
       .order('created_at', { ascending: false })
       .limit(1)
-      .maybeSingle()
     
-    order = orderData
-    orderError = orderErr
-  } else {
-    // Exact match for old format
-    console.log('🔍 Using exact match for order search...')
-    const { data: orderData, error: orderErr } = await supabase
-      .from('orders')
-      .select(`
-        id,
-        status,
-        user_id,
-        product_id,
-        buyer_email,
-        created_at,
-        products (
-          id,
-          title,
-          price,
-          seller_id,
-          product_type,
-          file_url
-        )
-      `)
-      .eq('id', orderIdPattern)
-      .eq('status', 'pending')
-      .maybeSingle()
+    if (likeError) {
+      console.log(`⚠️ Error in ILIKE search for pattern "${pattern}":`, likeError.message)
+      continue
+    }
     
-    order = orderData
-    orderError = orderErr
+    if (likeOrders && likeOrders.length > 0) {
+      console.log(`✅ Found order by ILIKE match with pattern: "${pattern}"`)
+      return likeOrders[0]
+    }
   }
 
-  if (orderError) {
-    console.error('❌ Error searching for order:', orderError)
-    return null
-  }
-
-  if (order) {
-    console.log(`✅ Order found:`, {
-      id: order.id,
-      status: order.status,
-      product_type: order.products?.product_type,
-      created: order.created_at
-    })
-  } else {
-    console.log(`❌ No matching order found for pattern: ${orderIdPattern}`)
-  }
-
-  return order
+  console.log(`❌ No matching order found with any pattern`)
+  return null
 }
 
 async function updateOrderAndProcess(order: any, transaction: CassoTransactionData, transactionId: string, supabase: any) {
@@ -236,6 +246,7 @@ async function updateOrderAndProcess(order: any, transaction: CassoTransactionDa
         payment_verified_at: new Date().toISOString(),
         bank_transaction_id: transactionId,
         bank_amount: transaction.amount,
+        casso_transaction_id: transactionId, // Add this field
         updated_at: new Date().toISOString()
       })
       .eq('id', order.id)

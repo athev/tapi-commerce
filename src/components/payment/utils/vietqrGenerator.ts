@@ -4,10 +4,11 @@ import { bankInfo } from '../config/bankConfig';
 // Simple cache to prevent regeneration
 const qrUrlCache = new Map<string, string>();
 
-// Hàm tạo nội dung chuyển khoản theo chuẩn Casso - sử dụng order ID đầy đủ
+// Hàm tạo nội dung chuyển khoản - sử dụng format ngắn DH + hex (32 ký tự)
 const generateTransferContent = (orderId: string): string => {
-  // Casso khuyến nghị sử dụng mã đơn hàng đầy đủ để đảm bảo tính duy nhất
-  return `DH ${orderId}`;
+  // Chuyển UUID thành hex string 32 ký tự (bỏ dấu gạch ngang và viết hoa)
+  const hexOrderId = orderId.replace(/-/g, '').toUpperCase();
+  return `DH${hexOrderId}`;
 };
 
 export const generateVietQRUrl = (orderId: string, amount: number): string | null => {
@@ -27,7 +28,7 @@ export const generateVietQRUrl = (orderId: string, amount: number): string | nul
     return null;
   }
 
-  // Tạo nội dung chuyển khoản theo chuẩn Casso: DH + space + order ID đầy đủ
+  // Tạo nội dung chuyển khoản theo format ngắn: DH + hex (32 ký tự)
   const transferContent = generateTransferContent(orderId);
   
   // Use exact VietQR dashboard format with addInfo parameter
@@ -35,8 +36,8 @@ export const generateVietQRUrl = (orderId: string, amount: number): string | nul
   const encodedTransferContent = encodeURIComponent(transferContent);
   const generatedUrl = `https://api.vietqr.io/image/${bankInfo.partnerId}-${bankInfo.accountNumber}-${bankInfo.templateId}.jpg?accountName=${encodedAccountName}&amount=${amount}&addInfo=${encodedTransferContent}`;
   
-  console.log('Generated VietQR URL with Casso standard transfer content:', generatedUrl);
-  console.log('Transfer content format (DH + space + full order ID):', transferContent);
+  console.log('Generated VietQR URL with hex transfer content:', generatedUrl);
+  console.log('Transfer content format (DH + 32 hex chars):', transferContent);
   
   qrUrlCache.set(cacheKey, generatedUrl);
   return generatedUrl;

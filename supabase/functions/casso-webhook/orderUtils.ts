@@ -1,5 +1,5 @@
 
-// Hàm extract order ID từ description - cải thiện để xử lý theo chuẩn Casso
+// Hàm extract order ID từ description - cải thiện để xử lý chính xác theo format DH + hex
 export function extractOrderId(description: string): string | null {
   console.log('🔍 Extracting order ID from description:', description)
   
@@ -12,19 +12,23 @@ export function extractOrderId(description: string): string | null {
   const cleanDesc = description.trim()
   console.log('🔧 Cleaned description:', cleanDesc)
   
-  // Các pattern để tìm order ID theo thứ tự ưu tiên - tuân thủ chuẩn Casso
+  // Các pattern để tìm order ID theo thứ tự ưu tiên
   const patterns = [
-    // Pattern chính theo chuẩn Casso: DH + space + UUID đầy đủ
-    /DH\s+([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
-    // Pattern không có space (backward compatibility)
+    // Pattern chính: DH + 32 ký tự hex (không có dấu gạch ngang)
+    /DH([A-F0-9]{32})/i,
+    // Pattern với khoảng trắng: DH + space + 32 ký tự hex  
+    /DH\s+([A-F0-9]{32})/i,
+    // Pattern với #: DH# + 32 ký tự hex
+    /DH#([A-F0-9]{32})/i,
+    // Pattern với # và space: DH# + space + 32 ký tự hex
+    /DH#\s+([A-F0-9]{32})/i,
+    // Pattern UUID đầy đủ với dấu gạch ngang
     /DH([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
-    // Pattern với # (legacy support)
-    /DH#\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
+    /DH\s+([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
+    // Pattern chỉ có hex string 32 ký tự
+    /([A-F0-9]{32})/i,
     // Pattern chỉ có UUID đầy đủ
-    /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
-    // Pattern 32 ký tự hex liền (cho các format cũ)
-    /DH\s*#?([a-f0-9]{32})/i,
-    /([a-f0-9]{32})/i
+    /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i
   ]
   
   for (let i = 0; i < patterns.length; i++) {
@@ -34,12 +38,12 @@ export function extractOrderId(description: string): string | null {
       let extractedId = match[1].toLowerCase()
       console.log(`✅ Pattern ${i + 1} matched, raw extracted ID:`, extractedId)
       
-      // Normalize UUID chuẩn nếu cần (cho format 32 ký tự)
+      // Normalize về UUID chuẩn nếu là 32 ký tự hex
       if (extractedId.length === 32) {
         extractedId = normalizeOrderId(extractedId)
       }
       
-      console.log('✅ Successfully extracted and processed order ID:', extractedId)
+      console.log('✅ Successfully extracted and normalized order ID:', extractedId)
       return extractedId
     }
   }
@@ -48,33 +52,59 @@ export function extractOrderId(description: string): string | null {
   return null
 }
 
-// Hàm normalize order ID từ 32 ký tự thành UUID chuẩn
-export function normalizeOrderId(id: string): string {
-  console.log('🔧 Normalizing order ID:', id)
+// Hàm normalize order ID từ 32 ký tự hex thành UUID chuẩn
+export function normalizeOrderId(hexId: string): string {
+  console.log('🔧 Normalizing hex ID to UUID:', hexId)
   
-  if (!id || typeof id !== 'string') {
-    console.log('❌ Invalid ID provided for normalization')
-    return id
+  if (!hexId || typeof hexId !== 'string') {
+    console.log('❌ Invalid hex ID provided for normalization')
+    return hexId
   }
   
-  // Loại bỏ dấu gạch ngang trước khi xử lý
-  const cleanId = id.replace(/-/g, '')
+  // Loại bỏ dấu gạch ngang nếu có
+  const cleanHex = hexId.replace(/-/g, '').toLowerCase()
   
   // Nếu không phải 32 ký tự, trả về nguyên
-  if (cleanId.length !== 32) {
-    console.log('⚠️ Order ID length not 32 chars, returning as-is:', id)
-    return id
+  if (cleanHex.length !== 32) {
+    console.log('⚠️ Hex ID length not 32 chars, returning as-is:', hexId)
+    return hexId
   }
   
   // Chuyển đổi 32 ký tự thành UUID chuẩn
   const normalized = [
-    cleanId.slice(0, 8),
-    cleanId.slice(8, 12),
-    cleanId.slice(12, 16),
-    cleanId.slice(16, 20),
-    cleanId.slice(20, 32)
+    cleanHex.slice(0, 8),
+    cleanHex.slice(8, 12),
+    cleanHex.slice(12, 16),
+    cleanHex.slice(16, 20),
+    cleanHex.slice(20, 32)
   ].join('-')
   
-  console.log('✅ Normalized order ID from', id, 'to', normalized)
+  console.log('✅ Normalized hex ID to UUID:', normalized)
   return normalized
+}
+
+// Hàm tạo các pattern tìm kiếm cho order ID
+export function generateSearchPatterns(orderId: string): string[] {
+  console.log('🔍 Generating search patterns for order ID:', orderId)
+  
+  // Lấy hex version (bỏ dấu gạch ngang)
+  const hexVersion = orderId.replace(/-/g, '').toUpperCase()
+  
+  const patterns = [
+    // Exact UUID match
+    orderId,
+    // Hex version patterns
+    `DH${hexVersion}`,
+    `DH ${hexVersion}`,
+    `DH#${hexVersion}`,
+    `DH# ${hexVersion}`,
+    // Just hex string
+    hexVersion,
+    // Mixed case patterns
+    `dh${hexVersion.toLowerCase()}`,
+    `DH${hexVersion.toLowerCase()}`,
+  ]
+  
+  console.log('✅ Generated search patterns:', patterns)
+  return patterns
 }

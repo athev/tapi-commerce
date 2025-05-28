@@ -25,8 +25,9 @@ const BankInformation = ({ amount, orderId, actualDescription }: BankInformation
     });
   };
 
-  // Tạo nội dung chuyển khoản theo chuẩn Casso: DH + space + order ID đầy đủ
-  const transferContent = `DH ${orderId}`;
+  // Tạo nội dung chuyển khoản theo format ngắn: DH + hex (32 ký tự)
+  const hexOrderId = orderId.replace(/-/g, '').toUpperCase();
+  const transferContent = `DH${hexOrderId}`;
 
   return (
     <div className="bg-gray-50 p-4 rounded-lg space-y-3">
@@ -120,7 +121,7 @@ const BankInformation = ({ amount, orderId, actualDescription }: BankInformation
           <strong>Lưu ý quan trọng:</strong> Vui lòng nhập chính xác nội dung chuyển khoản <code className="bg-white px-1 rounded">{transferContent}</code> để hệ thống tự động xác nhận thanh toán.
         </p>
         <p className="text-xs text-gray-600 mt-1">
-          💡 <strong>Mẹo:</strong> Sử dụng đúng format "DH + khoảng trắng + mã đơn hàng" theo chuẩn Casso
+          💡 <strong>Mẹo:</strong> Sử dụng format "DH + 32 ký tự hex" (không có dấu gạch ngang)
         </p>
       </div>
     </div>
