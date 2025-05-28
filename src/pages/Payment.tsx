@@ -51,6 +51,11 @@ const Payment = () => {
             seller_name,
             product_type,
             file_url
+          ),
+          casso_transactions!left (
+            description,
+            transaction_id,
+            amount as transaction_amount
           )
         `)
         .eq('id', orderId)
@@ -381,6 +386,16 @@ const Payment = () => {
                        'Dịch vụ khác'}
                     </span>
                   </div>
+
+                  {/* Display actual transaction description if available */}
+                  {order.casso_transactions?.[0]?.description && (
+                    <div className="flex justify-between items-center">
+                      <span>Nội dung CK thực tế:</span>
+                      <code className="font-mono text-sm bg-green-50 px-2 py-1 rounded border border-green-200">
+                        {order.casso_transactions[0].description}
+                      </code>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex justify-between items-center text-lg font-bold py-2 border-t">
@@ -396,6 +411,7 @@ const Payment = () => {
             orderId={orderId || ''}
             amount={order.products?.price || 0}
             onManualConfirmation={handleManualPaymentConfirmation}
+            actualDescription={order.casso_transactions?.[0]?.description}
           />
         </div>
       </main>

@@ -13,9 +13,10 @@ interface QRPaymentProps {
   orderId: string;
   amount: number;
   onManualConfirmation: () => void;
+  actualDescription?: string;
 }
 
-const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) => {
+const QRPayment = ({ orderId, amount, onManualConfirmation, actualDescription }: QRPaymentProps) => {
   const { timeLeft, showManualButton, formatTime } = usePaymentTimer();
   
   // Stable QR URL generation with proper memoization
@@ -72,7 +73,11 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
             <p className="text-sm text-gray-600">Số tiền cần thanh toán</p>
           </div>
 
-          <BankInformation amount={amount} orderId={orderId} />
+          <BankInformation 
+            amount={amount} 
+            orderId={orderId}
+            actualDescription={actualDescription}
+          />
           <ManualConfirmation 
             showManualButton={showManualButton} 
             onManualConfirmation={onManualConfirmation}

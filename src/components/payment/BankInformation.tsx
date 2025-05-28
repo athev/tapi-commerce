@@ -1,15 +1,16 @@
 
 import { Button } from "@/components/ui/button";
-import { Copy } from "lucide-react";
+import { Copy, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { bankInfo } from './config/bankConfig';
 
 interface BankInformationProps {
   amount: number;
   orderId: string;
+  actualDescription?: string;
 }
 
-const BankInformation = ({ amount, orderId }: BankInformationProps) => {
+const BankInformation = ({ amount, orderId, actualDescription }: BankInformationProps) => {
   const { toast } = useToast();
 
   const formatAmount = (amount: number) => {
@@ -85,6 +86,32 @@ const BankInformation = ({ amount, orderId }: BankInformationProps) => {
             </Button>
           </div>
         </div>
+
+        {/* Display actual transaction description if available */}
+        {actualDescription && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mt-3">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span className="text-sm font-medium text-green-800">Nội dung đã được xác nhận:</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <code className="text-sm bg-white px-2 py-1 rounded border font-mono text-green-700">
+                {actualDescription}
+              </code>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0"
+                onClick={() => copyToClipboard(actualDescription, "Nội dung đã xác nhận")}
+              >
+                <Copy className="h-3 w-3" />
+              </Button>
+            </div>
+            <p className="text-xs text-green-600 mt-2">
+              ✅ Đây là nội dung chuyển khoản đã được hệ thống xử lý từ Casso
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
