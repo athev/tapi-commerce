@@ -9,9 +9,9 @@ export async function verifyCassoSignature(payload: string, signature: string, s
     console.log('🔐 Starting CASSO signature verification')
     console.log('Payload length:', payload.length)
     console.log('Secret configured:', !!secret)
-    console.log('Signature received:', signature.substring(0, 20) + '...')
+    console.log('Signature received:', signature)
     
-    // Create HMAC-SHA256 signature
+    // Create HMAC-SHA256 signature from raw payload
     const encoder = new TextEncoder()
     const key = await crypto.subtle.importKey(
       'raw',
@@ -28,46 +28,28 @@ export async function verifyCassoSignature(payload: string, signature: string, s
       .map(b => b.toString(16).padStart(2, '0'))
       .join('')
     
-    console.log('Expected signature (hex):', expectedSignature.substring(0, 20) + '...')
+    console.log('Expected signature (hex):', expectedSignature)
     
-    // Normalize received signature
+    // Extract signature from header (remove v1= prefix if present)
     let receivedSignature = signature.trim().toLowerCase()
-    
-    // Remove common prefixes
-    const prefixes = ['sha256=', 'hmac-sha256=', 'casso-signature=', 'x-casso-signature=']
-    for (const prefix of prefixes) {
-      if (receivedSignature.startsWith(prefix)) {
-        receivedSignature = receivedSignature.substring(prefix.length)
-        console.log(`Removed prefix: ${prefix}`)
-        break
-      }
+    if (receivedSignature.startsWith('v1=')) {
+      receivedSignature = receivedSignature.substring(3)
+      console.log('Removed v1= prefix, signature:', receivedSignature)
     }
     
-    console.log('Normalized signature:', receivedSignature.substring(0, 20) + '...')
+    // Compare signatures using timing-safe comparison
+    const isValid = expectedSignature === receivedSignature
+    console.log('Signature verification result:', isValid)
     
-    // Compare signatures
-    const hexMatch = expectedSignature === receivedSignature
-    console.log('Hex signatures match:', hexMatch)
-    
-    if (hexMatch) {
-      console.log('✅ CASSO signature verified (hex)')
+    if (isValid) {
+      console.log('✅ CASSO signature verified successfully')
       return true
+    } else {
+      console.log('❌ CASSO signature verification failed')
+      console.log('Expected:', expectedSignature)
+      console.log('Received:', receivedSignature)
+      return false
     }
-    
-    // Try base64 encoding as fallback
-    const base64Signature = btoa(String.fromCharCode(...new Uint8Array(signatureBytes)))
-    console.log('Trying base64 signature:', base64Signature.substring(0, 20) + '...')
-    
-    const base64Match = base64Signature === receivedSignature
-    console.log('Base64 signatures match:', base64Match)
-    
-    if (base64Match) {
-      console.log('✅ CASSO signature verified (base64)')
-      return true
-    }
-    
-    console.log('❌ CASSO signature verification failed - no format matched')
-    return false
     
   } catch (error) {
     console.error('❌ Error in signature verification:', error)

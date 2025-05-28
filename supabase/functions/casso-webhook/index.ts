@@ -53,6 +53,13 @@ serve(async (req) => {
       }, 400)
     }
 
+    // Get signature for verification
+    const signature = req.headers.get('x-casso-signature')
+    console.log('Signature found:', !!signature)
+    if (signature) {
+      console.log('Signature value:', signature)
+    }
+
     // Parse JSON payload
     let payload: CassoWebhookPayload
     try {
@@ -78,13 +85,6 @@ serve(async (req) => {
       }, 400)
     }
 
-    // Get signature for verification
-    const signature = req.headers.get('x-casso-signature') || req.headers.get('secure-token')
-    console.log('Signature found:', !!signature)
-    if (signature) {
-      console.log('Signature value:', signature.substring(0, 20) + '...')
-    }
-
     // Check if this is a test webhook (no signature or test data)
     const isTestWebhook = !signature || 
                          (payload.data && payload.data.length > 0 && payload.data[0].id === 0) ||
@@ -101,38 +101,36 @@ serve(async (req) => {
     }
 
     // Verify CASSO signature for real transactions
-    if (signature) {
-      console.log('🔐 Starting signature verification...')
-      try {
-        const isValidSignature = await verifyCassoSignature(rawBody, signature, cassoSecret)
-        
-        if (!isValidSignature) {
-          console.error('❌ SIGNATURE VERIFICATION FAILED')
-          console.error('Raw body hash will be logged for debugging')
-          
-          return createResponse({
-            success: false,
-            error: 'Invalid signature',
-            timestamp: new Date().toISOString()
-          }, 401)
-        }
-        console.log('✅ CASSO signature verified successfully')
-      } catch (signatureError) {
-        console.error('❌ Error during signature verification:', signatureError)
-        return createResponse({
-          success: false,
-          error: 'Signature verification failed',
-          details: signatureError.message,
-          timestamp: new Date().toISOString()
-        }, 401)
-      }
-    } else {
-      console.log('⚠️ No signature provided for real transaction')
+    if (!signature) {
+      console.error('❌ Missing x-casso-signature header for real transaction')
       return createResponse({
         success: false,
         error: 'Missing signature for transaction',
         timestamp: new Date().toISOString()
-      }, 400)
+      }, 403)
+    }
+
+    console.log('🔐 Starting signature verification...')
+    try {
+      const isValidSignature = await verifyCassoSignature(rawBody, signature, cassoSecret)
+      
+      if (!isValidSignature) {
+        console.error('❌ SIGNATURE VERIFICATION FAILED')
+        return createResponse({
+          success: false,
+          error: 'Invalid signature',
+          timestamp: new Date().toISOString()
+        }, 403)
+      }
+      console.log('✅ CASSO signature verified successfully')
+    } catch (signatureError) {
+      console.error('❌ Error during signature verification:', signatureError)
+      return createResponse({
+        success: false,
+        error: 'Signature verification failed',
+        details: signatureError.message,
+        timestamp: new Date().toISOString()
+      }, 403)
     }
 
     // Validate payload structure
