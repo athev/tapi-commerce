@@ -105,10 +105,13 @@ export const useSellerStatus = () => {
       applicationStatus: sellerApplication?.status 
     });
     
-    // Always check profile role first - this is the source of truth
+    // Check application status first - if approved, user should be treated as seller
+    if (sellerApplication?.status === 'approved') return 'approved_seller';
+    
+    // Then check profile role as backup
     if (profile?.role === 'seller') return 'approved_seller';
     
-    // Then check application status
+    // Then check other application statuses
     if (sellerApplication?.status === 'pending') return 'pending_approval';
     if (sellerApplication?.status === 'rejected') return 'rejected';
     
