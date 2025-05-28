@@ -1,7 +1,8 @@
-
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { CassoTransactionData } from './types.ts'
 import { extractOrderId } from './orderUtils.ts'
+import { sendPaymentConfirmationEmail, sendSellerNotificationEmail } from './emailService.ts'
+import { processAutomaticDelivery } from './deliveryService.ts'
 
 export async function processTransaction(transaction: CassoTransactionData, supabase: any) {
   const transactionId = transaction.tid || transaction.id?.toString() || `casso_${Date.now()}`
@@ -107,8 +108,8 @@ async function processOrder(transaction: CassoTransactionData, transactionId: st
     }
   }
 
-  // Update order status and create notifications
-  return await updateOrderAndNotify(order, transaction, transactionId, supabase)
+  // Update order status and process automatic delivery
+  return await updateOrderAndProcess(order, transaction, transactionId, supabase)
 }
 
 async function findMatchingOrder(orderIdPattern: string, supabase: any) {
@@ -123,11 +124,15 @@ async function findMatchingOrder(orderIdPattern: string, supabase: any) {
         id,
         status,
         user_id,
+        product_id,
+        buyer_email,
         products (
           id,
           title,
           price,
-          seller_id
+          seller_id,
+          product_type,
+          file_url
         )
       `)
       .ilike('id', orderIdPattern)
@@ -145,11 +150,15 @@ async function findMatchingOrder(orderIdPattern: string, supabase: any) {
         id,
         status,
         user_id,
+        product_id,
+        buyer_email,
         products (
           id,
           title,
           price,
-          seller_id
+          seller_id,
+          product_type,
+          file_url
         )
       `)
       .eq('id', orderIdPattern)
@@ -168,67 +177,96 @@ async function findMatchingOrder(orderIdPattern: string, supabase: any) {
   return order
 }
 
-async function updateOrderAndNotify(order: any, transaction: CassoTransactionData, transactionId: string, supabase: any) {
-  // Update order status
-  const { error: updateError } = await supabase
-    .from('orders')
-    .update({
-      status: 'paid',
-      delivery_status: 'pending',
-      payment_verified_at: new Date().toISOString(),
-      bank_transaction_id: transactionId,
-      bank_amount: transaction.amount
-    })
-    .eq('id', order.id)
+async function updateOrderAndProcess(order: any, transaction: CassoTransactionData, transactionId: string, supabase: any) {
+  try {
+    console.log(`🔄 Starting complete order processing for: ${order.id}`)
+    
+    // Update order status
+    const { error: updateError } = await supabase
+      .from('orders')
+      .update({
+        status: 'paid',
+        delivery_status: 'pending',
+        payment_verified_at: new Date().toISOString(),
+        bank_transaction_id: transactionId,
+        bank_amount: transaction.amount
+      })
+      .eq('id', order.id)
 
-  if (updateError) {
-    console.error('❌ Error updating order:', updateError)
+    if (updateError) {
+      console.error('❌ Error updating order:', updateError)
+      return {
+        transaction_id: transactionId,
+        status: 'order_update_error',
+        error: updateError.message
+      }
+    }
+
+    console.log(`✅ Order ${order.id} updated to paid status`)
+
+    // Update transaction record
+    await supabase
+      .from('casso_transactions')
+      .update({
+        order_id: order.id,
+        matched_at: new Date().toISOString(),
+        processed: true
+      })
+      .eq('transaction_id', transactionId)
+
+    // Process automatic delivery
+    console.log(`🚀 Starting automatic delivery process...`)
+    const deliveryResult = await processAutomaticDelivery(order, supabase)
+    console.log(`📦 Delivery result:`, deliveryResult)
+
+    // Send email notifications
+    console.log(`📧 Sending email notifications...`)
+    try {
+      await sendPaymentConfirmationEmail(order)
+      await sendSellerNotificationEmail(order)
+      console.log(`✅ Email notifications sent successfully`)
+    } catch (emailError) {
+      console.error('⚠️ Email notification error (non-critical):', emailError)
+    }
+
+    // Create notifications in database
+    await supabase
+      .from('notifications')
+      .insert([
+        {
+          user_id: order.user_id,
+          title: 'Thanh toán thành công',
+          message: `Đơn hàng ${order.products?.title} đã được thanh toán và xử lý thành công.`,
+          type: 'payment_success',
+          related_order_id: order.id
+        },
+        {
+          user_id: order.products?.seller_id,
+          title: 'Đơn hàng mới được thanh toán',
+          message: `Đơn hàng ${order.products?.title} đã được thanh toán. ${deliveryResult.success ? 'Đã giao hàng tự động.' : 'Cần xử lý thủ công.'}`,
+          type: 'new_order',
+          related_order_id: order.id
+        }
+      ])
+
+    console.log(`🎉 Successfully processed transaction ${transactionId}`)
+    
     return {
       transaction_id: transactionId,
-      status: 'order_update_error',
-      error: updateError.message
-    }
-  }
-
-  console.log(`✅ Order ${order.id} updated to paid status`)
-
-  // Update transaction record
-  await supabase
-    .from('casso_transactions')
-    .update({
+      status: 'processed_successfully',
       order_id: order.id,
-      matched_at: new Date().toISOString(),
-      processed: true
-    })
-    .eq('transaction_id', transactionId)
-
-  // Create notifications
-  await supabase
-    .from('notifications')
-    .insert([
-      {
-        user_id: order.user_id,
-        title: 'Thanh toán thành công',
-        message: `Đơn hàng ${order.products?.title} đã được thanh toán thành công.`,
-        type: 'payment_success',
-        related_order_id: order.id
-      },
-      {
-        user_id: order.products?.seller_id,
-        title: 'Đơn hàng mới được thanh toán',
-        message: `Đơn hàng ${order.products?.title} đã được thanh toán.`,
-        type: 'new_order',
-        related_order_id: order.id
-      }
-    ])
-
-  console.log(`🎉 Successfully processed transaction ${transactionId}`)
-  
-  return {
-    transaction_id: transactionId,
-    status: 'processed_successfully',
-    order_id: order.id,
-    amount: transaction.amount
+      amount: transaction.amount,
+      delivery_status: deliveryResult.success ? 'auto_delivered' : 'manual_required',
+      delivery_message: deliveryResult.message
+    }
+    
+  } catch (error) {
+    console.error(`❌ Error in complete order processing:`, error)
+    return {
+      transaction_id: transactionId,
+      status: 'processing_error',
+      error: error.message
+    }
   }
 }
 

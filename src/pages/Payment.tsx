@@ -7,7 +7,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Check, ArrowLeft, Clock, AlertCircle } from "lucide-react";
+import { Check, ArrowLeft, Clock, AlertCircle, Download, Key, UserPlus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import QRPayment from "@/components/payment/QRPayment";
@@ -28,7 +28,7 @@ const Payment = () => {
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'confirming' | 'completed'>('pending');
 
-  // Query để kiểm tra trạng thái thanh toán real-time
+  // Query để kiểm tra trạng thái thanh toán real-time với interval ngắn hơn
   const { data: order, isLoading, error } = useQuery({
     queryKey: ['order-status', orderId],
     queryFn: async () => {
@@ -49,7 +49,8 @@ const Payment = () => {
             price,
             image,
             seller_name,
-            product_type
+            product_type,
+            file_url
           )
         `)
         .eq('id', orderId)
@@ -64,7 +65,7 @@ const Payment = () => {
       return data;
     },
     enabled: !!orderId,
-    refetchInterval: 5000, // Kiểm tra mỗi 5 giây
+    refetchInterval: 3000, // Kiểm tra mỗi 3 giây thay vì 5 giây
     retry: 3,
     retryDelay: 1000,
   });
@@ -77,12 +78,21 @@ const Payment = () => {
   useEffect(() => {
     if (order?.status === 'paid' && paymentStatus !== 'completed') {
       setPaymentStatus('completed');
-      toast({
-        title: "Thanh toán thành công!",
-        description: "Đơn hàng của bạn đã được xác nhận thanh toán tự động.",
-      });
+      
+      // Show different toast messages based on delivery status
+      if (order.delivery_status === 'delivered') {
+        toast({
+          title: "Thanh toán và giao hàng thành công! 🎉",
+          description: "Đơn hàng đã được xác nhận và giao hàng tự động. Kiểm tra email để nhận sản phẩm.",
+        });
+      } else {
+        toast({
+          title: "Thanh toán thành công! ✅",
+          description: "Đơn hàng của bạn đã được xác nhận thanh toán tự động.",
+        });
+      }
     }
-  }, [order?.status, paymentStatus, toast]);
+  }, [order?.status, order?.delivery_status, paymentStatus, toast]);
 
   const handleManualPaymentConfirmation = async () => {
     setIsConfirmingPayment(true);
@@ -117,7 +127,46 @@ const Payment = () => {
     }
   };
 
-  // Payment completed screen
+  const getDeliveryStatusIcon = (deliveryStatus: string, productType: string) => {
+    if (deliveryStatus === 'delivered') {
+      switch (productType) {
+        case 'file_download':
+          return <Download className="h-5 w-5 text-green-600" />;
+        case 'license_key_delivery':
+          return <Key className="h-5 w-5 text-green-600" />;
+        case 'shared_account':
+        case 'upgrade_account_no_pass':
+        case 'upgrade_account_with_pass':
+          return <UserPlus className="h-5 w-5 text-green-600" />;
+        default:
+          return <Check className="h-5 w-5 text-green-600" />;
+      }
+    }
+    return <Clock className="h-5 w-5 text-yellow-600" />;
+  };
+
+  const getDeliveryStatusText = (deliveryStatus: string, productType: string) => {
+    if (deliveryStatus === 'delivered') {
+      switch (productType) {
+        case 'file_download':
+          return 'Đã gửi file qua email';
+        case 'license_key_delivery':
+          return 'Đã gửi license key';
+        case 'shared_account':
+          return 'Đã gửi thông tin tài khoản';
+        case 'upgrade_account_no_pass':
+        case 'upgrade_account_with_pass':
+          return 'Đã xử lý nâng cấp tài khoản';
+        default:
+          return 'Đã giao hàng thành công';
+      }
+    } else if (deliveryStatus === 'processing') {
+      return 'Đang xử lý giao hàng';
+    }
+    return 'Chờ xử lý';
+  };
+
+  // Payment completed screen with enhanced delivery info
   if (paymentStatus === 'completed' || order?.status === 'paid') {
     return (
       <div className="flex flex-col min-h-screen">
@@ -132,13 +181,44 @@ const Payment = () => {
               <h2 className="text-2xl font-bold text-green-800 mb-2">Thanh toán thành công!</h2>
               <p className="text-green-700 mb-6">
                 Đơn hàng của bạn đã được xác nhận và đang được xử lý. 
-                Sản phẩm sẽ được gửi đến bạn trong ít phút.
               </p>
+
+              {/* Delivery Status Information */}
+              {order?.delivery_status && (
+                <div className="bg-white rounded-lg p-4 mb-6 border border-green-200">
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    {getDeliveryStatusIcon(order.delivery_status, order.products?.product_type)}
+                    <span className="font-medium">
+                      {getDeliveryStatusText(order.delivery_status, order.products?.product_type)}
+                    </span>
+                  </div>
+                  
+                  {order.delivery_notes && (
+                    <div className="text-sm text-gray-600 mt-2 p-2 bg-gray-50 rounded">
+                      <strong>Chi tiết:</strong> {order.delivery_notes}
+                    </div>
+                  )}
+
+                  {order.delivery_status === 'delivered' && order.products?.product_type === 'file_download' && (
+                    <p className="text-sm text-green-600 mt-2">
+                      📧 Kiểm tra email để tải xuống sản phẩm
+                    </p>
+                  )}
+
+                  {order.delivery_status === 'processing' && (
+                    <p className="text-sm text-yellow-600 mt-2">
+                      ⏳ Sản phẩm đang được xử lý thủ công, chúng tôi sẽ liên hệ sớm
+                    </p>
+                  )}
+                </div>
+              )}
+
               {order?.payment_verified_at && (
                 <div className="text-sm text-green-600 mb-4">
                   Thanh toán được xác nhận lúc: {new Date(order.payment_verified_at).toLocaleString('vi-VN')}
                 </div>
               )}
+
               <div className="space-y-3">
                 <Button 
                   className="bg-marketplace-primary hover:bg-marketplace-primary/90" 
@@ -243,6 +323,21 @@ const Payment = () => {
             <h1 className="text-3xl font-bold">Thanh toán đơn hàng</h1>
           </div>
           
+          {/* Enhanced Payment Notice */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center gap-2 mb-2">
+              <Clock className="h-5 w-5 text-blue-600" />
+              <span className="font-medium text-blue-800">Thanh toán tự động</span>
+            </div>
+            <p className="text-blue-700 text-sm">
+              Hệ thống sẽ tự động xác nhận thanh toán và giao hàng ngay khi nhận được chuyển khoản. 
+              {order?.products?.product_type === 'file_download' && 
+                ' File sẽ được gửi qua email tự động.'}
+              {order?.products?.product_type === 'license_key_delivery' && 
+                ' License key sẽ được gửi qua email tự động.'}
+            </p>
+          </div>
+          
           {/* Order Summary */}
           <Card className="mb-8">
             <CardHeader>
@@ -280,6 +375,9 @@ const Payment = () => {
                     <span className="font-medium">
                       {order.products?.product_type === 'file_download' ? 'File tải về' : 
                        order.products?.product_type === 'license_key_delivery' ? 'Mã kích hoạt' :
+                       order.products?.product_type === 'shared_account' ? 'Tài khoản chia sẻ' :
+                       order.products?.product_type === 'upgrade_account_no_pass' ? 'Nâng cấp tài khoản' :
+                       order.products?.product_type === 'upgrade_account_with_pass' ? 'Nâng cấp tài khoản có mật khẩu' :
                        'Dịch vụ khác'}
                     </span>
                   </div>
