@@ -36,7 +36,7 @@ export const fetchManualPaymentOrders = async () => {
 };
 
 export const confirmManualPayment = async (orderId: string) => {
-  console.log('Starting manual payment confirmation for order:', orderId);
+  console.log('🔄 Starting manual payment confirmation for order:', orderId);
   
   try {
     // Lấy thông tin đơn hàng trước khi cập nhật
@@ -56,32 +56,56 @@ export const confirmManualPayment = async (orderId: string) => {
       .single();
 
     if (fetchError || !orderData) {
-      console.error('Error fetching order data:', fetchError);
+      console.error('❌ Error fetching order data:', fetchError);
       throw fetchError || new Error('Không tìm thấy thông tin đơn hàng');
     }
 
-    console.log('Order data before update:', orderData);
+    console.log('📋 Order data before update:', orderData);
 
-    // FIXED: Cập nhật trạng thái đơn hàng với tất cả fields cần thiết
+    // CRITICAL FIX: Cập nhật trạng thái đơn hàng với tất cả fields cần thiết
+    const updatePayload = { 
+      status: 'paid',
+      delivery_status: 'processing', // FIXED: Đảm bảo delivery_status được set
+      payment_verified_at: new Date().toISOString(),
+      manual_payment_requested: false, // FIXED: Set về false sau khi xác nhận
+      casso_transaction_id: `manual_${orderId.slice(0, 8)}_${Date.now()}`, // FIXED: Tạo manual transaction ID
+      updated_at: new Date().toISOString()
+    };
+
+    console.log('📝 Update payload:', updatePayload);
+
     const { data: updateData, error: updateError } = await supabase
       .from('orders')
-      .update({ 
-        status: 'paid',
-        delivery_status: 'processing', // FIXED: Thay đổi từ 'pending' thành 'processing'
-        payment_verified_at: new Date().toISOString(),
-        manual_payment_requested: false, // FIXED: Set về false sau khi xác nhận
-        casso_transaction_id: `manual_${orderId}_${Date.now()}`, // FIXED: Tạo manual transaction ID
-        updated_at: new Date().toISOString()
-      })
+      .update(updatePayload)
       .eq('id', orderId)
       .select('*');
     
     if (updateError) {
-      console.error('Error updating order:', updateError);
+      console.error('❌ Error updating order:', updateError);
       throw updateError;
     }
 
-    console.log('Order manual confirmation update successful:', updateData);
+    console.log('✅ Order manual confirmation update successful:', updateData);
+
+    // Kiểm tra xem có dữ liệu được cập nhật không
+    if (!updateData || updateData.length === 0) {
+      console.error('⚠️ No rows were updated - checking order existence');
+      
+      // Kiểm tra lại order có tồn tại không
+      const { data: checkOrder, error: checkError } = await supabase
+        .from('orders')
+        .select('id, status, manual_payment_requested')
+        .eq('id', orderId)
+        .single();
+      
+      if (checkError) {
+        console.error('❌ Order not found:', checkError);
+        throw new Error('Đơn hàng không tồn tại');
+      }
+      
+      console.log('📋 Current order state:', checkOrder);
+      throw new Error('Không thể cập nhật đơn hàng');
+    }
 
     // Tạo thông báo cho người mua
     const { error: buyerNotificationError } = await supabase
@@ -96,9 +120,9 @@ export const confirmManualPayment = async (orderId: string) => {
       });
 
     if (buyerNotificationError) {
-      console.error('Error creating buyer notification:', buyerNotificationError);
+      console.error('⚠️ Error creating buyer notification:', buyerNotificationError);
     } else {
-      console.log('Buyer notification created successfully');
+      console.log('✅ Buyer notification created successfully');
     }
 
     // Tạo thông báo cho seller về đơn hàng mới cần xử lý
@@ -114,22 +138,32 @@ export const confirmManualPayment = async (orderId: string) => {
       });
 
     if (sellerNotificationError) {
-      console.error('Error creating seller notification:', sellerNotificationError);
+      console.error('⚠️ Error creating seller notification:', sellerNotificationError);
     } else {
-      console.log('Seller notification created successfully');
+      console.log('✅ Seller notification created successfully');
     }
 
-    // Thêm delay nhỏ để đảm bảo database được update
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Kiểm tra lại trạng thái sau khi cập nhật
+    const { data: finalCheck, error: finalError } = await supabase
+      .from('orders')
+      .select('id, status, delivery_status, payment_verified_at, manual_payment_requested')
+      .eq('id', orderId)
+      .single();
+    
+    if (finalError) {
+      console.error('⚠️ Error in final check:', finalError);
+    } else {
+      console.log('🔍 Final order state after update:', finalCheck);
+    }
 
   } catch (error) {
-    console.error('Error in confirmManualPayment:', error);
+    console.error('❌ Error in confirmManualPayment:', error);
     throw error;
   }
 };
 
 export const rejectManualPayment = async (orderId: string) => {
-  console.log('Starting manual payment rejection for order:', orderId);
+  console.log('🔄 Starting manual payment rejection for order:', orderId);
   
   try {
     // Lấy thông tin đơn hàng
@@ -143,11 +177,11 @@ export const rejectManualPayment = async (orderId: string) => {
       .single();
 
     if (fetchError || !orderData) {
-      console.error('Error fetching order data:', fetchError);
+      console.error('❌ Error fetching order data:', fetchError);
       throw fetchError || new Error('Không tìm thấy thông tin đơn hàng');
     }
 
-    console.log('Order data before rejection:', orderData);
+    console.log('📋 Order data before rejection:', orderData);
 
     // Cập nhật đơn hàng - chỉ tắt manual_payment_requested
     const { data: updateData, error: updateError } = await supabase
@@ -160,11 +194,11 @@ export const rejectManualPayment = async (orderId: string) => {
       .select('*');
     
     if (updateError) {
-      console.error('Error updating order:', updateError);
+      console.error('❌ Error updating order:', updateError);
       throw updateError;
     }
 
-    console.log('Order rejection updated successfully:', updateData);
+    console.log('✅ Order rejection updated successfully:', updateData);
 
     // Thông báo cho người mua
     const { error: notificationError } = await supabase
@@ -179,16 +213,13 @@ export const rejectManualPayment = async (orderId: string) => {
       });
 
     if (notificationError) {
-      console.error('Error creating rejection notification:', notificationError);
+      console.error('⚠️ Error creating rejection notification:', notificationError);
     } else {
-      console.log('Rejection notification created successfully');
+      console.log('✅ Rejection notification created successfully');
     }
 
-    // Thêm delay nhỏ để đảm bảo database được update
-    await new Promise(resolve => setTimeout(resolve, 500));
-
   } catch (error) {
-    console.error('Error in rejectManualPayment:', error);
+    console.error('❌ Error in rejectManualPayment:', error);
     throw error;
   }
 };

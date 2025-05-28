@@ -1,3 +1,4 @@
+
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { CassoTransactionData } from './types.ts'
 import { extractOrderId, generateSearchPatterns, isOrderMatch } from './orderUtils.ts'
@@ -207,19 +208,24 @@ async function updateOrderAndProcess(order: any, transaction: CassoTransactionDa
     console.log(`🔄 Starting complete order processing for: ${order.id}`)
     console.log(`📦 Product type: ${order.products?.product_type}`)
     
-    // Update order status to paid first
-    const { error: updateError } = await supabase
+    // CRITICAL FIX: Update order status to paid with correct fields
+    const updatePayload = {
+      status: 'paid',
+      delivery_status: 'processing', // FIXED: Set to processing instead of pending
+      payment_verified_at: new Date().toISOString(),
+      bank_transaction_id: transactionId,
+      bank_amount: transaction.amount,
+      casso_transaction_id: transactionId,
+      updated_at: new Date().toISOString()
+    };
+
+    console.log('📝 Updating order with payload:', updatePayload);
+
+    const { data: updateData, error: updateError } = await supabase
       .from('orders')
-      .update({
-        status: 'paid',
-        delivery_status: 'pending',
-        payment_verified_at: new Date().toISOString(),
-        bank_transaction_id: transactionId,
-        bank_amount: transaction.amount,
-        casso_transaction_id: transactionId, // Add this field
-        updated_at: new Date().toISOString()
-      })
+      .update(updatePayload)
       .eq('id', order.id)
+      .select('*');
 
     if (updateError) {
       console.error('❌ Error updating order status:', updateError)
@@ -230,7 +236,17 @@ async function updateOrderAndProcess(order: any, transaction: CassoTransactionDa
       }
     }
 
-    console.log(`✅ Order ${order.id} updated to paid status`)
+    console.log(`✅ Order ${order.id} updated to paid status:`, updateData);
+
+    // Verify the update was successful
+    if (!updateData || updateData.length === 0) {
+      console.error('⚠️ No rows were updated in automatic processing');
+      return {
+        transaction_id: transactionId,
+        status: 'order_update_failed',
+        error: 'No rows were updated'
+      }
+    }
 
     // Update transaction record with order link
     const { error: linkError } = await supabase
