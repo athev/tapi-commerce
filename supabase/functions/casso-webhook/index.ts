@@ -12,6 +12,10 @@ serve(async (req) => {
   }
 
   try {
+    console.log('=== CASSO WEBHOOK REQUEST START ===')
+    console.log('Request method:', req.method)
+    console.log('Request headers:', Object.fromEntries(req.headers))
+
     // Get CASSO webhook secret from environment
     const cassoSecret = Deno.env.get('CASSO_WEBHOOK_SECRET')
     if (!cassoSecret) {
@@ -25,18 +29,22 @@ serve(async (req) => {
       })
     }
 
+    console.log('CASSO secret configured, length:', cassoSecret.length)
+
     // Get signature from header
     const signature = req.headers.get('x-casso-signature')
+    console.log('Signature from header:', signature)
     
     // Get raw body text for signature verification
     const rawBody = await req.text()
-    console.log('Received webhook payload:', rawBody)
+    console.log('Raw body length:', rawBody.length)
+    console.log('Raw body preview:', rawBody.substring(0, 200) + '...')
 
     // Verify CASSO signature only if signature is provided
     if (signature) {
       const isValidSignature = await verifyCassoSignature(rawBody, signature, cassoSecret)
       if (!isValidSignature) {
-        console.error('Invalid CASSO signature')
+        console.error('SIGNATURE VERIFICATION FAILED')
         return new Response(JSON.stringify({ 
           success: false, 
           error: 'Invalid signature' 
@@ -45,15 +53,16 @@ serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
       }
-      console.log('CASSO signature verified successfully')
+      console.log('✅ CASSO signature verified successfully')
     } else {
-      console.log('No signature provided - proceeding without verification (test mode)')
+      console.log('⚠️ No signature provided - proceeding without verification (test mode)')
     }
 
     // Parse JSON payload after verification
     let payload: CassoWebhookPayload
     try {
       payload = JSON.parse(rawBody)
+      console.log('Parsed payload:', JSON.stringify(payload, null, 2))
     } catch (error) {
       console.error('Invalid JSON payload:', error)
       return new Response(JSON.stringify({ 
@@ -64,8 +73,6 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
-
-    console.log('Received Casso webhook:', payload)
 
     // Check if payload has error
     if (payload.error !== 0) {
@@ -101,9 +108,9 @@ serve(async (req) => {
     const transactionId = transaction.reference || transaction.id.toString()
 
     try {
-      console.log(`Processing transaction: ${transactionId}`)
-      console.log(`Transaction description: ${transaction.description}`)
-      console.log(`Transaction amount: ${transaction.amount}`)
+      console.log(`🔄 Processing transaction: ${transactionId}`)
+      console.log(`💰 Transaction amount: ${transaction.amount}`)
+      console.log(`📝 Transaction description: ${transaction.description}`)
       
       // Check if transaction already exists
       const { data: existingTransaction } = await supabase
@@ -113,7 +120,7 @@ serve(async (req) => {
         .single()
 
       if (existingTransaction) {
-        console.log(`Transaction ${transactionId} already processed`)
+        console.log(`✅ Transaction ${transactionId} already processed`)
         return new Response(JSON.stringify({
           success: true,
           message: 'Transaction already processed',
@@ -135,7 +142,7 @@ serve(async (req) => {
         })
 
       if (saveError) {
-        console.error('Error saving transaction:', saveError)
+        console.error('❌ Error saving transaction:', saveError)
         return new Response(JSON.stringify({ 
           success: false, 
           error: 'Failed to save transaction',
@@ -146,9 +153,11 @@ serve(async (req) => {
         })
       }
 
+      console.log('✅ Transaction saved to database')
+
       // Extract and normalize order ID from description
       const orderId = extractOrderId(transaction.description)
-      console.log(`Final processed order ID: ${orderId} from description: ${transaction.description}`)
+      console.log(`🔍 Extracted order ID: ${orderId} from description: "${transaction.description}"`)
 
       if (!orderId) {
         // Save to unmatched transactions
@@ -163,7 +172,7 @@ serve(async (req) => {
             reason: 'Could not extract order ID from description'
           })
         
-        console.log(`No order ID found in description: ${transaction.description}`)
+        console.log(`⚠️ No order ID found in description: ${transaction.description}`)
         return new Response(JSON.stringify({
           success: true,
           message: 'Transaction saved but no matching order found',
@@ -192,8 +201,8 @@ serve(async (req) => {
         .single()
 
       if (orderError || !order) {
-        console.log(`Order query error:`, orderError)
-        console.log(`Order not found or not pending for ID: ${orderId}`)
+        console.log(`❌ Order query error:`, orderError)
+        console.log(`❌ Order not found or not pending for ID: ${orderId}`)
         
         await supabase
           .from('unmatched_transactions')
@@ -216,11 +225,11 @@ serve(async (req) => {
         })
       }
 
-      console.log(`Found matching order:`, order)
+      console.log(`✅ Found matching order:`, order)
 
       // Verify amount matches (allow equal or greater)
       const expectedAmount = order.products?.price || 0
-      console.log(`Comparing amounts - Expected: ${expectedAmount}, Received: ${transaction.amount}`)
+      console.log(`💰 Comparing amounts - Expected: ${expectedAmount}, Received: ${transaction.amount}`)
       
       if (transaction.amount < expectedAmount) {
         await supabase
@@ -234,7 +243,7 @@ serve(async (req) => {
             reason: `Amount insufficient. Expected: ${expectedAmount}, Received: ${transaction.amount}`
           })
         
-        console.log(`Amount insufficient for order ${orderId}. Expected: ${expectedAmount}, Received: ${transaction.amount}`)
+        console.log(`❌ Amount insufficient for order ${orderId}. Expected: ${expectedAmount}, Received: ${transaction.amount}`)
         return new Response(JSON.stringify({
           success: true,
           message: 'Transaction saved but amount insufficient',
@@ -260,7 +269,7 @@ serve(async (req) => {
         .eq('id', orderId)
 
       if (updateError) {
-        console.error('Error updating order:', updateError)
+        console.error('❌ Error updating order:', updateError)
         return new Response(JSON.stringify({ 
           success: false, 
           error: 'Failed to update order',
@@ -271,7 +280,7 @@ serve(async (req) => {
         })
       }
 
-      console.log(`Successfully updated order ${orderId} to paid status`)
+      console.log(`✅ Successfully updated order ${orderId} to paid status`)
 
       // Update casso_transactions with matched order_id
       await supabase
@@ -307,7 +316,8 @@ serve(async (req) => {
           })
       }
 
-      console.log(`Successfully processed transaction ${transactionId} for order ${orderId}`)
+      console.log(`🎉 Successfully processed transaction ${transactionId} for order ${orderId}`)
+      console.log('=== CASSO WEBHOOK REQUEST END ===')
 
       return new Response(JSON.stringify({
         success: true,
@@ -321,7 +331,7 @@ serve(async (req) => {
       })
 
     } catch (error) {
-      console.error(`Error processing transaction ${transactionId}:`, error)
+      console.error(`❌ Error processing transaction ${transactionId}:`, error)
       return new Response(JSON.stringify({ 
         success: false, 
         error: 'Internal server error',
@@ -333,7 +343,7 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('Webhook error:', error)
+    console.error('❌ Webhook error:', error)
     return new Response(JSON.stringify({ 
       success: false, 
       error: 'Internal server error',

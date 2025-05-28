@@ -8,6 +8,9 @@ export async function verifyCassoSignature(payload: string, signature: string, s
 
   try {
     console.log('Verifying CASSO signature...')
+    console.log('Payload length:', payload.length)
+    console.log('Secret length:', secret.length)
+    console.log('Raw signature from header:', signature)
     
     // Tạo HMAC-SHA256 signature
     const encoder = new TextEncoder()
@@ -24,13 +27,16 @@ export async function verifyCassoSignature(payload: string, signature: string, s
       .map(b => b.toString(16).padStart(2, '0'))
       .join('')
     
-    // So sánh signature (remove prefix nếu có)
-    const receivedSignature = signature.replace(/^sha256=/, '')
-    const isValid = expectedSignature === receivedSignature
+    // So sánh signature (remove prefix nếu có và normalize)
+    const receivedSignature = signature.replace(/^(sha256=|SHA256=)/, '').toLowerCase()
+    const normalizedExpected = expectedSignature.toLowerCase()
+    
+    console.log('Expected signature (normalized):', normalizedExpected)
+    console.log('Received signature (normalized):', receivedSignature)
+    
+    const isValid = normalizedExpected === receivedSignature
     
     console.log('Signature verification result:', isValid)
-    console.log('Expected signature:', expectedSignature)
-    console.log('Received signature:', receivedSignature)
     
     return isValid
   } catch (error) {
