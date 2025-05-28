@@ -27,14 +27,38 @@ export async function verifyCassoSignature(payload: string, signature: string, s
       .map(b => b.toString(16).padStart(2, '0'))
       .join('')
     
-    // So sánh signature (remove prefix nếu có và normalize)
-    const receivedSignature = signature.replace(/^(sha256=|SHA256=)/, '').toLowerCase()
+    // CASSO signature format handling
+    // CASSO có thể gửi signature dưới nhiều format khác nhau
+    let receivedSignature = signature.toLowerCase()
+    
+    // Remove các prefix có thể có
+    receivedSignature = receivedSignature
+      .replace(/^(sha256=|hmac-sha256=|casso-signature=)/, '')
+      .replace(/^t=\d+,v1=/, '') // Remove timestamp prefix nếu có
+    
     const normalizedExpected = expectedSignature.toLowerCase()
     
     console.log('Expected signature (normalized):', normalizedExpected)
     console.log('Received signature (normalized):', receivedSignature)
     
+    // So sánh cả hai cách: có thể CASSO encode khác
     const isValid = normalizedExpected === receivedSignature
+    
+    // Nếu không khớp, thử encode với base64
+    if (!isValid) {
+      try {
+        const base64Expected = btoa(String.fromCharCode(...new Uint8Array(signatureBytes)))
+        console.log('Trying base64 comparison:', base64Expected)
+        const base64Valid = base64Expected === signature
+        
+        if (base64Valid) {
+          console.log('✅ Signature valid with base64 encoding')
+          return true
+        }
+      } catch (error) {
+        console.log('Base64 comparison failed:', error)
+      }
+    }
     
     console.log('Signature verification result:', isValid)
     
