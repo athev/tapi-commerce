@@ -109,7 +109,7 @@ export const useSellerStatus = () => {
     // Check profile role first - this is the source of truth after approval
     if (profile?.role === 'seller') return 'approved_seller';
     
-    // Then check application status
+    // Then check application status - if approved but role not updated yet, still treat as approved
     if (sellerApplication?.status === 'approved') return 'approved_seller';
     if (sellerApplication?.status === 'pending') return 'pending_approval';
     if (sellerApplication?.status === 'rejected') return 'rejected';

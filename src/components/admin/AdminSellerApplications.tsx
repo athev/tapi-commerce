@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,6 +54,11 @@ const AdminSellerApplications = () => {
     setProcessingId(applicationId);
     
     try {
+      const application = applications?.find(app => app.id === applicationId);
+      if (!application) {
+        throw new Error('Application not found');
+      }
+
       // First update the application status
       const { error: appError } = await supabase
         .from('seller_applications')
@@ -66,37 +72,34 @@ const AdminSellerApplications = () => {
 
       // If approved, update user role to seller
       if (newStatus === 'approved') {
-        const application = applications?.find(app => app.id === applicationId);
-        if (application) {
-          console.log('Updating user role to seller for user:', application.user_id);
-          
-          // Update profile role
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .update({ role: 'seller' })
-            .eq('id', application.user_id);
-          
-          if (profileError) {
-            console.error('Error updating profile role:', profileError);
-            throw profileError;
-          }
+        console.log('Updating user role to seller for user:', application.user_id);
+        
+        // Update profile role
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({ role: 'seller' })
+          .eq('id', application.user_id);
+        
+        if (profileError) {
+          console.error('Error updating profile role:', profileError);
+          throw profileError;
+        }
 
-          console.log('Successfully updated profile role to seller');
+        console.log('Successfully updated profile role to seller');
 
-          // Send notification to the user about approval
-          const { error: notificationError } = await supabase
-            .from('notifications')
-            .insert({
-              user_id: application.user_id,
-              type: 'info',
-              title: 'Đăng ký người bán được duyệt',
-              message: `Chúc mừng! Đăng ký gian hàng "${application.business_name}" của bạn đã được phê duyệt. Bạn có thể bắt đầu bán hàng ngay bây giờ.`,
-              is_read: false
-            });
+        // Send notification to the user about approval
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: application.user_id,
+            type: 'info',
+            title: 'Đăng ký người bán được duyệt',
+            message: `Chúc mừng! Đăng ký gian hàng "${application.business_name}" của bạn đã được phê duyệt. Bạn có thể bắt đầu bán hàng ngay bây giờ.`,
+            is_read: false
+          });
 
-          if (notificationError) {
-            console.error('Error creating notification:', notificationError);
-          }
+        if (notificationError) {
+          console.error('Error creating notification:', notificationError);
         }
       }
       
