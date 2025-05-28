@@ -1,5 +1,5 @@
 
-// Hàm extract order ID từ description - cải thiện để xử lý chính xác theo format DH + hex
+// Hàm extract order ID từ description - cải thiện để xử lý chính xác theo format DH + hex và loại bỏ đoạn dư thừa ngân hàng
 export function extractOrderId(description: string): string | null {
   console.log('🔍 Extracting order ID from description:', description)
   
@@ -13,9 +13,32 @@ export function extractOrderId(description: string): string | null {
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '') // Bỏ dấu tiếng Việt
-    .replace(/[^a-z0-9\s#]/g, '') // Chỉ giữ chữ, số, space và #
   
   console.log('🔧 Cleaned description:', cleanDesc)
+  
+  // CRITICAL FIX: Loại bỏ các đoạn dư thừa do ngân hàng tạo ra TRƯỚC KHI extract
+  const bankSuffixPatterns = [
+    /\s*ft\d+\s*/gi,  // FT + số
+    /\s*ma\s*giao\s*dich\s*/gi,  // "Ma giao dich"
+    /\s*trace\s*\d+\s*/gi,  // Trace + số
+    /\s*ref\s*\d+\s*/gi,  // Ref + số
+    /\s*ib\s*ft\s*\d+\s*/gi,  // IB FT + số
+    /\s*napas\s*/gi,  // NAPAS
+    /\s*\d{10,}\s*/g,  // Chuỗi số dài (từ 10 chữ số trở lên)
+  ]
+  
+  let processedDesc = cleanDesc
+  for (const pattern of bankSuffixPatterns) {
+    const before = processedDesc
+    processedDesc = processedDesc.replace(pattern, ' ')
+    if (before !== processedDesc) {
+      console.log(`🔧 Removed bank suffix with pattern ${pattern}:`, before, '->', processedDesc)
+    }
+  }
+  
+  // Loại bỏ khoảng trắng thừa sau khi xóa suffix
+  processedDesc = processedDesc.replace(/\s+/g, ' ').trim()
+  console.log('🔧 Final processed description:', processedDesc)
   
   // Các pattern để tìm order ID theo thứ tự ưu tiên - CẢI THIỆN với LIKE pattern
   const patterns = [
@@ -28,27 +51,33 @@ export function extractOrderId(description: string): string | null {
     // Pattern UUID đầy đủ với dấu gạch ngang
     /dh\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
     
-    // FIXED: Pattern cho hex ngắn (8-24 ký tự) - để xử lý trường hợp như DH4D3D37EDEC53
-    /dh\s*([a-f0-9]{8,24})/i,
-    /dh#\s*([a-f0-9]{8,24})/i,
+    // IMPROVED: Pattern cho hex ngắn (8-24 ký tự) - để xử lý trường hợp như DH4D3D37EDEC53
+    /dh\s*([a-f0-9]{8,31})/i,  // Tăng từ 24 lên 31 để capture tốt hơn
+    /dh#\s*([a-f0-9]{8,31})/i,
     
-    // Pattern chỉ có hex string 32 ký tự
-    /([a-f0-9]{32})/i,
+    // Pattern chỉ có hex string 32 ký tự (nếu không có DH prefix)
+    /^([a-f0-9]{32})$/i,
     // Pattern chỉ có UUID đầy đủ
-    /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
-    // Pattern hex ngắn
-    /([a-f0-9]{8,24})/i
+    /^([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i,
+    // Pattern hex ngắn ở đầu chuỗi
+    /^([a-f0-9]{8,31})$/i
   ]
   
   for (let i = 0; i < patterns.length; i++) {
     const pattern = patterns[i]
-    const match = cleanDesc.match(pattern)
+    const match = processedDesc.match(pattern)
     if (match) {
       let extractedId = match[1].toLowerCase()
       console.log(`✅ Pattern ${i + 1} matched, raw extracted ID:`, extractedId)
       
+      // Validate extracted ID không chứa ký tự không mong muốn
+      if (!/^[a-f0-9-]+$/.test(extractedId)) {
+        console.log('⚠️ Extracted ID contains invalid characters, skipping:', extractedId)
+        continue
+      }
+      
       // Normalize về UUID chuẩn nếu là 32 ký tự hex
-      if (extractedId.length === 32) {
+      if (extractedId.length === 32 && !extractedId.includes('-')) {
         extractedId = normalizeOrderId(extractedId)
       }
       
@@ -57,7 +86,7 @@ export function extractOrderId(description: string): string | null {
     }
   }
   
-  console.log('❌ No order ID pattern found in description')
+  console.log('❌ No order ID pattern found in processed description')
   return null
 }
 
@@ -109,8 +138,8 @@ export function generateSearchPatterns(extractedId: string): string[] {
       hexVersion.slice(0, 16)  // 16 ký tự đầu
     )
   }
-  // Nếu là hex ngắn (8-24 ký tự)
-  else if (extractedId.length >= 8 && extractedId.length <= 24) {
+  // Nếu là hex ngắn (8-31 ký tự)
+  else if (extractedId.length >= 8 && extractedId.length <= 31) {
     patterns.push(extractedId.toLowerCase())
   }
   // Nếu là hex dài (32 ký tự)
@@ -129,18 +158,18 @@ export function generateSearchPatterns(extractedId: string): string[] {
   return [...new Set(patterns)] // Remove duplicates
 }
 
-// FIXED: Hàm kiểm tra match linh hoạt - cải thiện để xử lý prefix matching và LIKE pattern
+// IMPROVED: Hàm kiểm tra match linh hoạt - cải thiện để xử lý prefix matching và LIKE pattern
 export function isOrderMatch(orderId: string, extractedId: string): boolean {
   console.log('🔍 Checking order match:', { orderId, extractedId })
   
   // Chuẩn hóa order ID (bỏ dấu gạch ngang, chuyển thường)
   const orderHex = orderId.replace(/-/g, '').toLowerCase()
-  const extracted = extractedId.toLowerCase()
+  const extracted = extractedId.toLowerCase().replace(/-/g, '')
   
   console.log('🔍 Normalized comparison:', { orderHex, extracted })
   
   // Exact match with UUID
-  if (orderId === extracted) {
+  if (orderId === extractedId) {
     console.log('✅ Exact UUID match')
     return true
   }
