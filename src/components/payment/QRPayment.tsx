@@ -75,7 +75,8 @@ const QRPayment = ({ orderId, amount, onManualConfirmation }: QRPaymentProps) =>
           <BankInformation amount={amount} orderId={orderId} />
           <ManualConfirmation 
             showManualButton={showManualButton} 
-            onManualConfirmation={onManualConfirmation} 
+            onManualConfirmation={onManualConfirmation}
+            orderId={orderId}
           />
         </CardContent>
       </Card>
