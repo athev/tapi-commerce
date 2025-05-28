@@ -8,36 +8,36 @@ export function extractOrderId(description: string): string | null {
     return null
   }
   
-  // Clean description - loại bỏ khoảng trắng thừa
+  // Clean description - loại bỏ khoảng trắng thừa, dấu và normalize
   const cleanDesc = description.trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // Bỏ dấu tiếng Việt
+    .replace(/[^a-z0-9\s#]/g, '') // Chỉ giữ chữ, số, space và #
+  
   console.log('🔧 Cleaned description:', cleanDesc)
   
-  // Các pattern để tìm order ID theo thứ tự ưu tiên
+  // Các pattern để tìm order ID theo thứ tự ưu tiên - CẢI THIỆN với LIKE pattern
   const patterns = [
     // Pattern chính: DH + 32 ký tự hex (không có dấu gạch ngang)
-    /DH([A-F0-9]{32})/i,
+    /dh\s*([a-f0-9]{32})/i,
     // Pattern với khoảng trắng: DH + space + 32 ký tự hex  
-    /DH\s+([A-F0-9]{32})/i,
+    /dh\s+([a-f0-9]{32})/i,
     // Pattern với #: DH# + 32 ký tự hex
-    /DH#([A-F0-9]{32})/i,
-    // Pattern với # và space: DH# + space + 32 ký tự hex
-    /DH#\s+([A-F0-9]{32})/i,
+    /dh#\s*([a-f0-9]{32})/i,
     // Pattern UUID đầy đủ với dấu gạch ngang
-    /DH([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
-    /DH\s+([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
+    /dh\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
     
     // FIXED: Pattern cho hex ngắn (8-24 ký tự) - để xử lý trường hợp như DH4D3D37EDEC53
-    /DH([A-F0-9]{8,24})/i,
-    /DH\s+([A-F0-9]{8,24})/i,
-    /DH#([A-F0-9]{8,24})/i,
-    /DH#\s+([A-F0-9]{8,24})/i,
+    /dh\s*([a-f0-9]{8,24})/i,
+    /dh#\s*([a-f0-9]{8,24})/i,
     
     // Pattern chỉ có hex string 32 ký tự
-    /([A-F0-9]{32})/i,
+    /([a-f0-9]{32})/i,
     // Pattern chỉ có UUID đầy đủ
     /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
     // Pattern hex ngắn
-    /([A-F0-9]{8,24})/i
+    /([a-f0-9]{8,24})/i
   ]
   
   for (let i = 0; i < patterns.length; i++) {
@@ -129,7 +129,7 @@ export function generateSearchPatterns(extractedId: string): string[] {
   return [...new Set(patterns)] // Remove duplicates
 }
 
-// FIXED: Hàm kiểm tra match linh hoạt - cải thiện để xử lý prefix matching
+// FIXED: Hàm kiểm tra match linh hoạt - cải thiện để xử lý prefix matching và LIKE pattern
 export function isOrderMatch(orderId: string, extractedId: string): boolean {
   console.log('🔍 Checking order match:', { orderId, extractedId })
   
@@ -160,6 +160,12 @@ export function isOrderMatch(orderId: string, extractedId: string): boolean {
   // ADDITIONAL: Reverse check - extracted có thể là UUID đầy đủ mà order ID là prefix
   if (extracted.length >= 32 && extracted.startsWith(orderHex.slice(0, 12))) {
     console.log('✅ Reverse prefix match')
+    return true
+  }
+  
+  // NEW: LIKE pattern matching - kiểm tra xem extractedId có chứa trong orderId không
+  if (orderHex.includes(extracted) || extracted.includes(orderHex.slice(0, 8))) {
+    console.log('✅ LIKE pattern match')
     return true
   }
   

@@ -62,14 +62,15 @@ export const confirmManualPayment = async (orderId: string) => {
 
     console.log('Order data before update:', orderData);
 
-    // Cập nhật trạng thái đơn hàng - sử dụng update trực tiếp
+    // FIXED: Cập nhật trạng thái đơn hàng với tất cả fields cần thiết
     const { data: updateData, error: updateError } = await supabase
       .from('orders')
       .update({ 
         status: 'paid',
-        delivery_status: 'pending',
+        delivery_status: 'processing', // FIXED: Thay đổi từ 'pending' thành 'processing'
         payment_verified_at: new Date().toISOString(),
-        manual_payment_requested: false,
+        manual_payment_requested: false, // FIXED: Set về false sau khi xác nhận
+        casso_transaction_id: `manual_${orderId}_${Date.now()}`, // FIXED: Tạo manual transaction ID
         updated_at: new Date().toISOString()
       })
       .eq('id', orderId)
@@ -80,7 +81,7 @@ export const confirmManualPayment = async (orderId: string) => {
       throw updateError;
     }
 
-    console.log('Order update successful:', updateData);
+    console.log('Order manual confirmation update successful:', updateData);
 
     // Tạo thông báo cho người mua
     const { error: buyerNotificationError } = await supabase
@@ -89,7 +90,7 @@ export const confirmManualPayment = async (orderId: string) => {
         user_id: orderData.user_id,
         type: 'payment_confirmed',
         title: 'Thanh toán đã được xác nhận',
-        message: `Đơn hàng "${orderData.products.title}" đã được xác nhận thanh toán thành công. Chúng tôi sẽ tiến hành giao hàng sớm nhất.`,
+        message: `Người bán đã xác nhận thanh toán cho đơn hàng "${orderData.products.title}". Đơn hàng sẽ được xử lý ngay.`,
         related_order_id: orderId,
         is_read: false
       });
@@ -106,8 +107,8 @@ export const confirmManualPayment = async (orderId: string) => {
       .insert({
         user_id: orderData.products.seller_id,
         type: 'new_paid_order',
-        title: 'Đơn hàng mới cần xử lý',
-        message: `Đơn hàng "${orderData.products.title}" đã được thanh toán và cần giao hàng. Vui lòng vào phần quản lý đơn hàng để xử lý.`,
+        title: 'Đơn hàng đã được xác nhận thanh toán',
+        message: `Đơn hàng "${orderData.products.title}" đã được xác nhận thanh toán thủ công và cần xử lý giao hàng.`,
         related_order_id: orderId,
         is_read: false
       });
