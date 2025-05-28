@@ -76,7 +76,8 @@ const ManualPaymentOrders = () => {
 
       console.log('Order data before update:', orderData);
 
-      // Cập nhật trạng thái đơn hàng
+      // Cập nhật trạng thái đơn hàng với logging chi tiết
+      console.log('Updating order with ID:', orderId);
       const { data: updateData, error: updateError } = await supabase
         .from('orders')
         .update({ 
@@ -95,6 +96,18 @@ const ManualPaymentOrders = () => {
       }
 
       console.log('Order updated successfully:', updateData);
+      
+      // Kiểm tra dữ liệu sau update
+      const { data: verifyData, error: verifyError } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', orderId)
+        .single();
+        
+      console.log('Order data after update verification:', verifyData);
+      if (verifyError) {
+        console.error('Error verifying update:', verifyError);
+      }
 
       // Tạo thông báo cho người mua
       const { error: buyerNotificationError } = await supabase
@@ -135,6 +148,7 @@ const ManualPaymentOrders = () => {
       toast.success('Đã xác nhận thanh toán thành công');
       
       // Force refetch to update the UI
+      console.log('Triggering refetch...');
       await refetch();
       
     } catch (error) {
