@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUser } from "@/hooks/useUser";
@@ -6,10 +7,14 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import ManualPaymentOrders from "@/components/admin/ManualPaymentOrders";
-import CassoDebugTester from "@/components/admin/CassoDebugTester";
+import AdminStats from "@/components/admin/AdminStats";
+import AdminUsers from "@/components/admin/AdminUsers";
+import AdminOrders from "@/components/admin/AdminOrders";
+import AdminProducts from "@/components/admin/AdminProducts";
+import AdminSellerApplications from "@/components/admin/AdminSellerApplications";
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState("manual-payments");
+  const [activeTab, setActiveTab] = useState("stats");
   const { user, session, isLoading } = useUser();
   const navigate = useNavigate();
 
@@ -43,17 +48,37 @@ const AdminDashboard = () => {
         <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="stats">Thống kê</TabsTrigger>
+            <TabsTrigger value="users">Người dùng</TabsTrigger>
+            <TabsTrigger value="orders">Đơn hàng</TabsTrigger>
+            <TabsTrigger value="products">Sản phẩm</TabsTrigger>
+            <TabsTrigger value="sellers">Seller Applications</TabsTrigger>
             <TabsTrigger value="manual-payments">Thanh toán thủ công</TabsTrigger>
-            <TabsTrigger value="casso-debug">Casso Debug</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="manual-payments">
-            <ManualPaymentOrders />
+          <TabsContent value="stats">
+            <AdminStats />
+          </TabsContent>
+
+          <TabsContent value="users">
+            <AdminUsers />
+          </TabsContent>
+
+          <TabsContent value="orders">
+            <AdminOrders />
+          </TabsContent>
+
+          <TabsContent value="products">
+            <AdminProducts />
+          </TabsContent>
+
+          <TabsContent value="sellers">
+            <AdminSellerApplications />
           </TabsContent>
           
-          <TabsContent value="casso-debug">
-            <CassoDebugTester />
+          <TabsContent value="manual-payments">
+            <ManualPaymentOrders />
           </TabsContent>
         </Tabs>
       </div>
