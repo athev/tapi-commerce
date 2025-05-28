@@ -26,7 +26,8 @@ const ManualPaymentOrders = () => {
               title,
               price,
               image,
-              seller_id
+              seller_id,
+              seller_name
             )
           `)
           .eq('manual_payment_requested', true)
@@ -51,7 +52,28 @@ const ManualPaymentOrders = () => {
     setIsProcessing(orderId);
     
     try {
-      const { error } = await supabase
+      // Lấy thông tin đơn hàng trước khi cập nhật
+      const { data: orderData, error: fetchError } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          products (
+            id,
+            title,
+            price,
+            seller_id,
+            product_type
+          )
+        `)
+        .eq('id', orderId)
+        .single();
+
+      if (fetchError || !orderData) {
+        throw fetchError || new Error('Không tìm thấy thông tin đơn hàng');
+      }
+
+      // Cập nhật trạng thái đơn hàng
+      const { error: updateError } = await supabase
         .from('orders')
         .update({ 
           status: 'paid',
@@ -62,7 +84,39 @@ const ManualPaymentOrders = () => {
         })
         .eq('id', orderId);
       
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // Tạo thông báo cho người mua
+      const { error: buyerNotificationError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: orderData.user_id,
+          type: 'payment_confirmed',
+          title: 'Thanh toán đã được xác nhận',
+          message: `Đơn hàng "${orderData.products.title}" đã được xác nhận thanh toán thành công. Chúng tôi sẽ tiến hành giao hàng sớm nhất.`,
+          related_order_id: orderId,
+          is_read: false
+        });
+
+      if (buyerNotificationError) {
+        console.error('Error creating buyer notification:', buyerNotificationError);
+      }
+
+      // Tạo thông báo cho seller về đơn hàng mới cần xử lý
+      const { error: sellerNotificationError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: orderData.products.seller_id,
+          type: 'new_paid_order',
+          title: 'Đơn hàng mới cần xử lý',
+          message: `Đơn hàng "${orderData.products.title}" đã được thanh toán và cần giao hàng. Vui lòng vào phần quản lý đơn hàng để xử lý.`,
+          related_order_id: orderId,
+          is_read: false
+        });
+
+      if (sellerNotificationError) {
+        console.error('Error creating seller notification:', sellerNotificationError);
+      }
       
       toast.success('Đã xác nhận thanh toán thành công');
       refetch();
@@ -78,7 +132,22 @@ const ManualPaymentOrders = () => {
     setIsProcessing(orderId);
     
     try {
-      const { error } = await supabase
+      // Lấy thông tin đơn hàng
+      const { data: orderData, error: fetchError } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          products (title)
+        `)
+        .eq('id', orderId)
+        .single();
+
+      if (fetchError || !orderData) {
+        throw fetchError || new Error('Không tìm thấy thông tin đơn hàng');
+      }
+
+      // Cập nhật đơn hàng
+      const { error: updateError } = await supabase
         .from('orders')
         .update({ 
           manual_payment_requested: false,
@@ -86,7 +155,23 @@ const ManualPaymentOrders = () => {
         })
         .eq('id', orderId);
       
-      if (error) throw error;
+      if (updateError) throw updateError;
+
+      // Thông báo cho người mua
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: orderData.user_id,
+          type: 'payment_rejected',
+          title: 'Yêu cầu xác nhận thanh toán bị từ chối',
+          message: `Yêu cầu xác nhận thanh toán cho đơn hàng "${orderData.products.title}" đã bị từ chối. Vui lòng kiểm tra lại thông tin chuyển khoản hoặc liên hệ hỗ trợ.`,
+          related_order_id: orderId,
+          is_read: false
+        });
+
+      if (notificationError) {
+        console.error('Error creating rejection notification:', notificationError);
+      }
       
       toast.success('Đã từ chối yêu cầu xác nhận');
       refetch();

@@ -18,7 +18,7 @@ const ManualConfirmation = ({ showManualButton, onManualConfirmation, orderId }:
     
     try {
       // Cập nhật đơn hàng để đánh dấu yêu cầu xác nhận thủ công
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('orders')
         .update({ 
           manual_payment_requested: true,
@@ -26,11 +26,47 @@ const ManualConfirmation = ({ showManualButton, onManualConfirmation, orderId }:
         })
         .eq('id', orderId);
 
-      if (error) {
-        throw error;
+      if (updateError) {
+        throw updateError;
       }
 
-      toast.success('Đã gửi yêu cầu xác nhận thủ công. Admin sẽ xử lý trong ít phút.');
+      // Lấy thông tin đơn hàng và sản phẩm để gửi thông báo
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          products (
+            id,
+            title,
+            seller_id,
+            seller_name
+          )
+        `)
+        .eq('id', orderId)
+        .single();
+
+      if (orderError || !orderData) {
+        throw orderError || new Error('Không tìm thấy thông tin đơn hàng');
+      }
+
+      // Tạo thông báo cho seller
+      const { error: notificationError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: orderData.products.seller_id,
+          type: 'manual_payment_request',
+          title: 'Yêu cầu xác nhận thanh toán thủ công',
+          message: `Khách hàng ${orderData.buyer_email} đã yêu cầu xác nhận thanh toán thủ công cho đơn hàng ${orderData.products.title}. Vui lòng kiểm tra và xác nhận.`,
+          related_order_id: orderId,
+          is_read: false
+        });
+
+      if (notificationError) {
+        console.error('Error creating notification:', notificationError);
+        // Không throw error vì đơn hàng đã được cập nhật thành công
+      }
+
+      toast.success('Đã gửi yêu cầu xác nhận thủ công. Seller sẽ xử lý trong ít phút.');
       onManualConfirmation();
     } catch (error) {
       console.error('Error requesting manual confirmation:', error);

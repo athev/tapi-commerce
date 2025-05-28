@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +10,7 @@ import { Check, ArrowLeft, Clock, AlertCircle, Download, Key, UserPlus } from "l
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import QRPayment from "@/components/payment/QRPayment";
+import ManualConfirmation from "@/components/payment/ManualConfirmation";
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { 
@@ -27,6 +27,7 @@ const Payment = () => {
   const { toast } = useToast();
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'confirming' | 'completed'>('pending');
+  const [showManualButton, setShowManualButton] = useState(false);
 
   // Query để kiểm tra trạng thái thanh toán real-time với interval ngắn hơn
   const { data: order, isLoading, error } = useQuery({
@@ -79,6 +80,17 @@ const Payment = () => {
     document.title = "Thanh toán đơn hàng | DigitalMarket";
   }, []);
 
+  // Show manual button after 5 minutes if payment not confirmed
+  useEffect(() => {
+    if (order?.status === 'pending' && !order?.manual_payment_requested) {
+      const timer = setTimeout(() => {
+        setShowManualButton(true);
+      }, 5 * 60 * 1000); // 5 minutes
+
+      return () => clearTimeout(timer);
+    }
+  }, [order?.status, order?.manual_payment_requested]);
+
   // Tự động chuyển sang trạng thái completed khi order đã paid
   useEffect(() => {
     if (order?.status === 'paid' && paymentStatus !== 'completed') {
@@ -118,8 +130,10 @@ const Payment = () => {
 
       toast({
         title: "Yêu cầu đã được gửi",
-        description: "Chúng tôi đã nhận được yêu cầu xác nhận thanh toán của bạn. Admin sẽ xử lý trong ít phút.",
+        description: "Chúng tôi đã nhận được yêu cầu xác nhận thanh toán của bạn. Seller sẽ xử lý trong ít phút.",
       });
+      
+      setShowManualButton(false);
     } catch (error) {
       console.error('Manual payment confirmation error:', error);
       toast({
@@ -257,6 +271,57 @@ const Payment = () => {
             </div>
           </div>
         </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show manual payment requested state
+  if (order?.manual_payment_requested) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        
+        <main className="flex-1 container py-12">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 text-center">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Clock className="h-8 w-8 text-yellow-600" />
+              </div>
+              <h2 className="text-2xl font-bold text-yellow-800 mb-2">Đang chờ xác nhận thanh toán</h2>
+              <p className="text-yellow-700 mb-6">
+                Yêu cầu xác nhận thanh toán thủ công đã được gửi. Seller sẽ xử lý trong ít phút.
+              </p>
+              
+              <div className="bg-white rounded-lg p-4 mb-6 border border-yellow-200">
+                <h3 className="font-medium mb-2">Thông tin đơn hàng</h3>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <p>Mã đơn: {orderId?.substring(0, 8).toUpperCase()}</p>
+                  <p>Sản phẩm: {order?.products?.title}</p>
+                  <p>Giá: {formatPrice(order?.products?.price || 0)}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <Button 
+                  variant="outline"
+                  onClick={() => navigate(`/product/${order?.product_id}`)}
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Về trang sản phẩm
+                </Button>
+                <br />
+                <Button 
+                  onClick={() => navigate('/my-purchases')}
+                  className="bg-marketplace-primary hover:bg-marketplace-primary/90"
+                >
+                  Xem đơn hàng của tôi
+                </Button>
+              </div>
+            </div>
+          </div>
+        </main>
+        
         <Footer />
       </div>
     );
@@ -406,13 +471,24 @@ const Payment = () => {
             </CardContent>
           </Card>
           
-          {/* QR Payment Component */}
+          {/* QR Payment Component with Manual Confirmation */}
           <QRPayment
             orderId={orderId || ''}
             amount={order.products?.price || 0}
             onManualConfirmation={handleManualPaymentConfirmation}
             actualDescription={order.casso_transactions?.[0]?.description}
           />
+          
+          {/* Manual Confirmation Button */}
+          {(showManualButton || order?.manual_payment_requested) && (
+            <div className="mt-6">
+              <ManualConfirmation
+                showManualButton={showManualButton && !order?.manual_payment_requested}
+                onManualConfirmation={() => setShowManualButton(false)}
+                orderId={orderId || ''}
+              />
+            </div>
+          )}
         </div>
       </main>
       
