@@ -29,7 +29,7 @@ serve(async (req) => {
       data: [{
         id: 999999,
         tid: "TEST_TRANSACTION",
-        description: "Test webhook - DH4d3d37edec53",
+        description: "Test webhook - DH4d3d37edec53 FT25148800400633 Ma giao dich Trace794799",
         amount: 100000,
         cusum_balance: 1000000,
         when: new Date().toISOString(),
@@ -43,7 +43,8 @@ serve(async (req) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-casso-signature': 'test_signature'
+          'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          'x-casso-signature': 'test_signature_for_debug'
         },
         body: JSON.stringify(testPayload)
       })
@@ -56,7 +57,12 @@ serve(async (req) => {
         success: true,
         webhook_status: webhookResponse.status,
         webhook_response: responseText,
-        test_payload: testPayload
+        test_payload: testPayload,
+        notes: {
+          description_with_bank_suffix: "DH4d3d37edec53 FT25148800400633 Ma giao dich Trace794799",
+          expected_extracted_id: "4d3d37edec53",
+          test_purpose: "Testing order ID extraction with bank suffix removal"
+        }
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
