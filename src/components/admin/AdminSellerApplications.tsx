@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,7 +53,8 @@ const AdminSellerApplications = () => {
     setProcessingId(applicationId);
     
     try {
-      const { error } = await supabase
+      // First update the application status
+      const { error: appError } = await supabase
         .from('seller_applications')
         .update({ 
           status: newStatus,
@@ -62,20 +62,28 @@ const AdminSellerApplications = () => {
         })
         .eq('id', applicationId);
       
-      if (error) throw error;
+      if (appError) throw appError;
 
       // If approved, update user role to seller
       if (newStatus === 'approved') {
         const application = applications?.find(app => app.id === applicationId);
         if (application) {
+          console.log('Updating user role to seller for user:', application.user_id);
+          
+          // Update profile role
           const { error: profileError } = await supabase
             .from('profiles')
             .update({ role: 'seller' })
             .eq('id', application.user_id);
           
-          if (profileError) throw profileError;
+          if (profileError) {
+            console.error('Error updating profile role:', profileError);
+            throw profileError;
+          }
 
-          // Send notification to the user about approval (use valid type)
+          console.log('Successfully updated profile role to seller');
+
+          // Send notification to the user about approval
           const { error: notificationError } = await supabase
             .from('notifications')
             .insert({

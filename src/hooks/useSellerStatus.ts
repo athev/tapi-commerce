@@ -71,12 +71,12 @@ export const useSellerStatus = () => {
     };
   }, [user?.id, fetchSellerApplication, refreshProfile]);
 
-  // Listen for profile changes
+  // Listen for profile changes - this is crucial for immediate update after role change
   useEffect(() => {
     if (!user) return;
 
     const profileChannel = supabase
-      .channel('profile-changes')
+      .channel('profile-role-changes')
       .on(
         'postgres_changes',
         {
@@ -86,7 +86,8 @@ export const useSellerStatus = () => {
           filter: `id=eq.${user.id}`
         },
         (payload) => {
-          console.log('Profile changed:', payload);
+          console.log('Profile role changed:', payload);
+          // Force refresh profile immediately
           refreshProfile();
         }
       )
@@ -105,13 +106,11 @@ export const useSellerStatus = () => {
       applicationStatus: sellerApplication?.status 
     });
     
-    // Check application status first - if approved, user should be treated as seller
-    if (sellerApplication?.status === 'approved') return 'approved_seller';
-    
-    // Then check profile role as backup
+    // Check profile role first - this is the source of truth after approval
     if (profile?.role === 'seller') return 'approved_seller';
     
-    // Then check other application statuses
+    // Then check application status
+    if (sellerApplication?.status === 'approved') return 'approved_seller';
     if (sellerApplication?.status === 'pending') return 'pending_approval';
     if (sellerApplication?.status === 'rejected') return 'rejected';
     
