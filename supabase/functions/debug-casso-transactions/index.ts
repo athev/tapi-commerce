@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -132,17 +131,31 @@ serve(async (req) => {
 
     // Get query parameters
     const url = new URL(req.url)
-    const testDescription = url.searchParams.get('description') || 'DH335F6DB3DAF7'
+    const testDescription = url.searchParams.get('description') || 'DH42A7FC87'
+    const testOrderId = url.searchParams.get('order_id') || '42a7fc87-0f86-49de-b4bc-3d1ae2008946'
     
     console.log('Testing with description:', testDescription)
+    console.log('Testing with order ID:', testOrderId)
 
     // Test order ID extraction
     const extractedId = extractOrderId(testDescription)
     console.log('Extracted order ID:', extractedId)
 
-    // Generate search patterns
-    const searchPatterns = extractedId ? generateSearchPatterns(extractedId) : []
-    console.log('Search patterns:', searchPatterns)
+    // Test flexible matching
+    const orderHex = testOrderId.replace(/-/g, '').toLowerCase()
+    const extracted = extractedId?.toLowerCase() || ''
+    
+    const matchResults = {
+      exact_uuid: testOrderId === extracted,
+      full_hex: orderHex === extracted,
+      prefix_match: extracted.length >= 8 && orderHex.startsWith(extracted),
+      description_analysis: {
+        original: testDescription,
+        extracted: extractedId,
+        order_hex_prefix: orderHex.slice(0, 8),
+        matches_prefix: orderHex.slice(0, 8) === extracted
+      }
+    }
 
     // Check recent transactions
     const { data: recentTransactions, error: transError } = await supabase
@@ -154,47 +167,33 @@ serve(async (req) => {
 
     console.log('Matching transactions:', recentTransactions)
 
-    // Check recent orders
-    const { data: recentOrders, error: orderError } = await supabase
+    // Check the specific order
+    const { data: specificOrder, error: orderError } = await supabase
       .from('orders')
       .select(`
-        id,
-        status,
-        payment_verified_at,
-        casso_transaction_id,
-        created_at,
+        id, status, payment_verified_at, casso_transaction_id, created_at,
         products (price, title)
       `)
+      .eq('id', testOrderId)
+      .maybeSingle()
+
+    // Check recent orders for comparison
+    const { data: recentOrders, error: recentOrderError } = await supabase
+      .from('orders')
+      .select(`
+        id, status, payment_verified_at, casso_transaction_id, created_at,
+        products (price, title)
+      `)
+      .eq('status', 'pending')
+      .is('payment_verified_at', null)
       .order('created_at', { ascending: false })
       .limit(10)
 
-    console.log('Recent orders:', recentOrders)
-
-    // Try to find matching orders for each pattern
-    const orderMatches = []
-    if (searchPatterns.length > 0) {
-      for (const pattern of searchPatterns) {
-        const { data: matchingOrders } = await supabase
-          .from('orders')
-          .select(`
-            id,
-            status,
-            payment_verified_at,
-            casso_transaction_id,
-            created_at,
-            products (price, title)
-          `)
-          .eq('id', pattern)
-          .limit(1)
-
-        if (matchingOrders && matchingOrders.length > 0) {
-          orderMatches.push({
-            pattern: pattern,
-            orders: matchingOrders
-          })
-        }
-      }
-    }
+    console.log('Recent pending orders:', recentOrders?.map(o => ({
+      id: o.id,
+      hex_prefix: o.id.replace(/-/g, '').slice(0, 8).toUpperCase(),
+      status: o.status
+    })))
 
     // Check unmatched transactions
     const { data: unmatchedTransactions } = await supabase
@@ -205,25 +204,35 @@ serve(async (req) => {
       .limit(5)
 
     const response = {
-      test_description: testDescription,
-      extracted_order_id: extractedId,
-      search_patterns: searchPatterns,
-      matching_transactions: recentTransactions,
-      recent_orders: recentOrders?.map(o => ({
-        id: o.id,
-        short_id: o.id.slice(0, 8),
-        status: o.status,
-        payment_verified: !!o.payment_verified_at,
-        casso_linked: !!o.casso_transaction_id,
-        price: o.products?.price
-      })),
-      order_matches: orderMatches,
-      unmatched_transactions: unmatchedTransactions,
-      debug_info: {
-        patterns_generated: searchPatterns.length,
-        transactions_found: recentTransactions?.length || 0,
-        orders_matched: orderMatches.length,
-        unmatched_found: unmatchedTransactions?.length || 0
+      test_input: {
+        description: testDescription,
+        order_id: testOrderId
+      },
+      extraction_result: {
+        extracted_id: extractedId,
+        match_analysis: matchResults
+      },
+      database_checks: {
+        specific_order: specificOrder ? {
+          id: specificOrder.id,
+          status: specificOrder.status,
+          payment_verified: !!specificOrder.payment_verified_at,
+          casso_linked: !!specificOrder.casso_transaction_id,
+          price: specificOrder.products?.price
+        } : null,
+        matching_transactions: recentTransactions?.length || 0,
+        unmatched_transactions: unmatchedTransactions?.length || 0,
+        pending_orders_count: recentOrders?.length || 0
+      },
+      debugging_info: {
+        order_hex_full: testOrderId.replace(/-/g, '').toLowerCase(),
+        order_hex_prefix: testOrderId.replace(/-/g, '').slice(0, 8).toUpperCase(),
+        extracted_matches_prefix: extracted === testOrderId.replace(/-/g, '').slice(0, 8).toLowerCase(),
+        recent_pending_orders: recentOrders?.map(o => ({
+          id: o.id,
+          hex_prefix: o.id.replace(/-/g, '').slice(0, 8).toUpperCase(),
+          would_match: o.id.replace(/-/g, '').toLowerCase().startsWith(extracted)
+        })) || []
       }
     }
 

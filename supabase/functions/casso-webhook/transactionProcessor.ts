@@ -1,6 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { CassoTransactionData } from './types.ts'
-import { extractOrderId, generateSearchPatterns } from './orderUtils.ts'
+import { extractOrderId, generateSearchPatterns, isOrderMatch } from './orderUtils.ts'
 import { sendPaymentConfirmationEmail, sendSellerNotificationEmail } from './emailService.ts'
 import { processAutomaticDelivery } from './deliveryService.ts'
 
@@ -76,12 +76,8 @@ async function processOrder(transaction: CassoTransactionData, transactionId: st
     }
   }
 
-  // Generate multiple search patterns for the order
-  const searchPatterns = generateSearchPatterns(extractedOrderId)
-  console.log(`🔍 Will search for order using patterns:`, searchPatterns)
-
-  // Find matching order with multiple pattern attempts
-  const order = await findMatchingOrder(searchPatterns, supabase)
+  // Find matching order with flexible matching
+  const order = await findMatchingOrderFlexible(extractedOrderId, supabase)
   
   if (!order) {
     console.log(`⚠️ Order not found for extracted ID: ${extractedOrderId}`)
@@ -91,20 +87,20 @@ async function processOrder(transaction: CassoTransactionData, transactionId: st
       .from('orders')
       .select('id, status, created_at')
       .order('created_at', { ascending: false })
-      .limit(5)
+      .limit(10)
     
     console.log('Recent orders for debugging:', recentOrders?.map(o => ({ 
       id: o.id, 
       short_id: o.id.slice(0, 8), 
-      status: o.status 
+      status: o.status,
+      hex: o.id.replace(/-/g, '').slice(0, 8).toUpperCase()
     })))
     
     await saveUnmatchedTransaction(transaction, transactionId, `Order not found for ID: ${extractedOrderId}`, supabase)
     return {
       transaction_id: transactionId,
       status: 'order_not_found',
-      extracted_order_id: extractedOrderId,
-      search_patterns: searchPatterns
+      extracted_order_id: extractedOrderId
     }
   }
 
@@ -150,85 +146,59 @@ async function processOrder(transaction: CassoTransactionData, transactionId: st
   return await updateOrderAndProcess(order, transaction, transactionId, supabase)
 }
 
-async function findMatchingOrder(searchPatterns: string[], supabase: any) {
-  console.log(`🔍 Searching for order with ${searchPatterns.length} patterns...`)
+// NEW: Tìm kiếm order linh hoạt với nhiều pattern
+async function findMatchingOrderFlexible(extractedId: string, supabase: any) {
+  console.log(`🔍 Flexible search for extracted ID: "${extractedId}"`)
   
-  for (const pattern of searchPatterns) {
-    console.log(`🔍 Trying pattern: "${pattern}"`)
-    
-    // Try exact match first
-    const { data: exactOrder, error: exactError } = await supabase
+  // Step 1: Try exact UUID match first
+  if (extractedId.includes('-') && extractedId.length === 36) {
+    console.log('🔍 Trying exact UUID match...')
+    const { data: exactOrder } = await supabase
       .from('orders')
       .select(`
-        id,
-        status,
-        user_id,
-        product_id,
-        buyer_email,
-        created_at,
-        payment_verified_at,
-        products (
-          id,
-          title,
-          price,
-          seller_id,
-          product_type,
-          file_url
-        )
+        id, status, user_id, product_id, buyer_email, created_at, payment_verified_at,
+        products (id, title, price, seller_id, product_type, file_url)
       `)
-      .eq('id', pattern)
+      .eq('id', extractedId)
       .eq('status', 'pending')
       .is('payment_verified_at', null)
       .maybeSingle()
     
-    if (exactError) {
-      console.log(`⚠️ Error in exact search for pattern "${pattern}":`, exactError.message)
-      continue
-    }
-    
     if (exactOrder) {
-      console.log(`✅ Found order by exact match with pattern: "${pattern}"`)
+      console.log(`✅ Found by exact UUID match`)
       return exactOrder
     }
-    
-    // If no exact match, try ILIKE search for partial matches
-    const { data: likeOrders, error: likeError } = await supabase
-      .from('orders')
-      .select(`
-        id,
-        status,
-        user_id,
-        product_id,
-        buyer_email,
-        created_at,
-        payment_verified_at,
-        products (
-          id,
-          title,
-          price,
-          seller_id,
-          product_type,
-          file_url
-        )
-      `)
-      .ilike('id', `%${pattern}%`)
-      .eq('status', 'pending')
-      .is('payment_verified_at', null)
-      .order('created_at', { ascending: false })
-      .limit(1)
-    
-    if (likeError) {
-      console.log(`⚠️ Error in ILIKE search for pattern "${pattern}":`, likeError.message)
-      continue
-    }
-    
-    if (likeOrders && likeOrders.length > 0) {
-      console.log(`✅ Found order by ILIKE match with pattern: "${pattern}"`)
-      return likeOrders[0]
+  }
+  
+  // Step 2: Get all pending orders and check flexible matching
+  console.log('🔍 Trying flexible matching with all pending orders...')
+  const { data: pendingOrders, error } = await supabase
+    .from('orders')
+    .select(`
+      id, status, user_id, product_id, buyer_email, created_at, payment_verified_at,
+      products (id, title, price, seller_id, product_type, file_url)
+    `)
+    .eq('status', 'pending')
+    .is('payment_verified_at', null)
+    .order('created_at', { ascending: false })
+    .limit(50) // Limit to recent orders for performance
+  
+  if (error) {
+    console.error('❌ Error fetching pending orders:', error)
+    return null
+  }
+  
+  console.log(`🔍 Checking ${pendingOrders?.length || 0} pending orders...`)
+  
+  // Check each order for match
+  for (const order of pendingOrders || []) {
+    if (isOrderMatch(order.id, extractedId)) {
+      console.log(`✅ Found flexible match: ${order.id}`)
+      return order
     }
   }
-
-  console.log(`❌ No matching order found with any pattern`)
+  
+  console.log(`❌ No flexible match found`)
   return null
 }
 
