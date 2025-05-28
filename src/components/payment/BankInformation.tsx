@@ -25,14 +25,8 @@ const BankInformation = ({ amount, orderId, actualDescription }: BankInformation
     });
   };
 
-  // Tạo nội dung chuyển khoản rút gọn: DH + 12 ký tự hex đầu của UUID
-  const generateShortTransferContent = (orderId: string): string => {
-    const cleanOrderId = orderId.replace(/-/g, '');
-    const shortId = cleanOrderId.substring(0, 12).toUpperCase();
-    return `DH${shortId}`;
-  };
-
-  const transferContent = generateShortTransferContent(orderId);
+  // Tạo nội dung chuyển khoản theo chuẩn Casso: DH + space + order ID đầy đủ
+  const transferContent = `DH ${orderId}`;
 
   return (
     <div className="bg-gray-50 p-4 rounded-lg space-y-3">
@@ -126,7 +120,7 @@ const BankInformation = ({ amount, orderId, actualDescription }: BankInformation
           <strong>Lưu ý quan trọng:</strong> Vui lòng nhập chính xác nội dung chuyển khoản <code className="bg-white px-1 rounded">{transferContent}</code> để hệ thống tự động xác nhận thanh toán.
         </p>
         <p className="text-xs text-gray-600 mt-1">
-          💡 <strong>Mẹo:</strong> Nội dung CK đã được rút gọn để phù hợp với giới hạn của ngân hàng
+          💡 <strong>Mẹo:</strong> Sử dụng đúng format "DH + khoảng trắng + mã đơn hàng" theo chuẩn Casso
         </p>
       </div>
     </div>

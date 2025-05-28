@@ -6,12 +6,12 @@ export async function verifyCassoSignature(payload: string, signature: string, s
   }
 
   try {
-    console.log('🔐 Starting CASSO signature verification')
+    console.log('🔐 Starting CASSO signature verification according to official docs')
     console.log('Payload length:', payload.length)
     console.log('Secret configured:', !!secret)
     console.log('Raw signature header:', signature)
     
-    // Create HMAC-SHA256 signature from raw payload using Web Crypto API
+    // Theo tài liệu Casso: tạo HMAC-SHA256 từ raw payload
     const encoder = new TextEncoder()
     const key = await crypto.subtle.importKey(
       'raw',
@@ -23,36 +23,29 @@ export async function verifyCassoSignature(payload: string, signature: string, s
     
     const signatureBytes = await crypto.subtle.sign('HMAC', key, encoder.encode(payload))
     
-    // Convert to hex string (lowercase)
+    // Convert to hex string (lowercase) theo chuẩn Casso
     const expectedSignature = Array.from(new Uint8Array(signatureBytes))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('')
     
     console.log('Expected signature (hex):', expectedSignature)
     
-    // Handle different signature formats from CASSO
-    let receivedSignature = signature.trim()
+    // Xử lý signature từ header theo tài liệu Casso
+    let receivedSignature = signature.trim().toLowerCase()
     
-    // Check if signature has timestamp prefix (t=timestamp,v1=signature)
-    if (receivedSignature.includes('t=') && receivedSignature.includes('v1=')) {
-      console.log('Detected timestamp-prefixed signature format')
-      const parts = receivedSignature.split(',')
-      const signaturePart = parts.find(part => part.startsWith('v1='))
-      if (signaturePart) {
-        receivedSignature = signaturePart.substring(3) // Remove 'v1='
-        console.log('Extracted signature from v1= format:', receivedSignature)
+    // Casso có thể gửi signature với các format khác nhau
+    if (receivedSignature.includes('=')) {
+      // Loại bỏ prefix nếu có (v1=, sha256=, etc.)
+      const parts = receivedSignature.split('=')
+      if (parts.length >= 2) {
+        receivedSignature = parts[parts.length - 1] // Lấy phần cuối cùng
+        console.log('Extracted signature after removing prefix:', receivedSignature)
       }
-    } else if (receivedSignature.startsWith('v1=')) {
-      // Simple v1= prefix
-      receivedSignature = receivedSignature.substring(3)
-      console.log('Removed v1= prefix, signature:', receivedSignature)
     }
     
-    // Clean and normalize the received signature
-    receivedSignature = receivedSignature.toLowerCase().trim()
     console.log('Final received signature (cleaned):', receivedSignature)
     
-    // Compare signatures
+    // So sánh signatures
     const isValid = expectedSignature === receivedSignature
     console.log('Signature verification result:', isValid)
     
@@ -66,9 +59,9 @@ export async function verifyCassoSignature(payload: string, signature: string, s
       console.log('Expected length:', expectedSignature.length)
       console.log('Received length:', receivedSignature.length)
       
-      // Additional debugging
-      console.log('Raw payload preview:', payload.substring(0, 200))
-      console.log('Secret preview:', secret.substring(0, 8) + '...')
+      // Debug thông tin để khắc phục
+      console.log('Raw payload first 200 chars:', payload.substring(0, 200))
+      console.log('Secret first 8 chars:', secret.substring(0, 8) + '...')
       
       return false
     }

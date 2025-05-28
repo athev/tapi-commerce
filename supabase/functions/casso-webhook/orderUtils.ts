@@ -1,5 +1,5 @@
 
-// Hàm extract order ID từ description - cải thiện để xử lý nhiều format
+// Hàm extract order ID từ description - cải thiện để xử lý theo chuẩn Casso
 export function extractOrderId(description: string): string | null {
   console.log('🔍 Extracting order ID from description:', description)
   
@@ -12,18 +12,18 @@ export function extractOrderId(description: string): string | null {
   const cleanDesc = description.trim()
   console.log('🔧 Cleaned description:', cleanDesc)
   
-  // Các pattern để tìm order ID theo thứ tự ưu tiên
+  // Các pattern để tìm order ID theo thứ tự ưu tiên - tuân thủ chuẩn Casso
   const patterns = [
-    // Pattern với DH# + UUID đầy đủ (ví dụ: DH#e8d2edb3-ade5-48e1-9662-dd2b82109582)
-    /DH#([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
-    // Pattern với DH + UUID đầy đủ (không có #)
+    // Pattern chính theo chuẩn Casso: DH + space + UUID đầy đủ
+    /DH\s+([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
+    // Pattern không có space (backward compatibility)
     /DH([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
-    // Pattern mới từ CASSO: DH + 12 ký tự hex (ví dụ: DHE8D2EDB3ADE5)
-    /DH([A-F0-9]{12})/i,
+    // Pattern với # (legacy support)
+    /DH#\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
     // Pattern chỉ có UUID đầy đủ
     /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
-    // Pattern 32 ký tự hex liền
-    /DH#?([a-f0-9]{32})/i,
+    // Pattern 32 ký tự hex liền (cho các format cũ)
+    /DH\s*#?([a-f0-9]{32})/i,
     /([a-f0-9]{32})/i
   ]
   
@@ -34,14 +34,7 @@ export function extractOrderId(description: string): string | null {
       let extractedId = match[1].toLowerCase()
       console.log(`✅ Pattern ${i + 1} matched, raw extracted ID:`, extractedId)
       
-      // Xử lý format mới từ CASSO (12 ký tự hex)
-      if (extractedId.length === 12 && /^[a-f0-9]{12}$/.test(extractedId)) {
-        console.log('🔍 Found CASSO new format (12 hex chars):', extractedId)
-        // Trả về pattern để tìm kiếm với ILIKE - tìm UUID có chứa 12 ký tự này
-        return `%${extractedId}%`
-      }
-      
-      // Normalize UUID chuẩn nếu cần
+      // Normalize UUID chuẩn nếu cần (cho format 32 ký tự)
       if (extractedId.length === 32) {
         extractedId = normalizeOrderId(extractedId)
       }
