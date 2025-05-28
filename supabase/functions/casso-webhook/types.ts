@@ -1,14 +1,25 @@
 
-export interface CassoTransaction {
-  transaction_id: string
-  amount: number
+export interface CassoTransactionData {
+  id: number | string
+  reference: string
   description: string
-  when: string
-  account_number: string
+  amount: number
+  runningBalance: number
+  transactionDateTime: string
+  accountNumber: string
+  bankName: string
+  bankAbbreviation: string
+  virtualAccountNumber?: string
+  virtualAccountName?: string
+  counterAccountName?: string
+  counterAccountNumber?: string
+  counterAccountBankId?: string
+  counterAccountBankName?: string
 }
 
 export interface CassoWebhookPayload {
-  data: CassoTransaction[]
+  error: number
+  data: CassoTransactionData
 }
 
 export const corsHeaders = {
