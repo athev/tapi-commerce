@@ -1,5 +1,5 @@
 
-// Hàm verify CASSO signature theo tài liệu chính thức
+// Hàm verify CASSO signature theo tài liệu chính thức mới nhất
 export async function verifyCassoSignature(payload: string, signature: string, secret: string): Promise<boolean> {
   if (!signature || !secret) {
     console.error('Missing signature or secret for verification')
@@ -35,10 +35,11 @@ export async function verifyCassoSignature(payload: string, signature: string, s
     let receivedSignature = signature.trim().toLowerCase()
     
     // Loại bỏ các prefix thường gặp
-    const prefixes = ['sha256=', 'hmac-sha256=', 'casso-signature=']
+    const prefixes = ['sha256=', 'hmac-sha256=', 'casso-signature=', 'x-casso-signature=']
     for (const prefix of prefixes) {
       if (receivedSignature.startsWith(prefix)) {
         receivedSignature = receivedSignature.substring(prefix.length)
+        console.log(`Removed prefix: ${prefix}`)
         break
       }
     }
@@ -48,6 +49,15 @@ export async function verifyCassoSignature(payload: string, signature: string, s
     
     if (expectedSignature === receivedSignature) {
       console.log('✅ CASSO signature verified successfully')
+      return true
+    }
+    
+    // Thử với base64 encoding nếu hex không khớp
+    const base64Signature = btoa(String.fromCharCode(...new Uint8Array(signatureBytes)))
+    console.log('Trying base64 signature:', base64Signature)
+    
+    if (base64Signature === receivedSignature) {
+      console.log('✅ CASSO signature verified successfully (base64)')
       return true
     }
     

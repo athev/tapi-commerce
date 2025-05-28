@@ -1,18 +1,26 @@
 
-// Hàm extract order ID từ description - cải thiện để xử lý format mới
+// Hàm extract order ID từ description - cải thiện để xử lý format mới và cũ
 export function extractOrderId(description: string): string | null {
   console.log('Extracting order ID from description:', description)
   
+  if (!description || typeof description !== 'string') {
+    console.log('Invalid description provided')
+    return null
+  }
+  
+  // Clean description - loại bỏ khoảng trắng thừa
+  const cleanDesc = description.trim()
+  
   // Tìm pattern DH + 12 ký tự hex (format mới từ CASSO)
   const newFormatPattern = /DH([A-F0-9]{12})/i
-  const newFormatMatch = description.match(newFormatPattern)
+  const newFormatMatch = cleanDesc.match(newFormatPattern)
   
   if (newFormatMatch) {
-    const shortCode = newFormatMatch[1]
+    const shortCode = newFormatMatch[1].toLowerCase()
     console.log('Found new format short code:', shortCode)
     
-    // Trả về pattern để tìm kiếm trong database với LIKE
-    return `%${shortCode.toLowerCase()}`
+    // Trả về pattern để tìm kiếm trong database với ILIKE
+    return `%${shortCode}`
   }
   
   // Fallback: Tìm pattern cũ với UUID đầy đủ
@@ -32,7 +40,7 @@ export function extractOrderId(description: string): string | null {
   ]
   
   for (const pattern of patterns) {
-    const match = description.match(pattern)
+    const match = cleanDesc.match(pattern)
     if (match) {
       let extractedId = match[1]
       console.log('Raw extracted ID (old format):', extractedId)
@@ -52,6 +60,11 @@ export function extractOrderId(description: string): string | null {
 // Hàm normalize order ID từ 32 ký tự thành UUID chuẩn
 export function normalizeOrderId(id: string): string {
   console.log('Normalizing order ID:', id)
+  
+  if (!id || typeof id !== 'string') {
+    console.log('Invalid ID provided for normalization')
+    return id
+  }
   
   // Nếu đã có dấu gạch ngang hoặc không phải 32 ký tự, trả về nguyên
   if (id.includes('-') || id.length !== 32) {

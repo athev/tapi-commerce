@@ -33,7 +33,7 @@ serve(async (req) => {
     console.log('CASSO secret configured, length:', cassoSecret.length)
 
     // Get signature from headers - theo tài liệu CASSO mới nhất
-    const signature = req.headers.get('secure-token')
+    const signature = req.headers.get('x-casso-signature') || req.headers.get('secure-token')
     console.log('Signature found:', !!signature)
     if (signature) {
       console.log('Signature value:', signature)
@@ -92,6 +92,9 @@ serve(async (req) => {
       
       if (!isValidSignature) {
         console.error('❌ SIGNATURE VERIFICATION FAILED')
+        console.error('Raw body for verification:', rawBody)
+        console.error('Signature received:', signature)
+        console.error('Secret used (first 10 chars):', cassoSecret.substring(0, 10) + '...')
         
         return new Response(JSON.stringify({ 
           success: false, 
@@ -149,14 +152,14 @@ serve(async (req) => {
       try {
         console.log(`🔄 Processing transaction: ${transactionId}`)
         console.log(`💰 Transaction amount: ${transaction.amount}`)
-        console.log(`📝 Transaction description: ${transaction.description}`)
+        console.log(`📝 Transaction description: "${transaction.description}"`)
         
         // Check if transaction already exists
         const { data: existingTransaction } = await supabase
           .from('casso_transactions')
           .select('id')
           .eq('transaction_id', transactionId)
-          .single()
+          .maybeSingle()
 
         if (existingTransaction) {
           console.log(`✅ Transaction ${transactionId} already processed`)
@@ -185,9 +188,9 @@ serve(async (req) => {
 
         console.log('✅ Transaction saved to database')
 
-        // Extract order ID from description - hỗ trợ format mới DH + 12 ký tự hex
+        // Extract order ID from description
         const orderIdPattern = extractOrderId(transaction.description)
-        console.log(`🔍 Extracted order pattern: ${orderIdPattern} from description: "${transaction.description}"`)
+        console.log(`🔍 Extracted order pattern: "${orderIdPattern}" from description: "${transaction.description}"`)
 
         if (!orderIdPattern) {
           // Save to unmatched transactions
@@ -202,15 +205,16 @@ serve(async (req) => {
               reason: 'Could not extract order ID from description'
             })
           
-          console.log(`⚠️ No order ID found in description: ${transaction.description}`)
+          console.log(`⚠️ No order ID found in description: "${transaction.description}"`)
           processedTransactions.push({
             transaction_id: transactionId,
-            status: 'no_order_found'
+            status: 'no_order_found',
+            description: transaction.description
           })
           continue
         }
 
-        // Find matching order - hỗ trợ cả format mới (pattern matching) và cũ (exact match)
+        // Find matching order
         let order, orderError
         
         if (orderIdPattern.startsWith('%')) {
@@ -231,7 +235,6 @@ serve(async (req) => {
             `)
             .ilike('id', orderIdPattern)
             .eq('status', 'pending')
-            .limit(1)
             .maybeSingle()
           
           order = orderData
@@ -260,9 +263,23 @@ serve(async (req) => {
           orderError = orderErr
         }
 
-        if (orderError || !order) {
-          console.log(`❌ Order not found or not pending for pattern: ${orderIdPattern}`)
-          console.log('Order search error:', orderError)
+        if (orderError) {
+          console.error('❌ Error searching for order:', orderError)
+          await supabase
+            .from('unmatched_transactions')
+            .insert({
+              transaction_id: transactionId,
+              amount: transaction.amount,
+              description: transaction.description,
+              when_occurred: transaction.when || new Date().toISOString(),
+              account_number: transaction.bank_sub_acc_id || transaction.subAccId,
+              reason: `Database error while searching for order: ${orderError.message}`
+            })
+          continue
+        }
+
+        if (!order) {
+          console.log(`❌ Order not found or not pending for pattern: "${orderIdPattern}"`)
           
           await supabase
             .from('unmatched_transactions')
@@ -272,24 +289,29 @@ serve(async (req) => {
               description: transaction.description,
               when_occurred: transaction.when || new Date().toISOString(),
               account_number: transaction.bank_sub_acc_id || transaction.subAccId,
-              reason: `Order with pattern ${orderIdPattern} not found or not pending`
+              reason: `Order with pattern "${orderIdPattern}" not found or not pending`
             })
           
           processedTransactions.push({
             transaction_id: transactionId,
             status: 'order_not_found',
-            order_pattern: orderIdPattern
+            order_pattern: orderIdPattern,
+            description: transaction.description
           })
           continue
         }
 
         console.log(`✅ Found matching order:`, order)
 
-        // Verify amount matches
+        // Verify amount matches exactly
         const expectedAmount = order.products?.price || 0
         console.log(`💰 Comparing amounts - Expected: ${expectedAmount}, Received: ${transaction.amount}`)
         
-        if (transaction.amount < expectedAmount) {
+        if (transaction.amount !== expectedAmount) {
+          const reason = transaction.amount < expectedAmount 
+            ? `Amount insufficient. Expected: ${expectedAmount}, Received: ${transaction.amount}`
+            : `Amount exceeds expected. Expected: ${expectedAmount}, Received: ${transaction.amount}`
+            
           await supabase
             .from('unmatched_transactions')
             .insert({
@@ -298,13 +320,13 @@ serve(async (req) => {
               description: transaction.description,
               when_occurred: transaction.when || new Date().toISOString(),
               account_number: transaction.bank_sub_acc_id || transaction.subAccId,
-              reason: `Amount insufficient. Expected: ${expectedAmount}, Received: ${transaction.amount}`
+              reason: reason
             })
           
-          console.log(`❌ Amount insufficient for order ${order.id}`)
+          console.log(`❌ Amount mismatch for order ${order.id}: ${reason}`)
           processedTransactions.push({
             transaction_id: transactionId,
-            status: 'insufficient_amount',
+            status: 'amount_mismatch',
             order_id: order.id,
             expected_amount: expectedAmount,
             received_amount: transaction.amount
@@ -326,6 +348,16 @@ serve(async (req) => {
 
         if (updateError) {
           console.error('❌ Error updating order:', updateError)
+          await supabase
+            .from('unmatched_transactions')
+            .insert({
+              transaction_id: transactionId,
+              amount: transaction.amount,
+              description: transaction.description,
+              when_occurred: transaction.when || new Date().toISOString(),
+              account_number: transaction.bank_sub_acc_id || transaction.subAccId,
+              reason: `Failed to update order status: ${updateError.message}`
+            })
           continue
         }
 
@@ -380,6 +412,9 @@ serve(async (req) => {
       }
     }
 
+    console.log('=== PROCESSING SUMMARY ===')
+    console.log('Total transactions:', payload.data.length)
+    console.log('Processed transactions:', processedTransactions)
     console.log('=== CASSO WEBHOOK REQUEST END ===')
 
     return new Response(JSON.stringify({
