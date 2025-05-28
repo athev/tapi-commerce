@@ -1,4 +1,24 @@
 
+// Hàm chuyển đổi mã đơn hàng ngắn thành UUID đầy đủ
+function convertShortCodeToUuid(shortCode: string): string | null {
+  console.log('Converting short code to UUID:', shortCode)
+  
+  // Loại bỏ prefix DH nếu có
+  const cleanCode = shortCode.replace(/^DH/i, '').toUpperCase()
+  
+  if (cleanCode.length !== 12) {
+    console.log('Invalid short code length:', cleanCode.length)
+    return null
+  }
+  
+  // Tạo UUID pattern từ short code
+  // Vì chúng ta chỉ lưu 12 ký tự cuối, ta cần tìm UUID khớp
+  const pattern = `%${cleanCode.toLowerCase()}`
+  console.log('Searching for UUID ending with:', cleanCode)
+  
+  return pattern
+}
+
 // Hàm normalize order ID từ 32 ký tự thành UUID chuẩn
 export function normalizeOrderId(id: string): string {
   console.log('Normalizing order ID:', id)
@@ -22,13 +42,25 @@ export function normalizeOrderId(id: string): string {
   return normalized
 }
 
-// Hàm extract order ID từ description - cải thiện để xử lý nhiều format hơn
+// Hàm extract order ID từ description - cải thiện để xử lý format mới
 export function extractOrderId(description: string): string | null {
   console.log('Extracting order ID from description:', description)
   
-  // Tìm pattern DH#order_id hoặc DHorder_id (có thể có hoặc không có dấu #)
+  // Tìm pattern DH + 12 ký tự hex (format mới)
+  const newFormatPattern = /DH([A-F0-9]{12})/i
+  const newFormatMatch = description.match(newFormatPattern)
+  
+  if (newFormatMatch) {
+    const shortCode = newFormatMatch[1]
+    console.log('Found new format short code:', shortCode)
+    
+    // Trả về pattern để tìm kiếm trong database
+    return `%${shortCode.toLowerCase()}`
+  }
+  
+  // Fallback: Tìm pattern cũ với UUID đầy đủ
   const patterns = [
-    // Pattern có dấu # và dấu gạch ngang
+    // Pattern có dấu # và dấu gạch ngang (format cũ)
     /DH#([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
     // Pattern có DH nhưng không có dấu #, có dấu gạch ngang
     /DH([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
@@ -46,7 +78,7 @@ export function extractOrderId(description: string): string | null {
     const match = description.match(pattern)
     if (match) {
       let extractedId = match[1]
-      console.log('Raw extracted ID:', extractedId)
+      console.log('Raw extracted ID (old format):', extractedId)
       
       // Normalize UUID (thêm dấu gạch ngang nếu cần)
       const normalizedId = normalizeOrderId(extractedId)

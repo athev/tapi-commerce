@@ -186,10 +186,10 @@ serve(async (req) => {
         console.log('✅ Transaction saved to database')
 
         // Extract order ID from description
-        const orderId = extractOrderId(transaction.description)
-        console.log(`🔍 Extracted order ID: ${orderId} from description: "${transaction.description}"`)
+        const orderIdPattern = extractOrderId(transaction.description)
+        console.log(`🔍 Extracted order pattern: ${orderIdPattern} from description: "${transaction.description}"`)
 
-        if (!orderId) {
+        if (!orderIdPattern) {
           // Save to unmatched transactions
           await supabase
             .from('unmatched_transactions')
@@ -210,26 +210,58 @@ serve(async (req) => {
           continue
         }
 
-        // Find matching order
-        const { data: order, error: orderError } = await supabase
-          .from('orders')
-          .select(`
-            id,
-            status,
-            user_id,
-            products (
+        // Find matching order - hỗ trợ cả format mới (pattern matching) và cũ (exact match)
+        let order, orderError
+        
+        if (orderIdPattern.startsWith('%')) {
+          // Format mới: tìm kiếm bằng pattern matching
+          console.log('🔍 Searching for order using pattern matching...')
+          const { data: orderData, error: orderErr } = await supabase
+            .from('orders')
+            .select(`
               id,
-              title,
-              price,
-              seller_id
-            )
-          `)
-          .eq('id', orderId)
-          .eq('status', 'pending')
-          .single()
+              status,
+              user_id,
+              products (
+                id,
+                title,
+                price,
+                seller_id
+              )
+            `)
+            .ilike('id', orderIdPattern)
+            .eq('status', 'pending')
+            .limit(1)
+            .single()
+          
+          order = orderData
+          orderError = orderErr
+        } else {
+          // Format cũ: tìm kiếm chính xác
+          console.log('🔍 Searching for order using exact match...')
+          const { data: orderData, error: orderErr } = await supabase
+            .from('orders')
+            .select(`
+              id,
+              status,
+              user_id,
+              products (
+                id,
+                title,
+                price,
+                seller_id
+              )
+            `)
+            .eq('id', orderIdPattern)
+            .eq('status', 'pending')
+            .single()
+          
+          order = orderData
+          orderError = orderErr
+        }
 
         if (orderError || !order) {
-          console.log(`❌ Order not found or not pending for ID: ${orderId}`)
+          console.log(`❌ Order not found or not pending for pattern: ${orderIdPattern}`)
           
           await supabase
             .from('unmatched_transactions')
@@ -239,13 +271,13 @@ serve(async (req) => {
               description: transaction.description,
               when_occurred: transaction.when || new Date().toISOString(),
               account_number: transaction.bank_sub_acc_id || transaction.subAccId,
-              reason: `Order ${orderId} not found or not pending`
+              reason: `Order with pattern ${orderIdPattern} not found or not pending`
             })
           
           processedTransactions.push({
             transaction_id: transactionId,
             status: 'order_not_found',
-            order_id: orderId
+            order_pattern: orderIdPattern
           })
           continue
         }
@@ -268,11 +300,11 @@ serve(async (req) => {
               reason: `Amount insufficient. Expected: ${expectedAmount}, Received: ${transaction.amount}`
             })
           
-          console.log(`❌ Amount insufficient for order ${orderId}`)
+          console.log(`❌ Amount insufficient for order ${order.id}`)
           processedTransactions.push({
             transaction_id: transactionId,
             status: 'insufficient_amount',
-            order_id: orderId,
+            order_id: order.id,
             expected_amount: expectedAmount,
             received_amount: transaction.amount
           })
@@ -289,20 +321,20 @@ serve(async (req) => {
             bank_transaction_id: transactionId,
             bank_amount: transaction.amount
           })
-          .eq('id', orderId)
+          .eq('id', order.id)
 
         if (updateError) {
           console.error('❌ Error updating order:', updateError)
           continue
         }
 
-        console.log(`✅ Successfully updated order ${orderId} to paid status`)
+        console.log(`✅ Successfully updated order ${order.id} to paid status`)
 
         // Update casso_transactions with matched order_id
         await supabase
           .from('casso_transactions')
           .update({
-            order_id: orderId,
+            order_id: order.id,
             matched_at: new Date().toISOString(),
             processed: true
           })
@@ -317,23 +349,23 @@ serve(async (req) => {
               title: 'Thanh toán thành công',
               message: `Đơn hàng ${order.products?.title} đã được thanh toán thành công. Sản phẩm sẽ được giao trong ít phút.`,
               type: 'payment_success',
-              related_order_id: orderId
+              related_order_id: order.id
             },
             {
               user_id: order.products?.seller_id,
               title: 'Có đơn hàng mới được thanh toán',
               message: `Đơn hàng ${order.products?.title} đã được thanh toán. Vui lòng xử lý giao hàng.`,
               type: 'new_order',
-              related_order_id: orderId
+              related_order_id: order.id
             }
           ])
 
-        console.log(`🎉 Successfully processed transaction ${transactionId} for order ${orderId}`)
+        console.log(`🎉 Successfully processed transaction ${transactionId} for order ${order.id}`)
         
         processedTransactions.push({
           transaction_id: transactionId,
           status: 'processed_successfully',
-          order_id: orderId,
+          order_id: order.id,
           amount: transaction.amount
         })
 
