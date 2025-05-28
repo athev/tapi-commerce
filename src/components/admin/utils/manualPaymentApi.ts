@@ -62,7 +62,7 @@ export const confirmManualPayment = async (orderId: string) => {
 
     console.log('Order data before update:', orderData);
 
-    // Cập nhật trạng thái đơn hàng
+    // Cập nhật trạng thái đơn hàng - sử dụng update trực tiếp
     const { data: updateData, error: updateError } = await supabase
       .from('orders')
       .update({ 
@@ -148,7 +148,7 @@ export const rejectManualPayment = async (orderId: string) => {
 
     console.log('Order data before rejection:', orderData);
 
-    // Cập nhật đơn hàng
+    // Cập nhật đơn hàng - chỉ tắt manual_payment_requested
     const { data: updateData, error: updateError } = await supabase
       .from('orders')
       .update({ 

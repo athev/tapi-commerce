@@ -17,6 +17,8 @@ const ManualConfirmation = ({ showManualButton, onManualConfirmation, orderId }:
     setIsProcessing(true);
     
     try {
+      console.log('Starting manual payment request for order:', orderId);
+      
       // Cập nhật đơn hàng để đánh dấu yêu cầu xác nhận thủ công
       const { error: updateError } = await supabase
         .from('orders')
@@ -27,8 +29,11 @@ const ManualConfirmation = ({ showManualButton, onManualConfirmation, orderId }:
         .eq('id', orderId);
 
       if (updateError) {
+        console.error('Error updating order:', updateError);
         throw updateError;
       }
+
+      console.log('Order updated successfully, now fetching order data...');
 
       // Lấy thông tin đơn hàng và sản phẩm để gửi thông báo
       const { data: orderData, error: orderError } = await supabase
@@ -46,27 +51,50 @@ const ManualConfirmation = ({ showManualButton, onManualConfirmation, orderId }:
         .single();
 
       if (orderError || !orderData) {
+        console.error('Error fetching order data:', orderError);
         throw orderError || new Error('Không tìm thấy thông tin đơn hàng');
       }
 
-      // Tạo thông báo cho seller
-      const { error: notificationError } = await supabase
+      console.log('Order data fetched:', orderData);
+
+      // Tạo thông báo cho admin (sử dụng seller_id thay vì tìm admin riêng)
+      const { error: adminNotificationError } = await supabase
         .from('notifications')
         .insert({
-          user_id: orderData.products.seller_id,
+          user_id: orderData.products.seller_id, // Thông báo cho seller
           type: 'manual_payment_request',
           title: 'Yêu cầu xác nhận thanh toán thủ công',
-          message: `Khách hàng ${orderData.buyer_email} đã yêu cầu xác nhận thanh toán thủ công cho đơn hàng ${orderData.products.title}. Vui lòng kiểm tra và xác nhận.`,
+          message: `Khách hàng ${orderData.buyer_email} đã yêu cầu xác nhận thanh toán thủ công cho đơn hàng "${orderData.products.title}". Vui lòng kiểm tra và xác nhận.`,
           related_order_id: orderId,
           is_read: false
         });
 
-      if (notificationError) {
-        console.error('Error creating notification:', notificationError);
+      if (adminNotificationError) {
+        console.error('Error creating admin notification:', adminNotificationError);
         // Không throw error vì đơn hàng đã được cập nhật thành công
+      } else {
+        console.log('Admin notification created successfully');
       }
 
-      toast.success('Đã gửi yêu cầu xác nhận thủ công. Seller sẽ xử lý trong ít phút.');
+      // Tạo thông báo cho buyer
+      const { error: buyerNotificationError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: orderData.user_id,
+          type: 'manual_payment_requested',
+          title: 'Yêu cầu xác nhận thanh toán đã được gửi',
+          message: `Yêu cầu xác nhận thanh toán cho đơn hàng "${orderData.products.title}" đã được gửi đến người bán. Bạn sẽ nhận được thông báo khi thanh toán được xác nhận.`,
+          related_order_id: orderId,
+          is_read: false
+        });
+
+      if (buyerNotificationError) {
+        console.error('Error creating buyer notification:', buyerNotificationError);
+      } else {
+        console.log('Buyer notification created successfully');
+      }
+
+      toast.success('Đã gửi yêu cầu xác nhận thủ công. Người bán sẽ xử lý trong ít phút.');
       onManualConfirmation();
     } catch (error) {
       console.error('Error requesting manual confirmation:', error);
