@@ -13,7 +13,8 @@ serve(async (req) => {
   try {
     console.log('=== CASSO WEBHOOK REQUEST START ===')
     console.log('Request method:', req.method)
-    console.log('Request headers:', Object.fromEntries(req.headers))
+    console.log('Request URL:', req.url)
+    console.log('All headers:', Object.fromEntries(req.headers))
 
     // Get CASSO webhook secret from environment
     const cassoSecret = Deno.env.get('CASSO_WEBHOOK_SECRET')
@@ -31,23 +32,46 @@ serve(async (req) => {
     console.log('CASSO secret configured, length:', cassoSecret.length)
 
     // Get signature from multiple possible headers
-    let signature = req.headers.get('x-casso-signature') || 
-                   req.headers.get('casso-signature') ||
-                   req.headers.get('x-signature') ||
-                   req.headers.get('signature')
+    const possibleSignatureHeaders = [
+      'x-casso-signature',
+      'casso-signature', 
+      'x-signature',
+      'signature',
+      'authorization',
+      'x-hub-signature-256',
+      'x-webhook-signature'
+    ]
     
-    console.log('Signature from header:', signature)
+    let signature = null
+    for (const header of possibleSignatureHeaders) {
+      const value = req.headers.get(header)
+      if (value) {
+        signature = value
+        console.log(`Found signature in header "${header}":`, value)
+        break
+      }
+    }
     
+    if (!signature) {
+      console.log('No signature found in any header')
+    }
+
     // Get raw body text for signature verification
     const rawBody = await req.text()
     console.log('Raw body length:', rawBody.length)
-    console.log('Raw body preview:', rawBody.substring(0, 200) + '...')
+    console.log('Raw body (first 500 chars):', rawBody.substring(0, 500))
 
-    // Parse JSON payload first to check if it's test data
+    // Parse JSON payload
     let payload: any
     try {
       payload = JSON.parse(rawBody)
-      console.log('Parsed payload:', JSON.stringify(payload, null, 2))
+      console.log('Parsed payload structure:', {
+        hasError: 'error' in payload,
+        hasData: 'data' in payload,
+        errorValue: payload.error,
+        dataType: typeof payload.data,
+        keys: Object.keys(payload)
+      })
     } catch (error) {
       console.error('Invalid JSON payload:', error)
       return new Response(JSON.stringify({ 
@@ -59,31 +83,37 @@ serve(async (req) => {
       })
     }
 
-    // Check if this is a test webhook (CASSO test data có thể không có signature hợp lệ)
+    // Check if this is a test webhook
     const isTestWebhook = payload.data?.id === 0 || 
                          payload.data?.description?.includes('test') ||
-                         payload.data?.amount === 0
+                         payload.data?.amount === 0 ||
+                         !signature
 
     if (isTestWebhook) {
       console.log('🧪 Detected test webhook - skipping signature verification')
       return new Response(JSON.stringify({
         success: true,
         message: 'Test webhook received successfully',
-        test: true
+        test: true,
+        timestamp: new Date().toISOString()
       }), {
+        status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    // Verify CASSO signature cho real transactions
+    // Verify CASSO signature for real transactions
     if (signature) {
+      console.log('Starting signature verification...')
       const isValidSignature = await verifyCassoSignature(rawBody, signature, cassoSecret)
+      
       if (!isValidSignature) {
         console.error('❌ SIGNATURE VERIFICATION FAILED')
         console.error('This could be due to:')
         console.error('1. Wrong secret key in CASSO_WEBHOOK_SECRET')
         console.error('2. Different signature algorithm used by CASSO')
         console.error('3. Payload modification during transit')
+        console.error('4. Different signature format than expected')
         
         return new Response(JSON.stringify({ 
           success: false, 
@@ -91,7 +121,8 @@ serve(async (req) => {
           debug: {
             signature_received: signature,
             payload_length: rawBody.length,
-            secret_configured: !!cassoSecret
+            secret_configured: !!cassoSecret,
+            timestamp: new Date().toISOString()
           }
         }), { 
           status: 401, 
@@ -101,28 +132,10 @@ serve(async (req) => {
       console.log('✅ CASSO signature verified successfully')
     } else {
       console.log('⚠️ No signature provided - this might be a test or misconfigured webhook')
-      // For production, you might want to reject requests without signature
-      // return new Response(JSON.stringify({ success: false, error: 'No signature provided' }), { status: 401 })
-    }
-
-    // Parse JSON payload after verification
-    let payload: CassoWebhookPayload
-    try {
-      payload = JSON.parse(rawBody)
-      console.log('Parsed payload:', JSON.stringify(payload, null, 2))
-    } catch (error) {
-      console.error('Invalid JSON payload:', error)
-      return new Response(JSON.stringify({ 
-        success: false, 
-        error: 'Invalid JSON payload' 
-      }), { 
-        status: 400, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
     }
 
     // Check if payload has error
-    if (payload.error !== 0) {
+    if (payload.error && payload.error !== 0) {
       console.error('CASSO webhook error:', payload.error)
       return new Response(JSON.stringify({ 
         success: false, 
@@ -152,7 +165,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     const transaction = payload.data
-    const transactionId = transaction.reference || transaction.id.toString()
+    const transactionId = transaction.reference || transaction.id?.toString() || `casso_${Date.now()}`
 
     try {
       console.log(`🔄 Processing transaction: ${transactionId}`)
@@ -184,7 +197,7 @@ serve(async (req) => {
           transaction_id: transactionId,
           amount: transaction.amount,
           description: transaction.description,
-          when_occurred: transaction.transactionDateTime,
+          when_occurred: transaction.transactionDateTime || new Date().toISOString(),
           account_number: transaction.accountNumber
         })
 
@@ -214,7 +227,7 @@ serve(async (req) => {
             transaction_id: transactionId,
             amount: transaction.amount,
             description: transaction.description,
-            when_occurred: transaction.transactionDateTime,
+            when_occurred: transaction.transactionDateTime || new Date().toISOString(),
             account_number: transaction.accountNumber,
             reason: 'Could not extract order ID from description'
           })
@@ -257,7 +270,7 @@ serve(async (req) => {
             transaction_id: transactionId,
             amount: transaction.amount,
             description: transaction.description,
-            when_occurred: transaction.transactionDateTime,
+            when_occurred: transaction.transactionDateTime || new Date().toISOString(),
             account_number: transaction.accountNumber,
             reason: `Order ${orderId} not found or not pending`
           })
@@ -285,7 +298,7 @@ serve(async (req) => {
             transaction_id: transactionId,
             amount: transaction.amount,
             description: transaction.description,
-            when_occurred: transaction.transactionDateTime,
+            when_occurred: transaction.transactionDateTime || new Date().toISOString(),
             account_number: transaction.accountNumber,
             reason: `Amount insufficient. Expected: ${expectedAmount}, Received: ${transaction.amount}`
           })
@@ -372,7 +385,8 @@ serve(async (req) => {
         transaction_id: transactionId,
         order_id: orderId,
         amount: transaction.amount,
-        status: 'matched_and_processed'
+        status: 'matched_and_processed',
+        timestamp: new Date().toISOString()
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
