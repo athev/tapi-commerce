@@ -32,7 +32,7 @@ serve(async (req) => {
 
     console.log('CASSO secret configured, length:', cassoSecret.length)
 
-    // Get signature from headers - theo tài liệu CASSO mới nhất
+    // Get signature from headers - theo tài liệu CASSO
     const signature = req.headers.get('x-casso-signature') || req.headers.get('secure-token')
     console.log('Signature found:', !!signature)
     if (signature) {
@@ -42,7 +42,7 @@ serve(async (req) => {
     // Get raw body text for signature verification
     const rawBody = await req.text()
     console.log('Raw body length:', rawBody.length)
-    console.log('Raw body:', rawBody)
+    console.log('Raw body preview:', rawBody.substring(0, 200) + '...')
 
     // Parse JSON payload
     let payload: CassoWebhookPayload
@@ -53,8 +53,7 @@ serve(async (req) => {
         hasData: 'data' in payload,
         errorValue: payload.error,
         dataType: typeof payload.data,
-        dataLength: Array.isArray(payload.data) ? payload.data.length : 'not array',
-        keys: Object.keys(payload)
+        dataLength: Array.isArray(payload.data) ? payload.data.length : 'not array'
       })
     } catch (error) {
       console.error('Invalid JSON payload:', error)
@@ -67,7 +66,7 @@ serve(async (req) => {
       })
     }
 
-    // Check if this is a test webhook (theo tài liệu CASSO)
+    // Check if this is a test webhook
     const isTestWebhook = !signature || 
                          (payload.data && payload.data.length > 0 && payload.data[0].id === 0) ||
                          (payload.data && payload.data.length > 0 && payload.data[0].description?.includes('test'))
@@ -94,7 +93,6 @@ serve(async (req) => {
         console.error('❌ SIGNATURE VERIFICATION FAILED')
         console.error('Raw body for verification:', rawBody)
         console.error('Signature received:', signature)
-        console.error('Secret used (first 10 chars):', cassoSecret.substring(0, 10) + '...')
         
         return new Response(JSON.stringify({ 
           success: false, 
@@ -111,6 +109,8 @@ serve(async (req) => {
         })
       }
       console.log('✅ CASSO signature verified successfully')
+    } else {
+      console.log('⚠️ No signature provided - assuming test mode')
     }
 
     // Check payload error
@@ -214,12 +214,12 @@ serve(async (req) => {
           continue
         }
 
-        // Find matching order
+        // Find matching order based on pattern type
         let order, orderError
         
-        if (orderIdPattern.startsWith('%')) {
+        if (orderIdPattern.includes('%')) {
           // Format mới: tìm kiếm bằng pattern matching với ILIKE
-          console.log('🔍 Searching for order using pattern matching for new format...')
+          console.log('🔍 Searching for order using pattern matching (new format)...')
           const { data: orderData, error: orderErr } = await supabase
             .from('orders')
             .select(`
@@ -241,7 +241,7 @@ serve(async (req) => {
           orderError = orderErr
         } else {
           // Format cũ: tìm kiếm chính xác
-          console.log('🔍 Searching for order using exact match for old format...')
+          console.log('🔍 Searching for order using exact match (old format)...')
           const { data: orderData, error: orderErr } = await supabase
             .from('orders')
             .select(`
@@ -417,6 +417,7 @@ serve(async (req) => {
     console.log('Processed transactions:', processedTransactions)
     console.log('=== CASSO WEBHOOK REQUEST END ===')
 
+    // Phản hồi theo yêu cầu của CASSO với HTTP 200 OK và JSON success: true
     return new Response(JSON.stringify({
       success: true,
       message: 'Webhook processed successfully',
@@ -424,6 +425,7 @@ serve(async (req) => {
       processed_transactions: processedTransactions,
       timestamp: new Date().toISOString()
     }), {
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
 
@@ -432,7 +434,8 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       success: false, 
       error: 'Internal server error',
-      details: error.message 
+      details: error.message,
+      timestamp: new Date().toISOString()
     }), { 
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
