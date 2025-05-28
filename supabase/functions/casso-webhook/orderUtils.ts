@@ -1,52 +1,9 @@
 
-// Hàm chuyển đổi mã đơn hàng ngắn thành UUID đầy đủ
-function convertShortCodeToUuid(shortCode: string): string | null {
-  console.log('Converting short code to UUID:', shortCode)
-  
-  // Loại bỏ prefix DH nếu có
-  const cleanCode = shortCode.replace(/^DH/i, '').toUpperCase()
-  
-  if (cleanCode.length !== 12) {
-    console.log('Invalid short code length:', cleanCode.length)
-    return null
-  }
-  
-  // Tạo UUID pattern từ short code
-  // Vì chúng ta chỉ lưu 12 ký tự cuối, ta cần tìm UUID khớp
-  const pattern = `%${cleanCode.toLowerCase()}`
-  console.log('Searching for UUID ending with:', cleanCode)
-  
-  return pattern
-}
-
-// Hàm normalize order ID từ 32 ký tự thành UUID chuẩn
-export function normalizeOrderId(id: string): string {
-  console.log('Normalizing order ID:', id)
-  
-  // Nếu đã có dấu gạch ngang hoặc không phải 32 ký tự, trả về nguyên
-  if (id.includes('-') || id.length !== 32) {
-    console.log('Order ID already normalized or invalid length:', id)
-    return id
-  }
-  
-  // Chuyển đổi 32 ký tự thành UUID chuẩn
-  const normalized = [
-    id.slice(0, 8),
-    id.slice(8, 12),
-    id.slice(12, 16),
-    id.slice(16, 20),
-    id.slice(20, 32)
-  ].join('-')
-  
-  console.log('Normalized order ID from', id, 'to', normalized)
-  return normalized
-}
-
 // Hàm extract order ID từ description - cải thiện để xử lý format mới
 export function extractOrderId(description: string): string | null {
   console.log('Extracting order ID from description:', description)
   
-  // Tìm pattern DH + 12 ký tự hex (format mới)
+  // Tìm pattern DH + 12 ký tự hex (format mới từ CASSO)
   const newFormatPattern = /DH([A-F0-9]{12})/i
   const newFormatMatch = description.match(newFormatPattern)
   
@@ -54,7 +11,7 @@ export function extractOrderId(description: string): string | null {
     const shortCode = newFormatMatch[1]
     console.log('Found new format short code:', shortCode)
     
-    // Trả về pattern để tìm kiếm trong database
+    // Trả về pattern để tìm kiếm trong database với LIKE
     return `%${shortCode.toLowerCase()}`
   }
   
@@ -90,4 +47,27 @@ export function extractOrderId(description: string): string | null {
   
   console.log('No order ID found in description')
   return null
+}
+
+// Hàm normalize order ID từ 32 ký tự thành UUID chuẩn
+export function normalizeOrderId(id: string): string {
+  console.log('Normalizing order ID:', id)
+  
+  // Nếu đã có dấu gạch ngang hoặc không phải 32 ký tự, trả về nguyên
+  if (id.includes('-') || id.length !== 32) {
+    console.log('Order ID already normalized or invalid length:', id)
+    return id
+  }
+  
+  // Chuyển đổi 32 ký tự thành UUID chuẩn
+  const normalized = [
+    id.slice(0, 8),
+    id.slice(8, 12),
+    id.slice(12, 16),
+    id.slice(16, 20),
+    id.slice(20, 32)
+  ].join('-')
+  
+  console.log('Normalized order ID from', id, 'to', normalized)
+  return normalized
 }

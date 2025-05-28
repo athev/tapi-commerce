@@ -32,8 +32,8 @@ serve(async (req) => {
 
     console.log('CASSO secret configured, length:', cassoSecret.length)
 
-    // Get signature from headers - theo tài liệu CASSO
-    const signature = req.headers.get('secure-token') || req.headers.get('x-casso-signature')
+    // Get signature from headers - theo tài liệu CASSO mới nhất
+    const signature = req.headers.get('secure-token')
     console.log('Signature found:', !!signature)
     if (signature) {
       console.log('Signature value:', signature)
@@ -185,7 +185,7 @@ serve(async (req) => {
 
         console.log('✅ Transaction saved to database')
 
-        // Extract order ID from description
+        // Extract order ID from description - hỗ trợ format mới DH + 12 ký tự hex
         const orderIdPattern = extractOrderId(transaction.description)
         console.log(`🔍 Extracted order pattern: ${orderIdPattern} from description: "${transaction.description}"`)
 
@@ -214,8 +214,8 @@ serve(async (req) => {
         let order, orderError
         
         if (orderIdPattern.startsWith('%')) {
-          // Format mới: tìm kiếm bằng pattern matching
-          console.log('🔍 Searching for order using pattern matching...')
+          // Format mới: tìm kiếm bằng pattern matching với ILIKE
+          console.log('🔍 Searching for order using pattern matching for new format...')
           const { data: orderData, error: orderErr } = await supabase
             .from('orders')
             .select(`
@@ -232,13 +232,13 @@ serve(async (req) => {
             .ilike('id', orderIdPattern)
             .eq('status', 'pending')
             .limit(1)
-            .single()
+            .maybeSingle()
           
           order = orderData
           orderError = orderErr
         } else {
           // Format cũ: tìm kiếm chính xác
-          console.log('🔍 Searching for order using exact match...')
+          console.log('🔍 Searching for order using exact match for old format...')
           const { data: orderData, error: orderErr } = await supabase
             .from('orders')
             .select(`
@@ -254,7 +254,7 @@ serve(async (req) => {
             `)
             .eq('id', orderIdPattern)
             .eq('status', 'pending')
-            .single()
+            .maybeSingle()
           
           order = orderData
           orderError = orderErr
@@ -262,6 +262,7 @@ serve(async (req) => {
 
         if (orderError || !order) {
           console.log(`❌ Order not found or not pending for pattern: ${orderIdPattern}`)
+          console.log('Order search error:', orderError)
           
           await supabase
             .from('unmatched_transactions')
