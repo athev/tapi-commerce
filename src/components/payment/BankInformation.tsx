@@ -25,8 +25,14 @@ const BankInformation = ({ amount, orderId, actualDescription }: BankInformation
     });
   };
 
-  // Sử dụng format đơn giản: DH# + UUID đầy đủ
-  const transferContent = `DH#${orderId}`;
+  // Tạo nội dung chuyển khoản rút gọn: DH + 12 ký tự hex đầu của UUID
+  const generateShortTransferContent = (orderId: string): string => {
+    const cleanOrderId = orderId.replace(/-/g, '');
+    const shortId = cleanOrderId.substring(0, 12).toUpperCase();
+    return `DH${shortId}`;
+  };
+
+  const transferContent = generateShortTransferContent(orderId);
 
   return (
     <div className="bg-gray-50 p-4 rounded-lg space-y-3">
@@ -115,9 +121,12 @@ const BankInformation = ({ amount, orderId, actualDescription }: BankInformation
         )}
       </div>
 
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mt-3">
-        <p className="text-xs text-yellow-700">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-3">
+        <p className="text-xs text-blue-700">
           <strong>Lưu ý quan trọng:</strong> Vui lòng nhập chính xác nội dung chuyển khoản <code className="bg-white px-1 rounded">{transferContent}</code> để hệ thống tự động xác nhận thanh toán.
+        </p>
+        <p className="text-xs text-gray-600 mt-1">
+          💡 <strong>Mẹo:</strong> Nội dung CK đã được rút gọn để phù hợp với giới hạn của ngân hàng
         </p>
       </div>
     </div>

@@ -4,10 +4,12 @@ import { bankInfo } from '../config/bankConfig';
 // Simple cache to prevent regeneration
 const qrUrlCache = new Map<string, string>();
 
-// Hàm tạo nội dung chuyển khoản đơn giản - chỉ sử dụng DH# + UUID đầy đủ
+// Hàm tạo nội dung chuyển khoản rút gọn - chỉ lấy 12 ký tự hex đầu của UUID
 const generateTransferContent = (orderId: string): string => {
-  // Sử dụng format đơn giản: DH# + UUID đầy đủ
-  return `DH#${orderId}`;
+  // Loại bỏ dấu gạch ngang và lấy 12 ký tự hex đầu
+  const cleanOrderId = orderId.replace(/-/g, '');
+  const shortId = cleanOrderId.substring(0, 12).toUpperCase();
+  return `DH${shortId}`;
 };
 
 export const generateVietQRUrl = (orderId: string, amount: number): string | null => {
@@ -27,7 +29,7 @@ export const generateVietQRUrl = (orderId: string, amount: number): string | nul
     return null;
   }
 
-  // Tạo nội dung chuyển khoản đơn giản: DH# + UUID đầy đủ
+  // Tạo nội dung chuyển khoản rút gọn: DH + 12 ký tự hex đầu
   const transferContent = generateTransferContent(orderId);
   
   // Use exact VietQR dashboard format with addInfo parameter
@@ -35,8 +37,8 @@ export const generateVietQRUrl = (orderId: string, amount: number): string | nul
   const encodedTransferContent = encodeURIComponent(transferContent);
   const generatedUrl = `https://api.vietqr.io/image/${bankInfo.partnerId}-${bankInfo.accountNumber}-${bankInfo.templateId}.jpg?accountName=${encodedAccountName}&amount=${amount}&addInfo=${encodedTransferContent}`;
   
-  console.log('Generated VietQR URL with transfer content:', generatedUrl);
-  console.log('Transfer content format (simple DH# + UUID):', transferContent);
+  console.log('Generated VietQR URL with shortened transfer content:', generatedUrl);
+  console.log('Transfer content format (DH + 12 hex chars):', transferContent);
   
   qrUrlCache.set(cacheKey, generatedUrl);
   return generatedUrl;
