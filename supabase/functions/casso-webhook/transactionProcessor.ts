@@ -14,11 +14,17 @@ export async function processTransaction(transaction: CassoTransactionData, supa
     console.log(`📝 Description: "${transaction.description}"`)
     
     // Check if already processed
-    const { data: existingTransaction } = await supabase
+    console.log(`🔍 Checking if transaction ${transactionId} already exists...`)
+    const { data: existingTransaction, error: checkError } = await supabase
       .from('casso_transactions')
       .select('id')
       .eq('transaction_id', transactionId)
       .maybeSingle()
+
+    if (checkError) {
+      console.error('❌ Error checking existing transaction:', checkError)
+      console.error('❌ Check error details:', JSON.stringify(checkError, null, 2))
+    }
 
     if (existingTransaction) {
       console.log(`✅ Transaction ${transactionId} already processed`)
@@ -28,37 +34,84 @@ export async function processTransaction(transaction: CassoTransactionData, supa
       }
     }
 
-    // Save transaction first
-    const { error: saveError } = await supabase
-      .from('casso_transactions')
-      .insert({
-        transaction_id: transactionId,
-        amount: transaction.amount,
-        description: transaction.description,
-        when_occurred: transaction.when || new Date().toISOString(),
-        account_number: transaction.bank_sub_acc_id || transaction.subAccId
-      })
+    console.log(`📝 No existing transaction found, proceeding with insert...`)
 
+    // CRITICAL: Add detailed logging for the insert operation
+    const insertData = {
+      transaction_id: transactionId,
+      amount: transaction.amount,
+      description: transaction.description,
+      when_occurred: transaction.when || new Date().toISOString(),
+      account_number: transaction.bank_sub_acc_id || transaction.subAccId
+    }
+
+    console.log(`🔍 Inserting transaction with data:`, JSON.stringify(insertData, null, 2))
+    console.log(`🔍 Insert payload details:`)
+    console.log(`  - transaction_id: ${insertData.transaction_id}`)
+    console.log(`  - amount: ${insertData.amount}`)
+    console.log(`  - description: ${insertData.description}`)
+    console.log(`  - when_occurred: ${insertData.when_occurred}`)
+    console.log(`  - account_number: ${insertData.account_number}`)
+
+    // Save transaction first with comprehensive error handling
+    const { data: insertResult, error: saveError } = await supabase
+      .from('casso_transactions')
+      .insert(insertData)
+      .select('*') // Return the inserted row to confirm success
+
+    console.log(`🔍 Insert operation completed`)
+    
     if (saveError) {
-      console.error('❌ Error saving transaction:', saveError)
+      console.error('❌ CRITICAL: Error saving transaction to database')
+      console.error('❌ Save error:', JSON.stringify(saveError, null, 2))
+      console.error('❌ Error message:', saveError.message)
+      console.error('❌ Error details:', saveError.details)
+      console.error('❌ Error hint:', saveError.hint)
+      console.error('❌ Error code:', saveError.code)
+      
+      // Check if it's an RLS policy error
+      if (saveError.message?.includes('row-level security') || saveError.code === 'PGRST301') {
+        console.error('❌ This appears to be a Row-Level Security policy blocking the insert')
+        console.error('❌ Check RLS policies on casso_transactions table')
+      }
+      
       return {
         transaction_id: transactionId,
         status: 'save_error',
-        error: saveError.message
+        error: saveError.message,
+        error_details: {
+          code: saveError.code,
+          details: saveError.details,
+          hint: saveError.hint
+        }
       }
     }
 
-    console.log('✅ Transaction saved to database')
+    if (!insertResult || insertResult.length === 0) {
+      console.error('❌ CRITICAL: Insert appeared successful but no data returned')
+      console.error('❌ This might indicate RLS policy blocking or other constraint issues')
+      return {
+        transaction_id: transactionId,
+        status: 'insert_no_data',
+        error: 'Insert completed but no data returned'
+      }
+    }
+
+    console.log(`✅ Transaction successfully saved to database`)
+    console.log(`✅ Inserted record:`, JSON.stringify(insertResult[0], null, 2))
+    console.log(`✅ Database record ID: ${insertResult[0].id}`)
 
     // Extract order ID and process order
     return await processOrder(transaction, transactionId, supabase)
 
   } catch (error) {
-    console.error(`❌ Error processing transaction ${transactionId}:`, error)
+    console.error(`❌ FATAL: Error processing transaction ${transactionId}:`, error)
+    console.error(`❌ Error stack:`, error.stack)
     return {
       transaction_id: transactionId,
       status: 'processing_error',
-      error: error.message
+      error: error.message,
+      error_stack: error.stack
     }
   }
 }
@@ -69,6 +122,7 @@ async function processOrder(transaction: CassoTransactionData, transactionId: st
   console.log(`🔍 Extracted order ID: "${extractedOrderId}"`)
 
   if (!extractedOrderId) {
+    console.log(`⚠️ Could not extract order ID from description: "${transaction.description}"`)
     await saveUnmatchedTransaction(transaction, transactionId, 'Could not extract order ID from description', supabase)
     return {
       transaction_id: transactionId,
@@ -248,7 +302,8 @@ async function updateOrderAndProcess(order: any, transaction: CassoTransactionDa
       }
     }
 
-    // Update transaction record with order link
+    // Update transaction record with order link - IMPROVED LOGGING
+    console.log(`🔗 Linking transaction ${transactionId} to order ${order.id}`)
     const { error: linkError } = await supabase
       .from('casso_transactions')
       .update({
@@ -260,6 +315,9 @@ async function updateOrderAndProcess(order: any, transaction: CassoTransactionDa
 
     if (linkError) {
       console.error('⚠️ Error linking transaction to order (non-critical):', linkError)
+      console.error('⚠️ Link error details:', JSON.stringify(linkError, null, 2))
+    } else {
+      console.log(`✅ Successfully linked transaction to order`)
     }
 
     // Process automatic delivery
@@ -323,16 +381,21 @@ async function updateOrderAndProcess(order: any, transaction: CassoTransactionDa
     
   } catch (error) {
     console.error(`❌ Error in complete order processing:`, error)
+    console.error(`❌ Processing error stack:`, error.stack)
     return {
       transaction_id: transactionId,
       status: 'processing_error',
-      error: error.message
+      error: error.message,
+      error_stack: error.stack
     }
   }
 }
 
 async function saveUnmatchedTransaction(transaction: CassoTransactionData, transactionId: string, reason: string, supabase: any) {
   try {
+    console.log(`💾 Saving unmatched transaction: ${transactionId}`)
+    console.log(`💾 Reason: ${reason}`)
+    
     const { error } = await supabase
       .from('unmatched_transactions')
       .insert({
@@ -346,10 +409,12 @@ async function saveUnmatchedTransaction(transaction: CassoTransactionData, trans
     
     if (error) {
       console.error('❌ Error saving unmatched transaction:', error)
+      console.error('❌ Unmatched save error details:', JSON.stringify(error, null, 2))
     } else {
-      console.log(`⚠️ Saved unmatched transaction: ${reason}`)
+      console.log(`✅ Saved unmatched transaction: ${reason}`)
     }
   } catch (error) {
     console.error('❌ Error in saveUnmatchedTransaction:', error)
+    console.error('❌ saveUnmatchedTransaction error stack:', error.stack)
   }
 }
