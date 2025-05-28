@@ -71,8 +71,39 @@ export const useSellerStatus = () => {
     };
   }, [user?.id, fetchSellerApplication, refreshProfile]);
 
+  // Listen for profile changes
+  useEffect(() => {
+    if (!user) return;
+
+    const profileChannel = supabase
+      .channel('profile-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Profile changed:', payload);
+          refreshProfile();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(profileChannel);
+    };
+  }, [user?.id, refreshProfile]);
+
   const getSellerStatus = () => {
     if (!user) return 'not_logged_in';
+    
+    console.log('getSellerStatus check:', { 
+      userRole: profile?.role, 
+      applicationStatus: sellerApplication?.status 
+    });
     
     // Always check profile role first - this is the source of truth
     if (profile?.role === 'seller') return 'approved_seller';

@@ -75,12 +75,12 @@ const AdminSellerApplications = () => {
           
           if (profileError) throw profileError;
 
-          // Send notification to the user about approval
+          // Send notification to the user about approval (use valid type)
           const { error: notificationError } = await supabase
             .from('notifications')
             .insert({
               user_id: application.user_id,
-              type: 'seller_approved',
+              type: 'info',
               title: 'Đăng ký người bán được duyệt',
               message: `Chúc mừng! Đăng ký gian hàng "${application.business_name}" của bạn đã được phê duyệt. Bạn có thể bắt đầu bán hàng ngay bây giờ.`,
               is_read: false
