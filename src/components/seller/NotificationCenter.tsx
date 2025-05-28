@@ -54,10 +54,11 @@ const NotificationCenter = () => {
 
   const handleConfirmManualPayment = async (notificationId: string, orderId: string) => {
     setIsProcessing(notificationId);
+    console.log('Starting manual payment confirmation from notification:', { notificationId, orderId });
     
     try {
       // Cập nhật đơn hàng
-      const { error: orderError } = await supabase
+      const { data: updateData, error: orderError } = await supabase
         .from('orders')
         .update({ 
           status: 'paid',
@@ -66,15 +67,24 @@ const NotificationCenter = () => {
           manual_payment_requested: false,
           updated_at: new Date().toISOString()
         })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .select();
       
-      if (orderError) throw orderError;
+      if (orderError) {
+        console.error('Error updating order:', orderError);
+        throw orderError;
+      }
+
+      console.log('Order updated from notification:', updateData);
 
       // Đánh dấu thông báo đã đọc
       await handleMarkAsRead(notificationId);
       
       toast.success('Đã xác nhận thanh toán thành công');
-      refetch();
+      
+      // Force refetch to update notifications
+      await refetch();
+      
     } catch (error) {
       console.error('Error confirming manual payment:', error);
       toast.error('Có lỗi xảy ra khi xác nhận thanh toán');

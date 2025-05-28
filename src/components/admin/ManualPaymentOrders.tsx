@@ -50,6 +50,7 @@ const ManualPaymentOrders = () => {
 
   const handleConfirmPayment = async (orderId: string) => {
     setIsProcessing(orderId);
+    console.log('Starting manual payment confirmation for order:', orderId);
     
     try {
       // Lấy thông tin đơn hàng trước khi cập nhật
@@ -69,11 +70,14 @@ const ManualPaymentOrders = () => {
         .single();
 
       if (fetchError || !orderData) {
+        console.error('Error fetching order data:', fetchError);
         throw fetchError || new Error('Không tìm thấy thông tin đơn hàng');
       }
 
+      console.log('Order data before update:', orderData);
+
       // Cập nhật trạng thái đơn hàng
-      const { error: updateError } = await supabase
+      const { data: updateData, error: updateError } = await supabase
         .from('orders')
         .update({ 
           status: 'paid',
@@ -82,9 +86,15 @@ const ManualPaymentOrders = () => {
           manual_payment_requested: false,
           updated_at: new Date().toISOString()
         })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .select();
       
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating order:', updateError);
+        throw updateError;
+      }
+
+      console.log('Order updated successfully:', updateData);
 
       // Tạo thông báo cho người mua
       const { error: buyerNotificationError } = await supabase
@@ -100,6 +110,8 @@ const ManualPaymentOrders = () => {
 
       if (buyerNotificationError) {
         console.error('Error creating buyer notification:', buyerNotificationError);
+      } else {
+        console.log('Buyer notification created successfully');
       }
 
       // Tạo thông báo cho seller về đơn hàng mới cần xử lý
@@ -116,10 +128,15 @@ const ManualPaymentOrders = () => {
 
       if (sellerNotificationError) {
         console.error('Error creating seller notification:', sellerNotificationError);
+      } else {
+        console.log('Seller notification created successfully');
       }
       
       toast.success('Đã xác nhận thanh toán thành công');
-      refetch();
+      
+      // Force refetch to update the UI
+      await refetch();
+      
     } catch (error) {
       console.error('Error confirming payment:', error);
       toast.error('Có lỗi xảy ra khi xác nhận thanh toán');
@@ -130,6 +147,7 @@ const ManualPaymentOrders = () => {
 
   const handleRejectPayment = async (orderId: string) => {
     setIsProcessing(orderId);
+    console.log('Starting manual payment rejection for order:', orderId);
     
     try {
       // Lấy thông tin đơn hàng
@@ -143,19 +161,28 @@ const ManualPaymentOrders = () => {
         .single();
 
       if (fetchError || !orderData) {
+        console.error('Error fetching order data:', fetchError);
         throw fetchError || new Error('Không tìm thấy thông tin đơn hàng');
       }
 
+      console.log('Order data before rejection:', orderData);
+
       // Cập nhật đơn hàng
-      const { error: updateError } = await supabase
+      const { data: updateData, error: updateError } = await supabase
         .from('orders')
         .update({ 
           manual_payment_requested: false,
           updated_at: new Date().toISOString()
         })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .select();
       
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating order:', updateError);
+        throw updateError;
+      }
+
+      console.log('Order rejection updated successfully:', updateData);
 
       // Thông báo cho người mua
       const { error: notificationError } = await supabase
@@ -171,10 +198,15 @@ const ManualPaymentOrders = () => {
 
       if (notificationError) {
         console.error('Error creating rejection notification:', notificationError);
+      } else {
+        console.log('Rejection notification created successfully');
       }
       
       toast.success('Đã từ chối yêu cầu xác nhận');
-      refetch();
+      
+      // Force refetch to update the UI
+      await refetch();
+      
     } catch (error) {
       console.error('Error rejecting payment:', error);
       toast.error('Có lỗi xảy ra khi từ chối yêu cầu');
