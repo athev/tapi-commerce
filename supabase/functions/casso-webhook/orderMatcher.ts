@@ -1,5 +1,6 @@
 
-import { extractOrderId, isOrderMatch } from './orderUtils.ts'
+import { extractOrderId } from './orderIdExtractor.ts'
+import { isOrderMatch } from './orderMatchingLogic.ts'
 
 export async function findMatchingOrder(extractedId: string, supabase: any) {
   console.log(`🔍 Searching for order with ID patterns...`)

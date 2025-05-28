@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -6,134 +7,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Hàm extract order ID từ description - cải thiện để xử lý chính xác theo format DH + hex
-function extractOrderId(description: string): string | null {
-  console.log('🔍 Extracting order ID from description:', description)
-  
-  if (!description || typeof description !== 'string') {
-    console.log('❌ Invalid description provided')
-    return null
-  }
-  
-  // Clean description - loại bỏ khoảng trắng thừa
-  const cleanDesc = description.trim()
-  console.log('🔧 Cleaned description:', cleanDesc)
-  
-  // FIXED: Các pattern để tìm order ID - bao gồm hex ngắn
-  const patterns = [
-    // Pattern chính: DH + 32 ký tự hex (không có dấu gạch ngang)
-    /DH([A-F0-9]{32})/i,
-    // Pattern với khoảng trắng: DH + space + 32 ký tự hex  
-    /DH\s+([A-F0-9]{32})/i,
-    // Pattern với #: DH# + 32 ký tự hex
-    /DH#([A-F0-9]{32})/i,
-    // Pattern với # và space: DH# + space + 32 ký tự hex
-    /DH#\s+([A-F0-9]{32})/i,
-    // Pattern UUID đầy đủ với dấu gạch ngang
-    /DH([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
-    /DH\s+([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
-    
-    // CRITICAL: Pattern cho hex ngắn (8-24 ký tự) - để xử lý DH4D3D37EDEC53
-    /DH([A-F0-9]{8,24})/i,
-    /DH\s+([A-F0-9]{8,24})/i,
-    /DH#([A-F0-9]{8,24})/i,
-    /DH#\s+([A-F0-9]{8,24})/i,
-    
-    // Pattern chỉ có hex string 32 ký tự
-    /([A-F0-9]{32})/i,
-    // Pattern chỉ có UUID đầy đủ
-    /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
-    // Pattern hex ngắn
-    /([A-F0-9]{8,24})/i
-  ]
-  
-  for (let i = 0; i < patterns.length; i++) {
-    const pattern = patterns[i]
-    const match = cleanDesc.match(pattern)
-    if (match) {
-      let extractedId = match[1].toLowerCase()
-      console.log(`✅ Pattern ${i + 1} matched, raw extracted ID:`, extractedId)
-      
-      // Normalize về UUID chuẩn nếu là 32 ký tự hex
-      if (extractedId.length === 32) {
-        extractedId = normalizeOrderId(extractedId)
-      }
-      
-      console.log('✅ Successfully extracted and normalized order ID:', extractedId)
-      return extractedId
-    }
-  }
-  
-  console.log('❌ No order ID pattern found in description')
-  return null
-}
-
-// Hàm normalize order ID từ 32 ký tự hex thành UUID chuẩn
-function normalizeOrderId(hexId: string): string {
-  console.log('🔧 Normalizing hex ID to UUID:', hexId)
-  
-  if (!hexId || typeof hexId !== 'string') {
-    console.log('❌ Invalid hex ID provided for normalization')
-    return hexId
-  }
-  
-  // Loại bỏ dấu gạch ngang nếu có
-  const cleanHex = hexId.replace(/-/g, '').toLowerCase()
-  
-  // Nếu không phải 32 ký tự, trả về nguyên
-  if (cleanHex.length !== 32) {
-    console.log('⚠️ Hex ID length not 32 chars, returning as-is:', hexId)
-    return hexId
-  }
-  
-  // Chuyển đổi 32 ký tự thành UUID chuẩn
-  const normalized = [
-    cleanHex.slice(0, 8),
-    cleanHex.slice(8, 12),
-    cleanHex.slice(12, 16),
-    cleanHex.slice(16, 20),
-    cleanHex.slice(20, 32)
-  ].join('-')
-  
-  console.log('✅ Normalized hex ID to UUID:', normalized)
-  return normalized
-}
-
-// FIXED: Hàm kiểm tra match với prefix matching
-function isOrderMatch(orderId: string, extractedId: string): boolean {
-  console.log('🔍 Checking order match:', { orderId, extractedId })
-  
-  // Chuẩn hóa order ID
-  const orderHex = orderId.replace(/-/g, '').toLowerCase()
-  const extracted = extractedId.toLowerCase()
-  
-  console.log('🔍 Normalized for comparison:', { orderHex, extracted })
-  
-  // Exact match with UUID
-  if (orderId === extracted) {
-    console.log('✅ Exact UUID match')
-    return true
-  }
-  
-  // Match với hex đầy đủ
-  if (orderHex === extracted) {
-    console.log('✅ Full hex match')
-    return true
-  }
-  
-  // CRITICAL: Match với prefix (từ 8 ký tự trở lên)
-  if (extracted.length >= 8 && orderHex.startsWith(extracted)) {
-    console.log('✅ Prefix hex match', { 
-      orderPrefix: orderHex.slice(0, extracted.length), 
-      extracted,
-      matches: orderHex.slice(0, extracted.length) === extracted
-    })
-    return true
-  }
-  
-  console.log('❌ No match found')
-  return false
-}
+// Import the refactored functions
+import { extractOrderId, normalizeOrderId } from '../casso-webhook/orderIdExtractor.ts'
+import { isOrderMatch } from '../casso-webhook/orderMatchingLogic.ts'
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
