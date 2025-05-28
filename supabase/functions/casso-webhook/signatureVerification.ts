@@ -9,7 +9,7 @@ export async function verifyCassoSignature(payload: string, signature: string, s
     console.log('🔐 Starting CASSO signature verification')
     console.log('Payload length:', payload.length)
     console.log('Secret configured:', !!secret)
-    console.log('Signature received:', signature)
+    console.log('Raw signature header:', signature)
     
     // Create HMAC-SHA256 signature from raw payload using Web Crypto API
     const encoder = new TextEncoder()
@@ -30,11 +30,29 @@ export async function verifyCassoSignature(payload: string, signature: string, s
     
     console.log('Expected signature (hex):', expectedSignature)
     
-    // CASSO sends signature directly without any prefix
-    const receivedSignature = signature.trim().toLowerCase()
-    console.log('Received signature (cleaned):', receivedSignature)
+    // Handle different signature formats from CASSO
+    let receivedSignature = signature.trim()
     
-    // Compare signatures directly - CASSO doesn't use v1= prefix
+    // Check if signature has timestamp prefix (t=timestamp,v1=signature)
+    if (receivedSignature.includes('t=') && receivedSignature.includes('v1=')) {
+      console.log('Detected timestamp-prefixed signature format')
+      const parts = receivedSignature.split(',')
+      const signaturePart = parts.find(part => part.startsWith('v1='))
+      if (signaturePart) {
+        receivedSignature = signaturePart.substring(3) // Remove 'v1='
+        console.log('Extracted signature from v1= format:', receivedSignature)
+      }
+    } else if (receivedSignature.startsWith('v1=')) {
+      // Simple v1= prefix
+      receivedSignature = receivedSignature.substring(3)
+      console.log('Removed v1= prefix, signature:', receivedSignature)
+    }
+    
+    // Clean and normalize the received signature
+    receivedSignature = receivedSignature.toLowerCase().trim()
+    console.log('Final received signature (cleaned):', receivedSignature)
+    
+    // Compare signatures
     const isValid = expectedSignature === receivedSignature
     console.log('Signature verification result:', isValid)
     
@@ -47,6 +65,11 @@ export async function verifyCassoSignature(payload: string, signature: string, s
       console.log('Received:', receivedSignature)
       console.log('Expected length:', expectedSignature.length)
       console.log('Received length:', receivedSignature.length)
+      
+      // Additional debugging
+      console.log('Raw payload preview:', payload.substring(0, 200))
+      console.log('Secret preview:', secret.substring(0, 8) + '...')
+      
       return false
     }
     
