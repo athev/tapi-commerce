@@ -55,7 +55,7 @@ const Payment = () => {
           casso_transactions!left (
             description,
             transaction_id,
-            amount as transaction_amount
+            amount
           )
         `)
         .eq('id', orderId)
