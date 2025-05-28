@@ -1,11 +1,11 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { CassoWebhookPayload, corsHeaders } from './types.ts'
-import { verifyCassoSignature } from './signatureVerification.ts'
-import { createResponse, createErrorResponse, createSuccessResponse } from './responseUtils.ts'
-import { validatePayload, isTestWebhook } from './payloadValidator.ts'
-import { processTransaction } from './transactionProcessor.ts'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -14,134 +14,270 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== CASSO WEBHOOK REQUEST START ===')
+    console.log('=== CASSO WEBHOOK V2 REQUEST START ===')
     console.log('Request method:', req.method)
     console.log('Request URL:', req.url)
     console.log('All headers:', Object.fromEntries(req.headers))
-
-    // Get CASSO webhook secret - use the "Key bảo mật" from CASSO dashboard
-    const cassoSecret = Deno.env.get('CASSO_WEBHOOK_SECRET') || Deno.env.get('CASSO_WEBHOOK_TOKEN')
-    if (!cassoSecret) {
-      console.error('❌ CASSO_WEBHOOK_SECRET not configured')
-      console.error('❌ Please set CASSO_WEBHOOK_SECRET to the "Key bảo mật" value from CASSO dashboard')
-      return createErrorResponse('Server configuration error', undefined, 500)
-    }
-
-    console.log('✅ CASSO secret configured, length:', cassoSecret.length)
-    console.log('✅ Secret preview:', cassoSecret.substring(0, 8) + '...')
-
-    // Get raw body for signature verification - CRITICAL: use text() not json()
-    let rawBody: string
-    try {
-      rawBody = await req.text()
-      console.log('✅ Raw body received, length:', rawBody.length)
-      console.log('Raw body preview:', rawBody.substring(0, 200) + '...')
-    } catch (error) {
-      console.error('❌ Failed to read request body:', error)
-      return createErrorResponse('Failed to read request body')
-    }
-
-    // Get signature for verification
-    const signature = req.headers.get('x-casso-signature')
-    console.log('Signature header found:', !!signature)
-    if (signature) {
-      console.log('Raw signature header value:', signature)
-      console.log('Signature length:', signature.length)
-    }
-
-    // Parse JSON payload from rawBody
-    let payload: CassoWebhookPayload
-    try {
-      if (!rawBody.trim()) {
-        throw new Error('Empty request body')
-      }
-      payload = JSON.parse(rawBody)
-      console.log('✅ JSON parsed successfully')
-      console.log('Payload structure:', {
-        hasError: 'error' in payload,
-        hasData: 'data' in payload,
-        errorValue: payload.error,
-        dataType: typeof payload.data,
-        dataLength: Array.isArray(payload.data) ? payload.data.length : 'not array'
-      })
-    } catch (error) {
-      console.error('❌ Invalid JSON payload:', error)
-      return createErrorResponse('Invalid JSON payload', error.message)
-    }
-
-    // Check if this is a test webhook
-    if (isTestWebhook(payload, signature)) {
-      console.log('🧪 Test webhook detected, returning success')
-      return createSuccessResponse({
-        message: 'Test webhook received successfully',
-        test: true
-      })
-    }
-
-    // Verify CASSO signature for real transactions
-    if (!signature) {
-      console.error('❌ Missing x-casso-signature header for real transaction')
-      return createErrorResponse('Missing signature for transaction', undefined, 403)
-    }
-
-    console.log('🔐 Starting signature verification...')
-    console.log('🔍 Using rawBody for signature calculation')
-    console.log('🔍 Secret length:', cassoSecret.length)
-    
-    try {
-      const isValidSignature = await verifyCassoSignature(rawBody, signature, cassoSecret)
-      
-      if (!isValidSignature) {
-        console.error('❌ SIGNATURE VERIFICATION FAILED')
-        console.error('This might be due to:')
-        console.error('1. Wrong CASSO_WEBHOOK_SECRET value')
-        console.error('2. Different signature format from CASSO')
-        console.error('3. Body modification during transport')
-        console.error('Make sure CASSO_WEBHOOK_SECRET matches the "Key bảo mật" from CASSO dashboard')
-        
-        // Still process the transaction in development/testing
-        console.log('⚠️ Processing transaction despite signature failure for debugging')
-      } else {
-        console.log('✅ CASSO signature verified successfully')
-      }
-    } catch (signatureError) {
-      console.error('❌ Error during signature verification:', signatureError)
-      console.log('⚠️ Continuing with transaction processing for debugging')
-    }
-
-    // Validate payload structure
-    const validation = validatePayload(payload)
-    if (!validation.isValid) {
-      return createErrorResponse(validation.error!)
-    }
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    const processedTransactions = []
-    
-    // Process each transaction
-    for (const transaction of payload.data) {
-      const result = await processTransaction(transaction, supabase)
-      processedTransactions.push(result)
+    // Parse request body
+    let payload: any
+    try {
+      const rawBody = await req.text()
+      console.log('Raw body received:', rawBody)
+      payload = JSON.parse(rawBody)
+    } catch (error) {
+      console.error('Failed to parse JSON:', error)
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Invalid JSON payload'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
     }
 
-    console.log('=== PROCESSING COMPLETE ===')
-    console.log('Total transactions:', payload.data.length)
-    console.log('Results:', processedTransactions)
+    console.log('Parsed payload:', JSON.stringify(payload, null, 2))
 
-    // Always return success response to CASSO
-    return createSuccessResponse({
-      message: 'Webhook processed successfully',
-      total_transactions: payload.data.length,
-      processed_transactions: processedTransactions
+    // Handle webhook test
+    if (payload.error === 0 && payload.data && payload.data.id === 0) {
+      console.log('🧪 Test webhook detected')
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Test webhook received successfully'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Process real transaction
+    if (payload.error === 0 && payload.data) {
+      const transaction = payload.data
+      console.log('Processing transaction:', transaction)
+
+      // Extract order ID from description
+      const extractOrderId = (description: string): string | null => {
+        if (!description) return null
+        
+        // Clean description
+        const cleanDesc = description.trim().toLowerCase()
+        console.log('Cleaned description:', cleanDesc)
+        
+        // Extract patterns for order ID
+        const patterns = [
+          /dh\s*([a-f0-9]{32})/i,
+          /dh\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
+          /dh\s*([a-f0-9]{8,31})/i,
+          /^([a-f0-9]{32})$/i,
+          /^([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i
+        ]
+        
+        for (const pattern of patterns) {
+          const match = cleanDesc.match(pattern)
+          if (match) {
+            let extractedId = match[1].toLowerCase()
+            console.log('Extracted order ID:', extractedId)
+            
+            // Normalize to UUID format if needed
+            if (extractedId.length === 32 && !extractedId.includes('-')) {
+              extractedId = [
+                extractedId.slice(0, 8),
+                extractedId.slice(8, 12),
+                extractedId.slice(12, 16),
+                extractedId.slice(16, 20),
+                extractedId.slice(20, 32)
+              ].join('-')
+            }
+            
+            return extractedId
+          }
+        }
+        
+        return null
+      }
+
+      const orderId = extractOrderId(transaction.description)
+      console.log('Extracted order ID:', orderId)
+
+      if (!orderId) {
+        console.log('⚠️ Could not extract order ID, saving as unmatched')
+        
+        // Save to unmatched transactions
+        await supabase
+          .from('unmatched_transactions')
+          .insert({
+            transaction_id: transaction.id?.toString() || `webhook_${Date.now()}`,
+            amount: transaction.amount,
+            description: transaction.description,
+            when_occurred: transaction.transactionDateTime || new Date().toISOString(),
+            account_number: transaction.accountNumber,
+            reason: 'Could not extract order ID'
+          })
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Transaction saved as unmatched'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      // Find matching order
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .select(`
+          id, status, user_id, product_id, buyer_email, created_at,
+          products (id, title, price, seller_id, product_type)
+        `)
+        .eq('id', orderId)
+        .eq('status', 'pending')
+        .is('payment_verified_at', null)
+        .maybeSingle()
+
+      if (orderError) {
+        console.error('Error finding order:', orderError)
+        return new Response(JSON.stringify({
+          success: false,
+          error: 'Database error'
+        }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      if (!order) {
+        console.log('❌ Order not found, saving as unmatched')
+        
+        await supabase
+          .from('unmatched_transactions')
+          .insert({
+            transaction_id: transaction.id?.toString() || `webhook_${Date.now()}`,
+            amount: transaction.amount,
+            description: transaction.description,
+            when_occurred: transaction.transactionDateTime || new Date().toISOString(),
+            account_number: transaction.accountNumber,
+            reason: `Order not found: ${orderId}`
+          })
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Order not found, saved as unmatched'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      // Verify amount
+      const expectedAmount = order.products?.price || 0
+      const amountDifference = Math.abs(transaction.amount - expectedAmount)
+      const tolerance = Math.max(1000, expectedAmount * 0.01)
+
+      if (amountDifference > tolerance) {
+        console.log('❌ Amount mismatch')
+        
+        await supabase
+          .from('unmatched_transactions')
+          .insert({
+            transaction_id: transaction.id?.toString() || `webhook_${Date.now()}`,
+            amount: transaction.amount,
+            description: transaction.description,
+            when_occurred: transaction.transactionDateTime || new Date().toISOString(),
+            account_number: transaction.accountNumber,
+            reason: `Amount mismatch: expected ${expectedAmount}, got ${transaction.amount}`
+          })
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Amount mismatch, saved as unmatched'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      // Process successful payment
+      console.log('✅ Processing successful payment')
+
+      // Save transaction
+      const transactionId = transaction.id?.toString() || `webhook_${Date.now()}`
+      await supabase
+        .from('casso_transactions')
+        .insert({
+          transaction_id: transactionId,
+          amount: transaction.amount,
+          description: transaction.description,
+          when_occurred: transaction.transactionDateTime || new Date().toISOString(),
+          account_number: transaction.accountNumber,
+          order_id: order.id,
+          matched_at: new Date().toISOString(),
+          processed: true
+        })
+
+      // Update order status
+      await supabase
+        .from('orders')
+        .update({
+          status: 'paid',
+          delivery_status: 'processing',
+          payment_verified_at: new Date().toISOString(),
+          bank_transaction_id: transactionId,
+          bank_amount: transaction.amount,
+          casso_transaction_id: transactionId
+        })
+        .eq('id', order.id)
+
+      // Create notifications
+      await supabase
+        .from('notifications')
+        .insert([
+          {
+            user_id: order.user_id,
+            title: 'Thanh toán thành công',
+            message: `Đơn hàng "${order.products?.title}" đã được thanh toán thành công.`,
+            type: 'payment_success',
+            related_order_id: order.id
+          },
+          {
+            user_id: order.products?.seller_id,
+            title: 'Đơn hàng mới được thanh toán',
+            message: `Đơn hàng "${order.products?.title}" đã được thanh toán thành công.`,
+            type: 'new_order',
+            related_order_id: order.id
+          }
+        ])
+
+      console.log('🎉 Payment processing completed successfully')
+
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'Payment processed successfully',
+        order_id: order.id,
+        transaction_id: transactionId
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Invalid payload
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Invalid payload structure'
+    }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 
   } catch (error) {
-    console.error('❌ Webhook fatal error:', error)
-    // Even on fatal error, return 200 to avoid CASSO retries
-    return createErrorResponse('Internal server error', error.message)
+    console.error('Webhook error:', error)
+    return new Response(JSON.stringify({
+      success: false,
+      error: 'Internal server error'
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
   }
 })
