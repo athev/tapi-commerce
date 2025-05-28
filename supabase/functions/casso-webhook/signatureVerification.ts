@@ -11,7 +11,7 @@ export async function verifyCassoSignature(payload: string, signature: string, s
     console.log('Secret configured:', !!secret)
     console.log('Signature received:', signature)
     
-    // Create HMAC-SHA256 signature from raw payload
+    // Create HMAC-SHA256 signature from raw payload using Web Crypto API
     const encoder = new TextEncoder()
     const key = await crypto.subtle.importKey(
       'raw',

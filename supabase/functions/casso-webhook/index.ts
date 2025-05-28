@@ -19,16 +19,16 @@ serve(async (req) => {
     console.log('Request URL:', req.url)
     console.log('All headers:', Object.fromEntries(req.headers))
 
-    // Get CASSO webhook secret
-    const cassoSecret = Deno.env.get('CASSO_WEBHOOK_SECRET')
+    // Get CASSO webhook secret - using correct environment variable name
+    const cassoSecret = Deno.env.get('CASSO_WEBHOOK_TOKEN') || Deno.env.get('CASSO_WEBHOOK_SECRET')
     if (!cassoSecret) {
-      console.error('❌ CASSO_WEBHOOK_SECRET not configured')
+      console.error('❌ CASSO_WEBHOOK_TOKEN not configured')
       return createErrorResponse('Server configuration error', undefined, 500)
     }
 
     console.log('✅ CASSO secret configured, length:', cassoSecret.length)
 
-    // Get raw body for signature verification
+    // Get raw body for signature verification - CRITICAL: use text() not json()
     let rawBody: string
     try {
       rawBody = await req.text()
@@ -46,7 +46,7 @@ serve(async (req) => {
       console.log('Signature value:', signature)
     }
 
-    // Parse JSON payload
+    // Parse JSON payload from rawBody
     let payload: CassoWebhookPayload
     try {
       if (!rawBody.trim()) {
@@ -68,6 +68,7 @@ serve(async (req) => {
 
     // Check if this is a test webhook
     if (isTestWebhook(payload, signature)) {
+      console.log('🧪 Test webhook detected, returning success')
       return createSuccessResponse({
         message: 'Test webhook received successfully',
         test: true
@@ -86,6 +87,8 @@ serve(async (req) => {
       
       if (!isValidSignature) {
         console.error('❌ SIGNATURE VERIFICATION FAILED')
+        console.error('Raw body for debug:', rawBody)
+        console.error('Expected vs Received signature logged above')
         return createErrorResponse('Invalid signature', undefined, 403)
       }
       console.log('✅ CASSO signature verified successfully')
