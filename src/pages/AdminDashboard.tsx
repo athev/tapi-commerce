@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUser } from "@/hooks/useUser";
 import { useEffect } from "react";
-import { useRouter } from "next/router";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import ManualPaymentOrders from "@/components/admin/ManualPaymentOrders";
@@ -11,14 +11,14 @@ import CassoDebugTester from "@/components/admin/CassoDebugTester";
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("manual-payments");
   const { user, session, isLoading } = useUser();
-  const router = useRouter();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!isLoading && !session) {
       toast.error("Bạn cần đăng nhập để xem trang này");
-      router.push('/login');
+      navigate('/login');
     }
-  }, [session, isLoading, router]);
+  }, [session, isLoading, navigate]);
 
   if (isLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
