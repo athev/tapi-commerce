@@ -8,7 +8,7 @@ import type { Database } from '@/integrations/supabase/types';
 type SellerApplication = Database['public']['Tables']['seller_applications']['Row'];
 
 export const useSellerStatus = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
   const [sellerApplication, setSellerApplication] = useState<SellerApplication | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -43,18 +43,55 @@ export const useSellerStatus = () => {
     fetchSellerApplication();
   }, [fetchSellerApplication]);
 
+  // Listen for changes in seller applications table
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('seller-application-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'seller_applications',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Seller application changed:', payload);
+          // Refresh both application and profile when status changes
+          fetchSellerApplication();
+          refreshProfile();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, fetchSellerApplication, refreshProfile]);
+
   const getSellerStatus = () => {
     if (!user) return 'not_logged_in';
+    
+    // Always check profile role first - this is the source of truth
     if (profile?.role === 'seller') return 'approved_seller';
+    
+    // Then check application status
     if (sellerApplication?.status === 'pending') return 'pending_approval';
     if (sellerApplication?.status === 'rejected') return 'rejected';
+    
     return 'buyer'; // Default role
   };
 
   return {
     sellerApplication,
     loading,
-    sellerStatus: getSellerStatus()
+    sellerStatus: getSellerStatus(),
+    refreshSellerStatus: () => {
+      fetchSellerApplication();
+      refreshProfile();
+    }
   };
 };
 

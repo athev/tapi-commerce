@@ -10,18 +10,22 @@ interface SellerStatusHandlerProps {
 }
 
 const SellerStatusHandler = ({ children }: SellerStatusHandlerProps) => {
-  const { user, refreshProfile } = useAuth();
-  const { sellerStatus, sellerApplication, loading } = useSellerStatus();
+  const { user, refreshProfile, profile } = useAuth();
+  const { sellerStatus, sellerApplication, loading, refreshSellerStatus } = useSellerStatus();
 
-  // Only refresh profile once when component mounts
+  // Refresh profile and seller status when component mounts
   useEffect(() => {
     if (user) {
+      console.log('SellerStatusHandler: Refreshing profile and seller status');
       refreshProfile();
+      refreshSellerStatus();
     }
-  }, [user?.id]); // Only depend on user.id, not the refreshProfile function
+  }, [user?.id]); // Only depend on user.id
 
   console.log('SellerStatusHandler:', { 
     user: !!user, 
+    profile: profile,
+    profileRole: profile?.role,
     sellerStatus, 
     sellerApplication,
     loading 
@@ -55,6 +59,7 @@ const SellerStatusHandler = ({ children }: SellerStatusHandlerProps) => {
   switch (sellerStatus) {
     case 'approved_seller':
       // User is an approved seller, show the full dashboard
+      console.log('SellerStatusHandler: Showing seller dashboard for approved seller');
       return <>{children}</>;
 
     case 'pending_approval':
