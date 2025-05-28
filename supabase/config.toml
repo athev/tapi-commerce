@@ -9,3 +9,6 @@ verify_jwt = false
 
 [functions.verify-casso-orders]
 verify_jwt = false
+
+[functions.wallet-cron]
+verify_jwt = false

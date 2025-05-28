@@ -6,11 +6,12 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Check, ArrowLeft, Clock, AlertCircle, Download, Key, UserPlus } from "lucide-react";
+import { Check, ArrowLeft, Clock, AlertCircle, Download, Key, UserPlus, MessageCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import QRPayment from "@/components/payment/QRPayment";
 import ManualConfirmation from "@/components/payment/ManualConfirmation";
+import OrderSupportChatButton from "@/components/chat/OrderSupportChatButton";
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { 
@@ -51,7 +52,8 @@ const Payment = () => {
             image,
             seller_name,
             product_type,
-            file_url
+            file_url,
+            seller_id
           ),
           casso_transactions!left (
             description,
@@ -229,6 +231,18 @@ const Payment = () => {
                       ⏳ Sản phẩm đang được xử lý thủ công, chúng tôi sẽ liên hệ sớm
                     </p>
                   )}
+                </div>
+              )}
+
+              {/* Chat with seller button */}
+              {order?.products?.seller_id && (
+                <div className="mb-6">
+                  <OrderSupportChatButton
+                    order={order}
+                    sellerId={order.products.seller_id}
+                    className="w-full sm:w-auto"
+                    variant="default"
+                  />
                 </div>
               )}
 

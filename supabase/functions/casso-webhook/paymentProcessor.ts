@@ -56,7 +56,17 @@ export async function processOrderPayment(transaction: CassoTransactionData, tra
   try {
     await updateOrderStatus(order, transaction, transactionId, supabase)
     await linkTransactionToOrder(transactionId, order.id, supabase)
-    return await processOrderCompletion(order, transaction, transactionId, supabase)
+    
+    const completionResult = await processOrderCompletion(order, transaction, transactionId, supabase)
+    
+    // Return success with order info for wallet processing
+    return {
+      transaction_id: transactionId,
+      status: 'success',
+      order: order,
+      transaction_amount: transaction.amount,
+      ...completionResult
+    }
   } catch (error) {
     console.error(`❌ Error in order update and delivery:`, error)
     return {

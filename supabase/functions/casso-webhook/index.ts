@@ -1,6 +1,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { processTransaction } from './transactionProcessor.ts'
+import { processSellerEarning } from './walletService.ts'
+import { createOrderSupportChat } from './chatService.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,10 +17,9 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== CASSO WEBHOOK V2 REQUEST START ===')
+    console.log('=== CASSO WEBHOOK V3 REQUEST START ===')
     console.log('Request method:', req.method)
     console.log('Request URL:', req.url)
-    console.log('All headers:', Object.fromEntries(req.headers))
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
@@ -59,204 +61,32 @@ serve(async (req) => {
       const transaction = payload.data
       console.log('Processing transaction:', transaction)
 
-      // Extract order ID from description
-      const extractOrderId = (description: string): string | null => {
-        if (!description) return null
+      // Process the transaction (existing logic)
+      const result = await processTransaction(transaction, supabase)
+      
+      // If transaction was successfully processed and matched to an order
+      if (result.status === 'success' && result.order) {
+        console.log('🎉 Transaction processed successfully, now processing wallet and chat...')
         
-        // Clean description
-        const cleanDesc = description.trim().toLowerCase()
-        console.log('Cleaned description:', cleanDesc)
+        // Process seller earning (add PI to wallet)
+        await processSellerEarning(result.order, result.transaction_amount || transaction.amount, supabase)
         
-        // Extract patterns for order ID
-        const patterns = [
-          /dh\s*([a-f0-9]{32})/i,
-          /dh\s*([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i,
-          /dh\s*([a-f0-9]{8,31})/i,
-          /^([a-f0-9]{32})$/i,
-          /^([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/i
-        ]
+        // Create order support chat
+        const conversationId = await createOrderSupportChat(result.order, supabase)
         
-        for (const pattern of patterns) {
-          const match = cleanDesc.match(pattern)
-          if (match) {
-            let extractedId = match[1].toLowerCase()
-            console.log('Extracted order ID:', extractedId)
-            
-            // Normalize to UUID format if needed
-            if (extractedId.length === 32 && !extractedId.includes('-')) {
-              extractedId = [
-                extractedId.slice(0, 8),
-                extractedId.slice(8, 12),
-                extractedId.slice(12, 16),
-                extractedId.slice(16, 20),
-                extractedId.slice(20, 32)
-              ].join('-')
-            }
-            
-            return extractedId
-          }
-        }
-        
-        return null
-      }
-
-      const orderId = extractOrderId(transaction.description)
-      console.log('Extracted order ID:', orderId)
-
-      if (!orderId) {
-        console.log('⚠️ Could not extract order ID, saving as unmatched')
-        
-        // Save to unmatched transactions
-        await supabase
-          .from('unmatched_transactions')
-          .insert({
-            transaction_id: transaction.id?.toString() || `webhook_${Date.now()}`,
-            amount: transaction.amount,
-            description: transaction.description,
-            when_occurred: transaction.transactionDateTime || new Date().toISOString(),
-            account_number: transaction.accountNumber,
-            reason: 'Could not extract order ID'
-          })
-
         return new Response(JSON.stringify({
           success: true,
-          message: 'Transaction saved as unmatched'
+          message: 'Payment processed successfully',
+          order_id: result.order.id,
+          transaction_id: result.transaction_id,
+          conversation_id: conversationId
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
       }
 
-      // Find matching order
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .select(`
-          id, status, user_id, product_id, buyer_email, created_at,
-          products (id, title, price, seller_id, product_type)
-        `)
-        .eq('id', orderId)
-        .eq('status', 'pending')
-        .is('payment_verified_at', null)
-        .maybeSingle()
-
-      if (orderError) {
-        console.error('Error finding order:', orderError)
-        return new Response(JSON.stringify({
-          success: false,
-          error: 'Database error'
-        }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
-
-      if (!order) {
-        console.log('❌ Order not found, saving as unmatched')
-        
-        await supabase
-          .from('unmatched_transactions')
-          .insert({
-            transaction_id: transaction.id?.toString() || `webhook_${Date.now()}`,
-            amount: transaction.amount,
-            description: transaction.description,
-            when_occurred: transaction.transactionDateTime || new Date().toISOString(),
-            account_number: transaction.accountNumber,
-            reason: `Order not found: ${orderId}`
-          })
-
-        return new Response(JSON.stringify({
-          success: true,
-          message: 'Order not found, saved as unmatched'
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
-
-      // Verify amount
-      const expectedAmount = order.products?.price || 0
-      const amountDifference = Math.abs(transaction.amount - expectedAmount)
-      const tolerance = Math.max(1000, expectedAmount * 0.01)
-
-      if (amountDifference > tolerance) {
-        console.log('❌ Amount mismatch')
-        
-        await supabase
-          .from('unmatched_transactions')
-          .insert({
-            transaction_id: transaction.id?.toString() || `webhook_${Date.now()}`,
-            amount: transaction.amount,
-            description: transaction.description,
-            when_occurred: transaction.transactionDateTime || new Date().toISOString(),
-            account_number: transaction.accountNumber,
-            reason: `Amount mismatch: expected ${expectedAmount}, got ${transaction.amount}`
-          })
-
-        return new Response(JSON.stringify({
-          success: true,
-          message: 'Amount mismatch, saved as unmatched'
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
-      }
-
-      // Process successful payment
-      console.log('✅ Processing successful payment')
-
-      // Save transaction
-      const transactionId = transaction.id?.toString() || `webhook_${Date.now()}`
-      await supabase
-        .from('casso_transactions')
-        .insert({
-          transaction_id: transactionId,
-          amount: transaction.amount,
-          description: transaction.description,
-          when_occurred: transaction.transactionDateTime || new Date().toISOString(),
-          account_number: transaction.accountNumber,
-          order_id: order.id,
-          matched_at: new Date().toISOString(),
-          processed: true
-        })
-
-      // Update order status
-      await supabase
-        .from('orders')
-        .update({
-          status: 'paid',
-          delivery_status: 'processing',
-          payment_verified_at: new Date().toISOString(),
-          bank_transaction_id: transactionId,
-          bank_amount: transaction.amount,
-          casso_transaction_id: transactionId
-        })
-        .eq('id', order.id)
-
-      // Create notifications
-      await supabase
-        .from('notifications')
-        .insert([
-          {
-            user_id: order.user_id,
-            title: 'Thanh toán thành công',
-            message: `Đơn hàng "${order.products?.title}" đã được thanh toán thành công.`,
-            type: 'payment_success',
-            related_order_id: order.id
-          },
-          {
-            user_id: order.products?.seller_id,
-            title: 'Đơn hàng mới được thanh toán',
-            message: `Đơn hàng "${order.products?.title}" đã được thanh toán thành công.`,
-            type: 'new_order',
-            related_order_id: order.id
-          }
-        ])
-
-      console.log('🎉 Payment processing completed successfully')
-
-      return new Response(JSON.stringify({
-        success: true,
-        message: 'Payment processed successfully',
-        order_id: order.id,
-        transaction_id: transactionId
-      }), {
+      // Return the original result if not successful
+      return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }

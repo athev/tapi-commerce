@@ -473,6 +473,101 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_logs: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          order_id: string | null
+          pi_amount: number
+          release_date: string | null
+          status: string
+          type: string
+          updated_at: string
+          vnd_amount: number
+          wallet_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          pi_amount: number
+          release_date?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+          vnd_amount: number
+          wallet_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          pi_amount?: number
+          release_date?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+          vnd_amount?: number
+          wallet_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_logs_wallet_id_fkey"
+            columns: ["wallet_id"]
+            isOneToOne: false
+            referencedRelation: "wallets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wallets: {
+        Row: {
+          available: number
+          created_at: string
+          id: string
+          pending: number
+          total_earned: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          available?: number
+          created_at?: string
+          id?: string
+          pending?: number
+          total_earned?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          available?: number
+          created_at?: string
+          id?: string
+          pending?: number
+          total_earned?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
