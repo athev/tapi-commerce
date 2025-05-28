@@ -1,1 +1,11 @@
+
 project_id = "vpogvgilorgkeulvnpbb"
+
+[functions.casso-webhook]
+verify_jwt = false
+
+[functions.debug-casso-transactions] 
+verify_jwt = false
+
+[functions.verify-casso-orders]
+verify_jwt = false
