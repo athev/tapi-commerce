@@ -37,9 +37,11 @@ export const fetchManualPaymentOrders = async () => {
 
 export const confirmManualPayment = async (orderId: string) => {
   console.log('🔄 Starting manual payment confirmation for order:', orderId);
+  console.log('🔄 Order ID type:', typeof orderId, 'Length:', orderId.length);
   
   try {
-    // Lấy thông tin đơn hàng trước khi cập nhật
+    // STEP 1: Verify order exists and get current state
+    console.log('📋 STEP 1: Fetching current order state...');
     const { data: orderData, error: fetchError } = await supabase
       .from('orders')
       .select(`
@@ -55,59 +57,111 @@ export const confirmManualPayment = async (orderId: string) => {
       .eq('id', orderId)
       .single();
 
-    if (fetchError || !orderData) {
+    if (fetchError) {
       console.error('❌ Error fetching order data:', fetchError);
-      throw fetchError || new Error('Không tìm thấy thông tin đơn hàng');
+      throw fetchError;
     }
 
-    console.log('📋 Order data before update:', orderData);
+    if (!orderData) {
+      console.error('❌ Order not found with ID:', orderId);
+      throw new Error('Không tìm thấy thông tin đơn hàng');
+    }
 
-    // CRITICAL FIX: Cập nhật trạng thái đơn hàng với tất cả fields cần thiết
+    console.log('📋 Current order data before update:', {
+      id: orderData.id,
+      status: orderData.status,
+      manual_payment_requested: orderData.manual_payment_requested,
+      delivery_status: orderData.delivery_status,
+      payment_verified_at: orderData.payment_verified_at
+    });
+
+    // STEP 2: Prepare update payload with detailed logging
     const updatePayload = { 
       status: 'paid',
-      delivery_status: 'processing', // FIXED: Đảm bảo delivery_status được set
+      delivery_status: 'processing',
       payment_verified_at: new Date().toISOString(),
-      manual_payment_requested: false, // FIXED: Set về false sau khi xác nhận
-      casso_transaction_id: `manual_${orderId.slice(0, 8)}_${Date.now()}`, // FIXED: Tạo manual transaction ID
+      manual_payment_requested: false,
+      casso_transaction_id: `manual_${orderId.slice(0, 8)}_${Date.now()}`,
       updated_at: new Date().toISOString()
     };
 
-    console.log('📝 Update payload:', updatePayload);
+    console.log('📝 STEP 2: Update payload prepared:', updatePayload);
+    console.log('📝 Attempting update with conditions: id =', orderId);
 
-    const { data: updateData, error: updateError } = await supabase
+    // STEP 3: Execute update with detailed result logging
+    const { data: updateData, error: updateError, count } = await supabase
       .from('orders')
       .update(updatePayload)
       .eq('id', orderId)
       .select('*');
     
+    console.log('📊 STEP 3: Update execution results:');
+    console.log('- Error:', updateError);
+    console.log('- Data returned:', updateData);
+    console.log('- Count:', count);
+    console.log('- Data length:', updateData?.length);
+
     if (updateError) {
-      console.error('❌ Error updating order:', updateError);
+      console.error('❌ Supabase update error:', updateError);
       throw updateError;
     }
 
-    console.log('✅ Order manual confirmation update successful:', updateData);
-
-    // Kiểm tra xem có dữ liệu được cập nhật không
+    // STEP 4: Verify update success
     if (!updateData || updateData.length === 0) {
-      console.error('⚠️ No rows were updated - checking order existence');
+      console.error('⚠️ No rows were updated - investigating...');
       
-      // Kiểm tra lại order có tồn tại không
+      // Check if order still exists
       const { data: checkOrder, error: checkError } = await supabase
         .from('orders')
-        .select('id, status, manual_payment_requested')
+        .select('id, status, manual_payment_requested, delivery_status')
         .eq('id', orderId)
         .single();
       
+      console.log('🔍 Order verification after failed update:');
+      console.log('- Check error:', checkError);
+      console.log('- Order still exists:', checkOrder);
+      
       if (checkError) {
-        console.error('❌ Order not found:', checkError);
-        throw new Error('Đơn hàng không tồn tại');
+        console.error('❌ Order verification failed:', checkError);
+        throw new Error('Đơn hàng không tồn tại hoặc không thể truy cập');
       }
       
-      console.log('📋 Current order state:', checkOrder);
-      throw new Error('Không thể cập nhật đơn hàng');
+      // Try a more direct update approach
+      console.log('🔄 Attempting direct update without conditions...');
+      const { data: directUpdate, error: directError } = await supabase
+        .from('orders')
+        .update({
+          status: 'paid',
+          delivery_status: 'processing',
+          payment_verified_at: new Date().toISOString(),
+          manual_payment_requested: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', orderId)
+        .select('*');
+      
+      console.log('🔄 Direct update results:', { directUpdate, directError });
+      
+      if (directError) {
+        console.error('❌ Direct update also failed:', directError);
+        throw directError;
+      }
+      
+      if (!directUpdate || directUpdate.length === 0) {
+        throw new Error('Không thể cập nhật đơn hàng - có thể do quyền truy cập');
+      }
+      
+      console.log('✅ Direct update successful:', directUpdate[0]);
+      // Use direct update data for notifications
+      updateData[0] = directUpdate[0];
+    } else {
+      console.log('✅ Standard update successful:', updateData[0]);
     }
 
-    // Tạo thông báo cho người mua
+    // STEP 5: Create notifications
+    console.log('📧 STEP 5: Creating notifications...');
+    
+    // Buyer notification
     const { error: buyerNotificationError } = await supabase
       .from('notifications')
       .insert({
@@ -125,7 +179,7 @@ export const confirmManualPayment = async (orderId: string) => {
       console.log('✅ Buyer notification created successfully');
     }
 
-    // Tạo thông báo cho seller về đơn hàng mới cần xử lý
+    // Seller notification
     const { error: sellerNotificationError } = await supabase
       .from('notifications')
       .insert({
@@ -143,17 +197,18 @@ export const confirmManualPayment = async (orderId: string) => {
       console.log('✅ Seller notification created successfully');
     }
 
-    // Kiểm tra lại trạng thái sau khi cập nhật
+    // STEP 6: Final verification
     const { data: finalCheck, error: finalError } = await supabase
       .from('orders')
       .select('id, status, delivery_status, payment_verified_at, manual_payment_requested')
       .eq('id', orderId)
       .single();
     
-    if (finalError) {
-      console.error('⚠️ Error in final check:', finalError);
-    } else {
-      console.log('🔍 Final order state after update:', finalCheck);
+    console.log('🔍 STEP 6: Final verification:', { finalCheck, finalError });
+
+    if (finalCheck) {
+      console.log('✅ Manual payment confirmation completed successfully');
+      console.log('📊 Final order state:', finalCheck);
     }
 
   } catch (error) {
