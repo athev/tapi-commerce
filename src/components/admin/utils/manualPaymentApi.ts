@@ -62,36 +62,25 @@ export const confirmManualPayment = async (orderId: string) => {
 
     console.log('Order data before update:', orderData);
 
-    // Sử dụng RPC function để bypass RLS nếu cần
-    const { data: updateResult, error: updateError } = await supabase.rpc('admin_confirm_manual_payment', {
-      order_id: orderId
-    });
-
+    // Cập nhật trạng thái đơn hàng
+    const { data: updateData, error: updateError } = await supabase
+      .from('orders')
+      .update({ 
+        status: 'paid',
+        delivery_status: 'pending',
+        payment_verified_at: new Date().toISOString(),
+        manual_payment_requested: false,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', orderId)
+      .select('*');
+    
     if (updateError) {
-      console.error('RPC function failed, trying direct update:', updateError);
-      
-      // Fallback: thử update trực tiếp
-      const { data: directUpdateData, error: directUpdateError } = await supabase
-        .from('orders')
-        .update({ 
-          status: 'paid',
-          delivery_status: 'pending',
-          payment_verified_at: new Date().toISOString(),
-          manual_payment_requested: false,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', orderId)
-        .select('*');
-      
-      if (directUpdateError) {
-        console.error('Direct update also failed:', directUpdateError);
-        throw directUpdateError;
-      }
-      
-      console.log('Direct update successful:', directUpdateData);
-    } else {
-      console.log('RPC update successful:', updateResult);
+      console.error('Error updating order:', updateError);
+      throw updateError;
     }
+
+    console.log('Order update successful:', updateData);
 
     // Tạo thông báo cho người mua
     const { error: buyerNotificationError } = await supabase
