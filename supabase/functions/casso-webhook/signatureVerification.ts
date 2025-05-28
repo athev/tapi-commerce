@@ -1,5 +1,5 @@
 
-// Hàm verify CASSO signature theo HMAC-SHA256
+// Hàm verify CASSO signature theo tài liệu chính thức
 export async function verifyCassoSignature(payload: string, signature: string, secret: string): Promise<boolean> {
   if (!signature || !secret) {
     console.error('Missing signature or secret for verification')
@@ -7,13 +7,12 @@ export async function verifyCassoSignature(payload: string, signature: string, s
   }
 
   try {
-    console.log('=== SIGNATURE VERIFICATION START ===')
-    console.log('Payload:', payload)
+    console.log('=== CASSO SIGNATURE VERIFICATION START ===')
     console.log('Payload length:', payload.length)
-    console.log('Secret length:', secret.length)
-    console.log('Raw signature from header:', signature)
+    console.log('Secret configured:', !!secret)
+    console.log('Received signature:', signature)
     
-    // Tạo HMAC-SHA256 signature
+    // Tạo HMAC-SHA256 signature theo tài liệu CASSO
     const encoder = new TextEncoder()
     const key = await crypto.subtle.importKey(
       'raw',
@@ -25,92 +24,35 @@ export async function verifyCassoSignature(payload: string, signature: string, s
     
     const signatureBytes = await crypto.subtle.sign('HMAC', key, encoder.encode(payload))
     
-    // Thử nhiều format signature khác nhau
-    const expectedHex = Array.from(new Uint8Array(signatureBytes))
+    // Chuyển đổi thành hex string (lowercase) theo format CASSO
+    const expectedSignature = Array.from(new Uint8Array(signatureBytes))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('')
     
-    const expectedBase64 = btoa(String.fromCharCode(...new Uint8Array(signatureBytes)))
-    const expectedBase64Url = expectedBase64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+    console.log('Expected signature (hex):', expectedSignature)
     
-    console.log('Expected hex:', expectedHex)
-    console.log('Expected base64:', expectedBase64)
-    console.log('Expected base64url:', expectedBase64Url)
+    // Normalize received signature - loại bỏ các prefix có thể có
+    let receivedSignature = signature.trim().toLowerCase()
     
-    // Normalize received signature
-    let receivedSignature = signature.trim()
-    
-    // Remove various prefixes
-    const prefixesToRemove = [
-      'sha256=',
-      'hmac-sha256=', 
-      'casso-signature=',
-      'Bearer ',
-      't=',
-    ]
-    
-    for (const prefix of prefixesToRemove) {
-      if (receivedSignature.toLowerCase().startsWith(prefix.toLowerCase())) {
+    // Loại bỏ các prefix thường gặp
+    const prefixes = ['sha256=', 'hmac-sha256=', 'casso-signature=']
+    for (const prefix of prefixes) {
+      if (receivedSignature.startsWith(prefix)) {
         receivedSignature = receivedSignature.substring(prefix.length)
-        console.log(`Removed prefix "${prefix}":`, receivedSignature)
+        break
       }
     }
     
-    // Remove timestamp if present (format: t=timestamp,v1=signature)
-    if (receivedSignature.includes(',v1=')) {
-      receivedSignature = receivedSignature.split(',v1=')[1]
-      console.log('Extracted from timestamp format:', receivedSignature)
+    console.log('Normalized signature:', receivedSignature)
+    console.log('Signatures match:', expectedSignature === receivedSignature)
+    
+    if (expectedSignature === receivedSignature) {
+      console.log('✅ CASSO signature verified successfully')
+      return true
     }
     
-    receivedSignature = receivedSignature.trim()
-    console.log('Final received signature:', receivedSignature)
-    
-    // Thử so sánh với các format khác nhau
-    const comparisons = [
-      { name: 'hex lowercase', expected: expectedHex.toLowerCase(), received: receivedSignature.toLowerCase() },
-      { name: 'hex uppercase', expected: expectedHex.toUpperCase(), received: receivedSignature.toUpperCase() },
-      { name: 'base64', expected: expectedBase64, received: receivedSignature },
-      { name: 'base64url', expected: expectedBase64Url, received: receivedSignature },
-    ]
-    
-    for (const comparison of comparisons) {
-      console.log(`Comparing ${comparison.name}:`)
-      console.log(`  Expected: ${comparison.expected}`)
-      console.log(`  Received: ${comparison.received}`)
-      console.log(`  Match: ${comparison.expected === comparison.received}`)
-      
-      if (comparison.expected === comparison.received) {
-        console.log(`✅ Signature verified with ${comparison.name} format`)
-        return true
-      }
-    }
-    
-    // Thử với payload được normalize khác nhau
-    const payloadVariations = [
-      payload,
-      payload.replace(/\r\n/g, '\n'),
-      payload.replace(/\n/g, '\r\n'),
-      payload.replace(/\s+/g, ' ').trim(),
-    ]
-    
-    for (let i = 0; i < payloadVariations.length; i++) {
-      const testPayload = payloadVariations[i]
-      if (testPayload === payload) continue
-      
-      console.log(`Testing payload variation ${i + 1}:`)
-      const testSignatureBytes = await crypto.subtle.sign('HMAC', key, encoder.encode(testPayload))
-      const testHex = Array.from(new Uint8Array(testSignatureBytes))
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('')
-      
-      if (testHex.toLowerCase() === receivedSignature.toLowerCase()) {
-        console.log(`✅ Signature verified with payload variation ${i + 1}`)
-        return true
-      }
-    }
-    
-    console.log('❌ All signature verification attempts failed')
-    console.log('=== SIGNATURE VERIFICATION END ===')
+    console.log('❌ CASSO signature verification failed')
+    console.log('=== CASSO SIGNATURE VERIFICATION END ===')
     
     return false
   } catch (error) {
