@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { Routes, Route, Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -43,6 +42,215 @@ const SellerDashboard = () => {
 
   const currentTab = getCurrentTab();
 
+  const DashboardContent = () => (
+    <Routes>
+      <Route path="/" element={
+        <Tabs value={currentTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview" asChild>
+              <Link to="/seller" className="flex items-center space-x-2">
+                <BarChart3 className="h-4 w-4" />
+                <span>Tổng quan</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="products" asChild>
+              <Link to="/seller/products" className="flex items-center space-x-2">
+                <Package className="h-4 w-4" />
+                <span>Sản phẩm</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="orders" asChild>
+              <Link to="/seller/orders" className="flex items-center space-x-2">
+                <ShoppingCart className="h-4 w-4" />
+                <span>Đơn hàng</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="wallet" asChild>
+              <Link to="/seller/wallet" className="flex items-center space-x-2">
+                <Wallet className="h-4 w-4" />
+                <span>Ví tiền</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="add-product" asChild>
+              <Link to="/seller/add-product" className="flex items-center space-x-2">
+                <Plus className="h-4 w-4" />
+                <span>Thêm SP</span>
+              </Link>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="overview" className="space-y-6">
+            <SellerStats />
+          </TabsContent>
+        </Tabs>
+      } />
+      
+      <Route path="/products" element={
+        <Tabs value="products" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview" asChild>
+              <Link to="/seller" className="flex items-center space-x-2">
+                <BarChart3 className="h-4 w-4" />
+                <span>Tổng quan</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="products" asChild>
+              <Link to="/seller/products" className="flex items-center space-x-2">
+                <Package className="h-4 w-4" />
+                <span>Sản phẩm</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="orders" asChild>
+              <Link to="/seller/orders" className="flex items-center space-x-2">
+                <ShoppingCart className="h-4 w-4" />
+                <span>Đơn hàng</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="wallet" asChild>
+              <Link to="/seller/wallet" className="flex items-center space-x-2">
+                <Wallet className="h-4 w-4" />
+                <span>Ví tiền</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="add-product" asChild>
+              <Link to="/seller/add-product" className="flex items-center space-x-2">
+                <Plus className="h-4 w-4" />
+                <span>Thêm SP</span>
+              </Link>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="products" className="space-y-6">
+            <SellerProducts />
+          </TabsContent>
+        </Tabs>
+      } />
+      
+      <Route path="/orders" element={
+        <Tabs value="orders" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview" asChild>
+              <Link to="/seller" className="flex items-center space-x-2">
+                <BarChart3 className="h-4 w-4" />
+                <span>Tổng quan</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="products" asChild>
+              <Link to="/seller/products" className="flex items-center space-x-2">
+                <Package className="h-4 w-4" />
+                <span>Sản phẩm</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="orders" asChild>
+              <Link to="/seller/orders" className="flex items-center space-x-2">
+                <ShoppingCart className="h-4 w-4" />
+                <span>Đơn hàng</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="wallet" asChild>
+              <Link to="/seller/wallet" className="flex items-center space-x-2">
+                <Wallet className="h-4 w-4" />
+                <span>Ví tiền</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="add-product" asChild>
+              <Link to="/seller/add-product" className="flex items-center space-x-2">
+                <Plus className="h-4 w-4" />
+                <span>Thêm SP</span>
+              </Link>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="orders" className="space-y-6">
+            <SellerOrders />
+          </TabsContent>
+        </Tabs>
+      } />
+
+      <Route path="/wallet" element={
+        <Tabs value="wallet" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview" asChild>
+              <Link to="/seller" className="flex items-center space-x-2">
+                <BarChart3 className="h-4 w-4" />
+                <span>Tổng quan</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="products" asChild>
+              <Link to="/seller/products" className="flex items-center space-x-2">
+                <Package className="h-4 w-4" />
+                <span>Sản phẩm</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="orders" asChild>
+              <Link to="/seller/orders" className="flex items-center space-x-2">
+                <ShoppingCart className="h-4 w-4" />
+                <span>Đơn hàng</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="wallet" asChild>
+              <Link to="/seller/wallet" className="flex items-center space-x-2">
+                <Wallet className="h-4 w-4" />
+                <span>Ví tiền</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="add-product" asChild>
+              <Link to="/seller/add-product" className="flex items-center space-x-2">
+                <Plus className="h-4 w-4" />
+                <span>Thêm SP</span>
+              </Link>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="wallet" className="space-y-6">
+            <SellerWallet />
+          </TabsContent>
+        </Tabs>
+      } />
+      
+      <Route path="/add-product" element={
+        <Tabs value="add-product" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="overview" asChild>
+              <Link to="/seller" className="flex items-center space-x-2">
+                <BarChart3 className="h-4 w-4" />
+                <span>Tổng quan</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="products" asChild>
+              <Link to="/seller/products" className="flex items-center space-x-2">
+                <Package className="h-4 w-4" />
+                <span>Sản phẩm</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="orders" asChild>
+              <Link to="/seller/orders" className="flex items-center space-x-2">
+                <ShoppingCart className="h-4 w-4" />
+                <span>Đơn hàng</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="wallet" asChild>
+              <Link to="/seller/wallet" className="flex items-center space-x-2">
+                <Wallet className="h-4 w-4" />
+                <span>Ví tiền</span>
+              </Link>
+            </TabsTrigger>
+            <TabsTrigger value="add-product" asChild>
+              <Link to="/seller/add-product" className="flex items-center space-x-2">
+                <Plus className="h-4 w-4" />
+                <span>Thêm SP</span>
+              </Link>
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="add-product" className="space-y-6">
+            <SellerAddProduct />
+          </TabsContent>
+        </Tabs>
+      } />
+    </Routes>
+  );
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -53,214 +261,9 @@ const SellerDashboard = () => {
           <p className="text-gray-600">Quản lý sản phẩm và đơn hàng của bạn</p>
         </div>
 
-        <SellerStatusHandler />
-        
-        <Routes>
-          <Route path="/" element={
-            <Tabs value={currentTab} className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="overview" asChild>
-                  <Link to="/seller" className="flex items-center space-x-2">
-                    <BarChart3 className="h-4 w-4" />
-                    <span>Tổng quan</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="products" asChild>
-                  <Link to="/seller/products" className="flex items-center space-x-2">
-                    <Package className="h-4 w-4" />
-                    <span>Sản phẩm</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="orders" asChild>
-                  <Link to="/seller/orders" className="flex items-center space-x-2">
-                    <ShoppingCart className="h-4 w-4" />
-                    <span>Đơn hàng</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="wallet" asChild>
-                  <Link to="/seller/wallet" className="flex items-center space-x-2">
-                    <Wallet className="h-4 w-4" />
-                    <span>Ví tiền</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="add-product" asChild>
-                  <Link to="/seller/add-product" className="flex items-center space-x-2">
-                    <Plus className="h-4 w-4" />
-                    <span>Thêm SP</span>
-                  </Link>
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="overview" className="space-y-6">
-                <SellerStats />
-              </TabsContent>
-            </Tabs>
-          } />
-          
-          <Route path="/products" element={
-            <Tabs value="products" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="overview" asChild>
-                  <Link to="/seller" className="flex items-center space-x-2">
-                    <BarChart3 className="h-4 w-4" />
-                    <span>Tổng quan</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="products" asChild>
-                  <Link to="/seller/products" className="flex items-center space-x-2">
-                    <Package className="h-4 w-4" />
-                    <span>Sản phẩm</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="orders" asChild>
-                  <Link to="/seller/orders" className="flex items-center space-x-2">
-                    <ShoppingCart className="h-4 w-4" />
-                    <span>Đơn hàng</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="wallet" asChild>
-                  <Link to="/seller/wallet" className="flex items-center space-x-2">
-                    <Wallet className="h-4 w-4" />
-                    <span>Ví tiền</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="add-product" asChild>
-                  <Link to="/seller/add-product" className="flex items-center space-x-2">
-                    <Plus className="h-4 w-4" />
-                    <span>Thêm SP</span>
-                  </Link>
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="products" className="space-y-6">
-                <SellerProducts />
-              </TabsContent>
-            </Tabs>
-          } />
-          
-          <Route path="/orders" element={
-            <Tabs value="orders" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="overview" asChild>
-                  <Link to="/seller" className="flex items-center space-x-2">
-                    <BarChart3 className="h-4 w-4" />
-                    <span>Tổng quan</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="products" asChild>
-                  <Link to="/seller/products" className="flex items-center space-x-2">
-                    <Package className="h-4 w-4" />
-                    <span>Sản phẩm</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="orders" asChild>
-                  <Link to="/seller/orders" className="flex items-center space-x-2">
-                    <ShoppingCart className="h-4 w-4" />
-                    <span>Đơn hàng</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="wallet" asChild>
-                  <Link to="/seller/wallet" className="flex items-center space-x-2">
-                    <Wallet className="h-4 w-4" />
-                    <span>Ví tiền</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="add-product" asChild>
-                  <Link to="/seller/add-product" className="flex items-center space-x-2">
-                    <Plus className="h-4 w-4" />
-                    <span>Thêm SP</span>
-                  </Link>
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="orders" className="space-y-6">
-                <SellerOrders />
-              </TabsContent>
-            </Tabs>
-          } />
-
-          <Route path="/wallet" element={
-            <Tabs value="wallet" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="overview" asChild>
-                  <Link to="/seller" className="flex items-center space-x-2">
-                    <BarChart3 className="h-4 w-4" />
-                    <span>Tổng quan</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="products" asChild>
-                  <Link to="/seller/products" className="flex items-center space-x-2">
-                    <Package className="h-4 w-4" />
-                    <span>Sản phẩm</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="orders" asChild>
-                  <Link to="/seller/orders" className="flex items-center space-x-2">
-                    <ShoppingCart className="h-4 w-4" />
-                    <span>Đơn hàng</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="wallet" asChild>
-                  <Link to="/seller/wallet" className="flex items-center space-x-2">
-                    <Wallet className="h-4 w-4" />
-                    <span>Ví tiền</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="add-product" asChild>
-                  <Link to="/seller/add-product" className="flex items-center space-x-2">
-                    <Plus className="h-4 w-4" />
-                    <span>Thêm SP</span>
-                  </Link>
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="wallet" className="space-y-6">
-                <SellerWallet />
-              </TabsContent>
-            </Tabs>
-          } />
-          
-          <Route path="/add-product" element={
-            <Tabs value="add-product" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="overview" asChild>
-                  <Link to="/seller" className="flex items-center space-x-2">
-                    <BarChart3 className="h-4 w-4" />
-                    <span>Tổng quan</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="products" asChild>
-                  <Link to="/seller/products" className="flex items-center space-x-2">
-                    <Package className="h-4 w-4" />
-                    <span>Sản phẩm</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="orders" asChild>
-                  <Link to="/seller/orders" className="flex items-center space-x-2">
-                    <ShoppingCart className="h-4 w-4" />
-                    <span>Đơn hàng</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="wallet" asChild>
-                  <Link to="/seller/wallet" className="flex items-center space-x-2">
-                    <Wallet className="h-4 w-4" />
-                    <span>Ví tiền</span>
-                  </Link>
-                </TabsTrigger>
-                <TabsTrigger value="add-product" asChild>
-                  <Link to="/seller/add-product" className="flex items-center space-x-2">
-                    <Plus className="h-4 w-4" />
-                    <span>Thêm SP</span>
-                  </Link>
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="add-product" className="space-y-6">
-                <SellerAddProduct />
-              </TabsContent>
-            </Tabs>
-          } />
-        </Routes>
+        <SellerStatusHandler>
+          <DashboardContent />
+        </SellerStatusHandler>
       </main>
       
       <Footer />
