@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Download, Eye } from "lucide-react";
 import { Link } from "react-router-dom";
 import OrderSupportChatButton from "@/components/chat/OrderSupportChatButton";
+import OrderConfirmButton from "@/components/buyer/OrderConfirmButton";
+import OrderDisputeButton from "@/components/buyer/OrderDisputeButton";
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { 
@@ -210,12 +212,15 @@ const MyPurchases = () => {
                             {purchase.delivery_status && (
                               <div className="mt-1">
                                 <Badge variant="outline" className={
-                                  purchase.delivery_status === 'delivered' ? 'border-green-500 text-green-700' :
+                                  purchase.delivery_status === 'delivered' || purchase.delivery_status === 'completed' ? 'border-green-500 text-green-700' :
                                   purchase.delivery_status === 'processing' ? 'border-blue-500 text-blue-700' :
+                                  purchase.delivery_status === 'disputed' ? 'border-red-500 text-red-700' :
                                   'border-gray-500 text-gray-700'
                                 }>
                                   {purchase.delivery_status === 'delivered' ? 'Đã giao' :
+                                   purchase.delivery_status === 'completed' ? 'Hoàn thành' :
                                    purchase.delivery_status === 'processing' ? 'Đang xử lý' :
+                                   purchase.delivery_status === 'disputed' ? 'Tranh chấp' :
                                    'Chờ xử lý'}
                                 </Badge>
                               </div>
@@ -254,6 +259,24 @@ const MyPurchases = () => {
                               </Link>
                             </Button>
                           )}
+
+                          {/* Order Confirm Button */}
+                          <OrderConfirmButton 
+                            orderId={purchase.id}
+                            status={purchase.status}
+                            deliveryStatus={purchase.delivery_status}
+                            variant="outline"
+                            size="default"
+                          />
+
+                          {/* Order Dispute Button */}
+                          <OrderDisputeButton 
+                            orderId={purchase.id}
+                            status={purchase.status}
+                            deliveryStatus={purchase.delivery_status}
+                            variant="outline"
+                            size="default"
+                          />
 
                           {/* Order Support Chat Button */}
                           <OrderSupportChatButton 
