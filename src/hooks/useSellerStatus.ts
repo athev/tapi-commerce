@@ -103,13 +103,17 @@ export const useSellerStatus = () => {
     
     console.log('getSellerStatus check:', { 
       userRole: profile?.role, 
-      applicationStatus: sellerApplication?.status 
+      applicationStatus: sellerApplication?.status,
+      loading
     });
     
-    // Check profile role first - this is the source of truth after approval
-    if (profile?.role === 'seller') return 'approved_seller';
+    // Priority 1: Check profile role first - this is the source of truth
+    if (profile?.role === 'seller' || profile?.role === 'admin') {
+      // If user has seller/admin role, they should see the dashboard regardless of application status
+      return 'approved_seller';
+    }
     
-    // Then check application status - if approved but role not updated yet, still treat as approved
+    // Priority 2: Check application status only if profile role is not seller/admin
     if (sellerApplication?.status === 'approved') return 'approved_seller';
     if (sellerApplication?.status === 'pending') return 'pending_approval';
     if (sellerApplication?.status === 'rejected') return 'rejected';
