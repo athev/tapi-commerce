@@ -98,6 +98,31 @@ export const useSellerStatus = () => {
     };
   }, [user?.id, refreshProfile]);
 
+  // Listen for wallet changes to refresh data when wallet is created
+  useEffect(() => {
+    if (!user) return;
+
+    const walletChannel = supabase
+      .channel('wallet-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'wallets',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Wallet created for user:', payload);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(walletChannel);
+    };
+  }, [user?.id]);
+
   const getSellerStatus = () => {
     if (!user) return 'not_logged_in';
     
