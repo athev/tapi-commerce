@@ -1,4 +1,3 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -93,45 +92,6 @@ const SellerWallet = () => {
     enabled: !!wallet
   });
 
-  // Auto-create wallet if user is seller but doesn't have one
-  const { mutate: createWallet, isPending: isCreatingWallet } = useQuery({
-    queryKey: ['create-wallet', user?.id],
-    queryFn: async () => {
-      if (!user || !profile || (profile.role !== 'seller' && profile.role !== 'admin')) {
-        return null;
-      }
-
-      console.log('Creating wallet for seller:', user.id);
-      
-      const { data, error } = await supabase
-        .from('wallets')
-        .insert({
-          user_id: user.id,
-          pending: 0,
-          available: 0,
-          total_earned: 0
-        })
-        .select()
-        .single();
-
-      if (error) {
-        // If wallet already exists, that's fine
-        if (error.code === '23505') {
-          console.log('Wallet already exists for user');
-          return null;
-        }
-        console.error('Error creating wallet:', error);
-        throw error;
-      }
-
-      console.log('Successfully created wallet:', data);
-      // Refetch wallet data after creation
-      setTimeout(() => refetchWallet(), 500);
-      return data;
-    },
-    enabled: false // Only run manually
-  });
-
   if (!user) {
     return (
       <Card>
@@ -144,7 +104,7 @@ const SellerWallet = () => {
     );
   }
 
-  if (walletLoading || isCreatingWallet) {
+  if (walletLoading) {
     return (
       <div className="space-y-4">
         {[...Array(3)].map((_, i) => (
@@ -176,15 +136,15 @@ const SellerWallet = () => {
     );
   }
 
-  // If no wallet and user is seller, try to create one
+  // If no wallet and user is seller, show message about wallet creation
   if (!wallet && profile && (profile.role === 'seller' || profile.role === 'admin')) {
     return (
       <Card>
         <CardContent className="p-6 text-center">
           <Wallet className="h-12 w-12 text-blue-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium mb-2">Đang khởi tạo ví tiền</h3>
+          <h3 className="text-lg font-medium mb-2">Ví tiền đang được tạo</h3>
           <p className="text-gray-500 mb-4">
-            Ví tiền đang được tạo tự động cho tài khoản người bán của bạn.
+            Ví tiền sẽ được tạo tự động cho tài khoản người bán của bạn.
           </p>
           <Button onClick={() => refetchWallet()} variant="outline">
             Làm mới
