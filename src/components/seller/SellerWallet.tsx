@@ -12,7 +12,7 @@ import TransactionHistory from "./TransactionHistory";
 const SellerWallet = () => {
   const { user, profile } = useAuth();
 
-  // Fetch wallet data with better error handling
+  // Fetch wallet data với refetch interval để cập nhật real-time
   const { data: wallet, isLoading: walletLoading, error: walletError, refetch: refetchWallet } = useQuery({
     queryKey: ['seller-wallet', user?.id],
     queryFn: async () => {
@@ -21,7 +21,7 @@ const SellerWallet = () => {
         return null;
       }
       
-      console.log('Fetching wallet for user:', user.id);
+      console.log('🔍 Fetching wallet for user:', user.id);
       
       const { data, error } = await supabase
         .from('wallets')
@@ -30,25 +30,30 @@ const SellerWallet = () => {
         .maybeSingle();
       
       if (error) {
-        console.error('Error fetching wallet:', error);
+        console.error('❌ Error fetching wallet:', error);
         throw error;
       }
       
-      console.log('Wallet data:', data);
+      console.log('💰 Wallet data fetched:', data);
       return data;
     },
     enabled: !!user,
     retry: 3,
-    retryDelay: 1000
+    retryDelay: 1000,
+    refetchInterval: 30000, // Refresh mỗi 30 giây để cập nhật real-time
+    refetchOnWindowFocus: true
   });
 
-  // Fetch wallet logs
-  const { data: walletLogs, isLoading: logsLoading } = useQuery({
+  // Fetch wallet logs với dependency đúng
+  const { data: walletLogs, isLoading: logsLoading, refetch: refetchLogs } = useQuery({
     queryKey: ['wallet-logs', wallet?.id],
     queryFn: async () => {
-      if (!wallet) return [];
+      if (!wallet) {
+        console.log('No wallet found for logs query');
+        return [];
+      }
       
-      console.log('Fetching wallet logs for wallet:', wallet.id);
+      console.log('📋 Fetching wallet logs for wallet:', wallet.id);
       
       const { data, error } = await supabase
         .from('wallet_logs')
@@ -63,15 +68,26 @@ const SellerWallet = () => {
         .order('created_at', { ascending: false });
       
       if (error) {
-        console.error('Error fetching wallet logs:', error);
+        console.error('❌ Error fetching wallet logs:', error);
         throw error;
       }
       
-      console.log('Wallet logs:', data);
-      return data;
+      console.log('📊 Wallet logs fetched:', data?.length, 'records');
+      return data || [];
     },
-    enabled: !!wallet
+    enabled: !!wallet,
+    refetchInterval: 30000, // Refresh mỗi 30 giây
+    refetchOnWindowFocus: true
   });
+
+  // Auto-refresh function
+  const handleRefresh = () => {
+    console.log('🔄 Manual refresh triggered');
+    refetchWallet();
+    if (wallet) {
+      refetchLogs();
+    }
+  };
 
   if (!user) {
     return (
@@ -109,7 +125,7 @@ const SellerWallet = () => {
           <Wallet className="h-12 w-12 text-red-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium mb-2 text-red-600">Lỗi tải ví tiền</h3>
           <p className="text-gray-500 mb-4">Có lỗi xảy ra khi tải thông tin ví tiền.</p>
-          <Button onClick={() => refetchWallet()} variant="outline">
+          <Button onClick={handleRefresh} variant="outline">
             Thử lại
           </Button>
         </CardContent>
@@ -125,9 +141,9 @@ const SellerWallet = () => {
           <Wallet className="h-12 w-12 text-blue-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium mb-2">Ví tiền đang được tạo</h3>
           <p className="text-gray-500 mb-4">
-            Ví tiền sẽ được tạo tự động cho tài khoản người bán của bạn.
+            Ví tiền sẽ được tạo tự động khi bạn có đơn hàng đầu tiên.
           </p>
-          <Button onClick={() => refetchWallet()} variant="outline">
+          <Button onClick={handleRefresh} variant="outline">
             Làm mới
           </Button>
         </CardContent>
@@ -151,6 +167,13 @@ const SellerWallet = () => {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Ví PI của tôi</h2>
+        <Button onClick={handleRefresh} variant="outline" size="sm">
+          🔄 Làm mới
+        </Button>
+      </div>
+      
       <WalletSummaryCards wallet={wallet} />
       <WithdrawalSection availablePI={Number(wallet.available)} />
       <TransactionHistory walletLogs={walletLogs || []} isLoading={logsLoading} />

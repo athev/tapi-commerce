@@ -13,7 +13,7 @@ export async function processSellerEarning(order: any, transactionAmount: number
     const piAmount = Math.floor(transactionAmount / 1000);
     console.log(`📊 PI Amount calculated: ${piAmount} PI (${transactionAmount} VND)`);
 
-    // Kiểm tra xem đã có wallet log cho order này chưa
+    // BƯỚC 1: Kiểm tra xem đã có wallet log cho order này chưa (tránh trùng lặp)
     const { data: existingLog, error: logCheckError } = await supabase
       .from('wallet_logs')
       .select('*')
@@ -23,6 +23,7 @@ export async function processSellerEarning(order: any, transactionAmount: number
 
     if (logCheckError) {
       console.error('❌ Error checking existing wallet log:', logCheckError);
+      return;
     }
 
     if (existingLog) {
@@ -30,7 +31,7 @@ export async function processSellerEarning(order: any, transactionAmount: number
       return;
     }
 
-    // Tạo hoặc cập nhật ví - LUÔN LUÔN xử lý ví khi có đơn hàng thành công
+    // BƯỚC 2: Lấy hoặc tạo ví cho seller
     let { data: wallet, error: walletError } = await supabase
       .from('wallets')
       .select('*')
@@ -60,17 +61,22 @@ export async function processSellerEarning(order: any, transactionAmount: number
         return;
       }
 
-      console.log('✅ New wallet created with PI:', newWallet.id);
+      console.log('✅ New wallet created with initial PI:', newWallet.id);
       wallet = newWallet;
     } else {
       console.log('📈 Updating existing wallet with PI');
       
-      // Cập nhật ví hiện tại - cộng PI vào pending
+      // BƯỚC 3: Cập nhật ví hiện tại - cộng PI vào pending và total_earned
+      const newPending = Number(wallet.pending) + piAmount;
+      const newTotalEarned = Number(wallet.total_earned) + piAmount;
+      
+      console.log(`💵 Wallet update: pending ${wallet.pending} → ${newPending}, total_earned ${wallet.total_earned} → ${newTotalEarned}`);
+      
       const { data: updatedWallet, error: updateError } = await supabase
         .from('wallets')
         .update({
-          pending: Number(wallet.pending) + piAmount,
-          total_earned: Number(wallet.total_earned) + piAmount,
+          pending: newPending,
+          total_earned: newTotalEarned,
           updated_at: new Date().toISOString()
         })
         .eq('id', wallet.id)
@@ -86,13 +92,15 @@ export async function processSellerEarning(order: any, transactionAmount: number
       wallet = updatedWallet;
     }
 
-    // Tạo wallet log - QUAN TRỌNG: Luôn tạo log để theo dõi
+    // BƯỚC 4: Tạo wallet log để tracking
     await createWalletLog(supabase, wallet.id, order.id, piAmount, transactionAmount);
 
     console.log(`🎉 Successfully added ${piAmount} PI to seller's wallet for order ${order.id}`);
+    console.log(`📊 Final wallet state - pending: ${wallet.pending}, available: ${wallet.available}, total_earned: ${wallet.total_earned}`);
 
   } catch (error) {
     console.error('❌ Error in processSellerEarning:', error);
+    throw error; // Re-throw để có thể catch ở level cao hơn
   }
 }
 
@@ -101,6 +109,8 @@ async function createWalletLog(supabase: any, walletId: string, orderId: string,
     // Tính release date (3 ngày sau)
     const releaseDate = new Date();
     releaseDate.setDate(releaseDate.getDate() + 3);
+
+    console.log(`📝 Creating wallet log for ${piAmount} PI, release date: ${releaseDate.toISOString()}`);
 
     const { data: logResult, error } = await supabase
       .from('wallet_logs')
@@ -119,11 +129,13 @@ async function createWalletLog(supabase: any, walletId: string, orderId: string,
 
     if (error) {
       console.error('❌ Error creating wallet log:', error);
+      throw error;
     } else {
-      console.log(`✅ Wallet log created successfully - Release date: ${releaseDate.toISOString()}`);
-      console.log(`📝 Log details: ${piAmount} PI from order ${orderId}`);
+      console.log(`✅ Wallet log created successfully - ID: ${logResult.id}`);
+      console.log(`📝 Log details: ${piAmount} PI from order ${orderId}, release on ${releaseDate.toISOString()}`);
     }
   } catch (error) {
     console.error('❌ Error in createWalletLog:', error);
+    throw error;
   }
 }

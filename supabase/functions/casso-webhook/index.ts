@@ -17,7 +17,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== CASSO WEBHOOK V3 REQUEST START ===')
+    console.log('=== CASSO WEBHOOK V4 REQUEST START ===')
     console.log('Request method:', req.method)
     console.log('Request URL:', req.url)
 
@@ -64,30 +64,51 @@ serve(async (req) => {
       // Process the transaction (existing logic)
       const result = await processTransaction(transaction, supabase)
       
-      // QUAN TRỌNG: Xử lý wallet NGAY sau khi transaction thành công
+      // 🎯 QUAN TRỌNG: Xử lý wallet NGAY sau khi transaction thành công
       if (result.status === 'success' && result.order) {
         console.log('🎉 Transaction processed successfully, now processing wallet and chat...')
         
-        // Process seller earning (add PI to wallet) - ĐÂY LÀ ĐIỂM QUAN TRỌNG
-        console.log('💰 Starting wallet processing for seller...')
-        await processSellerEarning(result.order, result.transaction_amount || transaction.amount, supabase)
-        console.log('✅ Wallet processing completed')
+        try {
+          // Process seller earning (add PI to wallet) - ĐÂY LÀ ĐIỂM QUAN TRỌNG
+          console.log('💰 Starting wallet processing for seller...')
+          await processSellerEarning(result.order, result.transaction_amount || transaction.amount, supabase)
+          console.log('✅ Wallet processing completed successfully')
+        } catch (walletError) {
+          console.error('❌ Wallet processing failed:', walletError)
+          // Tiếp tục với chat nhưng ghi log lỗi
+        }
         
-        // Create order support chat
-        console.log('💬 Creating order support chat...')
-        const conversationId = await createOrderSupportChat(result.order, supabase)
-        console.log('✅ Chat creation completed')
-        
-        return new Response(JSON.stringify({
-          success: true,
-          message: 'Payment processed successfully',
-          order_id: result.order.id,
-          transaction_id: result.transaction_id,
-          conversation_id: conversationId,
-          wallet_processed: true
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        })
+        try {
+          // Create order support chat
+          console.log('💬 Creating order support chat...')
+          const conversationId = await createOrderSupportChat(result.order, supabase)
+          console.log('✅ Chat creation completed')
+          
+          return new Response(JSON.stringify({
+            success: true,
+            message: 'Payment processed successfully',
+            order_id: result.order.id,
+            transaction_id: result.transaction_id,
+            conversation_id: conversationId,
+            wallet_processed: true
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        } catch (chatError) {
+          console.error('❌ Chat creation failed:', chatError)
+          
+          // Return success vì wallet đã xử lý thành công
+          return new Response(JSON.stringify({
+            success: true,
+            message: 'Payment and wallet processed successfully, chat creation failed',
+            order_id: result.order.id,
+            transaction_id: result.transaction_id,
+            wallet_processed: true,
+            chat_error: chatError.message
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          })
+        }
       }
 
       // Return the original result if not successful
@@ -109,7 +130,8 @@ serve(async (req) => {
     console.error('Webhook error:', error)
     return new Response(JSON.stringify({
       success: false,
-      error: 'Internal server error'
+      error: 'Internal server error',
+      details: error.message
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
