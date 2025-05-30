@@ -28,7 +28,8 @@ const OrderConfirmButton = ({
     mutationFn: async () => {
       console.log('Confirming order completion:', orderId);
       
-      const { error } = await supabase
+      // Update order status to completed
+      const { error: orderError } = await supabase
         .from('orders')
         .update({
           delivery_status: 'completed',
@@ -36,19 +37,25 @@ const OrderConfirmButton = ({
         })
         .eq('id', orderId);
 
-      if (error) {
-        console.error('Error confirming order:', error);
-        throw error;
+      if (orderError) {
+        console.error('Error confirming order:', orderError);
+        throw new Error(`Không thể cập nhật đơn hàng: ${orderError.message}`);
       }
 
       // Call edge function to process early PI release
-      const { error: releaseError } = await supabase.functions.invoke('release-pi-early', {
-        body: { orderId }
-      });
+      try {
+        const { error: releaseError } = await supabase.functions.invoke('release-pi-early', {
+          body: { orderId }
+        });
 
-      if (releaseError) {
-        console.error('Error releasing PI early:', releaseError);
-        // Don't throw here as the order update was successful
+        if (releaseError) {
+          console.error('Error releasing PI early:', releaseError);
+          // Don't throw here as the order update was successful
+          console.log('Order confirmed but PI release may have issues');
+        }
+      } catch (error) {
+        console.error('Edge function error:', error);
+        // Continue as order confirmation is still valid
       }
     },
     onSuccess: () => {
@@ -60,12 +67,14 @@ const OrderConfirmButton = ({
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['user-purchases'] });
       queryClient.invalidateQueries({ queryKey: ['seller-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['seller-wallet'] });
+      queryClient.invalidateQueries({ queryKey: ['wallet-logs'] });
     },
     onError: (error) => {
       console.error('Confirm order error:', error);
       toast({
         title: "Lỗi xác nhận",
-        description: "Có lỗi xảy ra khi xác nhận đơn hàng",
+        description: error.message || "Có lỗi xảy ra khi xác nhận đơn hàng",
         variant: "destructive",
       });
     }

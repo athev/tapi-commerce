@@ -48,6 +48,8 @@ const SellerWallet = () => {
     queryFn: async () => {
       if (!wallet) return [];
       
+      console.log('Fetching wallet logs for wallet:', wallet.id);
+      
       const { data, error } = await supabase
         .from('wallet_logs')
         .select(`
@@ -60,7 +62,12 @@ const SellerWallet = () => {
         .eq('wallet_id', wallet.id)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching wallet logs:', error);
+        throw error;
+      }
+      
+      console.log('Wallet logs:', data);
       return data;
     },
     enabled: !!wallet

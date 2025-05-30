@@ -13,7 +13,24 @@ export async function processSellerEarning(order: any, transactionAmount: number
     const piAmount = Math.floor(transactionAmount / 1000);
     console.log(`📊 PI Amount calculated: ${piAmount} PI (${transactionAmount} VND)`);
 
-    // Tạo ví nếu chưa có
+    // Kiểm tra xem đã có wallet log cho order này chưa
+    const { data: existingLog, error: logCheckError } = await supabase
+      .from('wallet_logs')
+      .select('*')
+      .eq('order_id', order.id)
+      .eq('type', 'earning')
+      .maybeSingle();
+
+    if (logCheckError) {
+      console.error('❌ Error checking existing wallet log:', logCheckError);
+    }
+
+    if (existingLog) {
+      console.log('✅ Wallet log already exists for this order, skipping duplicate processing');
+      return;
+    }
+
+    // Tạo hoặc cập nhật ví
     const { data: wallet, error: walletError } = await supabase
       .from('wallets')
       .select('*')
@@ -54,8 +71,9 @@ export async function processSellerEarning(order: any, transactionAmount: number
       const { error: updateError } = await supabase
         .from('wallets')
         .update({
-          pending: wallet.pending + piAmount,
-          total_earned: wallet.total_earned + piAmount
+          pending: Number(wallet.pending) + piAmount,
+          total_earned: Number(wallet.total_earned) + piAmount,
+          updated_at: new Date().toISOString()
         })
         .eq('id', wallet.id);
 

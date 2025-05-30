@@ -8,120 +8,181 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    console.log('=== RELEASE PI EARLY FUNCTION START ===')
-    
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     const { orderId } = await req.json()
-    
+    console.log(`Processing early PI release for order: ${orderId}`)
+
     if (!orderId) {
-      return new Response(JSON.stringify({
-        success: false,
-        error: 'Order ID is required'
-      }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+      throw new Error('Order ID is required')
     }
 
-    console.log(`📦 Processing early PI release for order: ${orderId}`)
-
-    // Find pending wallet logs for this order
-    const { data: pendingLogs, error: fetchError } = await supabase
-      .from('wallet_logs')
+    // Get order details with product info
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
       .select(`
-        id,
-        wallet_id,
-        pi_amount,
-        wallets!inner(user_id, pending, available)
+        *,
+        products!inner(
+          id,
+          price,
+          seller_id,
+          title
+        )
       `)
+      .eq('id', orderId)
+      .single()
+
+    if (orderError || !order) {
+      console.error('Order not found:', orderError)
+      throw new Error(`Order not found: ${orderId}`)
+    }
+
+    console.log('Order found:', order)
+
+    const sellerId = order.products.seller_id
+    const orderAmount = order.products.price
+
+    // Calculate PI amount (1 PI = 1000 VND)
+    const piAmount = Math.floor(orderAmount / 1000)
+    console.log(`Calculated PI amount: ${piAmount} PI for ${orderAmount} VND`)
+
+    // Get or create seller wallet
+    let { data: wallet, error: walletError } = await supabase
+      .from('wallets')
+      .select('*')
+      .eq('user_id', sellerId)
+      .maybeSingle()
+
+    if (walletError) {
+      console.error('Error fetching wallet:', walletError)
+      throw new Error(`Wallet fetch error: ${walletError.message}`)
+    }
+
+    if (!wallet) {
+      console.log('Creating new wallet for seller:', sellerId)
+      const { data: newWallet, error: createError } = await supabase
+        .from('wallets')
+        .insert({
+          user_id: sellerId,
+          pending: 0,
+          available: 0,
+          total_earned: 0
+        })
+        .select()
+        .single()
+
+      if (createError) {
+        console.error('Error creating wallet:', createError)
+        throw new Error(`Wallet creation error: ${createError.message}`)
+      }
+
+      wallet = newWallet
+      console.log('New wallet created:', wallet.id)
+    }
+
+    // Update wallet - move pending PI to available (early release)
+    // Also handle case where PI hasn't been added to pending yet
+    const { data: existingLog, error: logError } = await supabase
+      .from('wallet_logs')
+      .select('*')
       .eq('order_id', orderId)
-      .eq('status', 'pending')
+      .eq('type', 'earning')
+      .maybeSingle()
 
-    if (fetchError) {
-      console.error('❌ Error fetching pending logs:', fetchError)
-      throw fetchError
-    }
+    let currentPending = Number(wallet.pending)
+    let currentAvailable = Number(wallet.available)
+    let currentTotal = Number(wallet.total_earned)
 
-    if (!pendingLogs || pendingLogs.length === 0) {
-      console.log('⚠️ No pending PI found for this order')
-      return new Response(JSON.stringify({
-        success: true,
-        message: 'No pending PI to release'
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
-    }
+    if (existingLog && existingLog.status === 'pending') {
+      // PI already in pending, move to available
+      console.log('Moving existing pending PI to available')
+      
+      const { error: updateError } = await supabase
+        .from('wallets')
+        .update({
+          pending: currentPending - piAmount,
+          available: currentAvailable + piAmount
+        })
+        .eq('id', wallet.id)
 
-    let releasedTotal = 0
+      if (updateError) {
+        console.error('Error updating wallet (move pending to available):', updateError)
+        throw new Error(`Wallet update error: ${updateError.message}`)
+      }
 
-    for (const log of pendingLogs) {
-      try {
-        console.log(`🔄 Releasing ${log.pi_amount} PI from log ${log.id}`)
-        
-        // Update wallet: move from pending to available
-        const { error: walletError } = await supabase
-          .from('wallets')
-          .update({
-            pending: Math.max(0, log.wallets.pending - log.pi_amount),
-            available: log.wallets.available + log.pi_amount
-          })
-          .eq('id', log.wallet_id)
+      // Update wallet log status
+      const { error: logUpdateError } = await supabase
+        .from('wallet_logs')
+        .update({
+          status: 'released',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingLog.id)
 
-        if (walletError) {
-          console.error(`❌ Error updating wallet ${log.wallet_id}:`, walletError)
-          continue
-        }
+      if (logUpdateError) {
+        console.error('Error updating wallet log:', logUpdateError)
+      }
 
-        // Update wallet log status
-        const { error: logError } = await supabase
-          .from('wallet_logs')
-          .update({ 
-            status: 'released',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', log.id)
+    } else {
+      // PI not in system yet, add directly to available
+      console.log('Adding PI directly to available (no pending found)')
+      
+      const { error: updateError } = await supabase
+        .from('wallets')
+        .update({
+          available: currentAvailable + piAmount,
+          total_earned: currentTotal + piAmount
+        })
+        .eq('id', wallet.id)
 
-        if (logError) {
-          console.error(`❌ Error updating log ${log.id}:`, logError)
-          continue
-        }
+      if (updateError) {
+        console.error('Error updating wallet (direct to available):', updateError)
+        throw new Error(`Wallet update error: ${updateError.message}`)
+      }
 
-        releasedTotal += log.pi_amount
-        console.log(`✅ Released ${log.pi_amount} PI early`)
+      // Create new wallet log as released
+      const { error: createLogError } = await supabase
+        .from('wallet_logs')
+        .insert({
+          wallet_id: wallet.id,
+          order_id: orderId,
+          type: 'earning',
+          pi_amount: piAmount,
+          vnd_amount: orderAmount,
+          status: 'released',
+          description: `Early release from order ${orderId.slice(0, 8)} (confirmed by buyer)`
+        })
 
-      } catch (error) {
-        console.error(`❌ Error processing log ${log.id}:`, error)
+      if (createLogError) {
+        console.error('Error creating wallet log:', createLogError)
       }
     }
 
-    const result = {
+    console.log(`✅ PI successfully released early for order ${orderId}`)
+
+    return new Response(JSON.stringify({
       success: true,
-      message: 'PI released early successfully',
-      order_id: orderId,
-      total_released: releasedTotal,
-      logs_processed: pendingLogs.length
-    }
-
-    console.log('🎉 Early PI release completed:', result)
-
-    return new Response(JSON.stringify(result), {
+      message: 'PI released successfully',
+      orderId,
+      piAmount,
+      released: true
+    }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 
   } catch (error) {
-    console.error('❌ Early PI release error:', error)
+    console.error('Early PI release error:', error)
     return new Response(JSON.stringify({
       success: false,
-      error: 'Failed to release PI early',
-      details: error.message
+      error: error.message
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
