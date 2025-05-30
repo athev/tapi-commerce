@@ -17,7 +17,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== CASSO WEBHOOK V4 REQUEST START ===')
+    console.log('=== CASSO WEBHOOK V5 REQUEST START ===')
     console.log('Request method:', req.method)
     console.log('Request URL:', req.url)
 
@@ -68,14 +68,46 @@ serve(async (req) => {
       if (result.status === 'success' && result.order) {
         console.log('🎉 Transaction processed successfully, now processing wallet and chat...')
         
-        try {
-          // Process seller earning (add PI to wallet) - ĐÂY LÀ ĐIỂM QUAN TRỌNG
-          console.log('💰 Starting wallet processing for seller...')
-          await processSellerEarning(result.order, result.transaction_amount || transaction.amount, supabase)
-          console.log('✅ Wallet processing completed successfully')
-        } catch (walletError) {
-          console.error('❌ Wallet processing failed:', walletError)
-          // Tiếp tục với chat nhưng ghi log lỗi
+        // Ensure we have the order with product details
+        const { data: orderWithProduct, error: orderError } = await supabase
+          .from('orders')
+          .select(`
+            *,
+            products!inner(
+              id,
+              title,
+              price,
+              seller_id,
+              seller_name
+            )
+          `)
+          .eq('id', result.order.id)
+          .single();
+
+        if (orderError) {
+          console.error('❌ Error fetching order with product details:', orderError);
+        } else {
+          console.log('📦 Order with product details:', orderWithProduct);
+          
+          try {
+            // Process seller earning (add PI to wallet) - ĐÂY LÀ ĐIỂM QUAN TRỌNG
+            console.log('💰 Starting wallet processing for seller...');
+            console.log(`💰 Processing wallet for order: ${orderWithProduct.id}, amount: ${result.transaction_amount || transaction.amount}`);
+            
+            const walletResult = await processSellerEarning(
+              orderWithProduct, 
+              result.transaction_amount || transaction.amount, 
+              supabase
+            );
+            
+            if (walletResult.success) {
+              console.log('✅ Wallet processing completed successfully:', walletResult);
+            } else {
+              console.error('❌ Wallet processing failed:', walletResult.error);
+            }
+          } catch (walletError) {
+            console.error('❌ Wallet processing exception:', walletError);
+          }
         }
         
         try {
