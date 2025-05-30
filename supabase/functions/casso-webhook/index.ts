@@ -64,22 +64,27 @@ serve(async (req) => {
       // Process the transaction (existing logic)
       const result = await processTransaction(transaction, supabase)
       
-      // If transaction was successfully processed and matched to an order
+      // QUAN TRỌNG: Xử lý wallet NGAY sau khi transaction thành công
       if (result.status === 'success' && result.order) {
         console.log('🎉 Transaction processed successfully, now processing wallet and chat...')
         
-        // Process seller earning (add PI to wallet)
+        // Process seller earning (add PI to wallet) - ĐÂY LÀ ĐIỂM QUAN TRỌNG
+        console.log('💰 Starting wallet processing for seller...')
         await processSellerEarning(result.order, result.transaction_amount || transaction.amount, supabase)
+        console.log('✅ Wallet processing completed')
         
         // Create order support chat
+        console.log('💬 Creating order support chat...')
         const conversationId = await createOrderSupportChat(result.order, supabase)
+        console.log('✅ Chat creation completed')
         
         return new Response(JSON.stringify({
           success: true,
           message: 'Payment processed successfully',
           order_id: result.order.id,
           transaction_id: result.transaction_id,
-          conversation_id: conversationId
+          conversation_id: conversationId,
+          wallet_processed: true
         }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
