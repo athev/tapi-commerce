@@ -17,7 +17,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== CASSO WEBHOOK V5 REQUEST START ===')
+    console.log('=== CASSO WEBHOOK V6 REQUEST START ===')
     console.log('Request method:', req.method)
     console.log('Request URL:', req.url)
 
@@ -63,6 +63,7 @@ serve(async (req) => {
 
       // Process the transaction (existing logic)
       const result = await processTransaction(transaction, supabase)
+      console.log('🔄 Transaction processing result:', result)
       
       // 🎯 QUAN TRỌNG: Xử lý wallet NGAY sau khi transaction thành công
       if (result.status === 'success' && result.order) {
@@ -89,21 +90,33 @@ serve(async (req) => {
         } else {
           console.log('📦 Order with product details:', orderWithProduct);
           
+          // 💰 XỬ LÝ VÍ TIỀN - ĐÂY LÀ ĐIỂM QUAN TRỌNG NHẤT
           try {
-            // Process seller earning (add PI to wallet) - ĐÂY LÀ ĐIỂM QUAN TRỌNG
             console.log('💰 Starting wallet processing for seller...');
-            console.log(`💰 Processing wallet for order: ${orderWithProduct.id}, amount: ${result.transaction_amount || transaction.amount}`);
+            console.log(`💰 Order status: ${orderWithProduct.status}`);
+            console.log(`💰 Bank amount: ${orderWithProduct.bank_amount}`);
+            console.log(`💰 Transaction amount: ${result.transaction_amount || transaction.amount}`);
             
-            const walletResult = await processSellerEarning(
-              orderWithProduct, 
-              result.transaction_amount || transaction.amount, 
-              supabase
-            );
-            
-            if (walletResult.success) {
-              console.log('✅ Wallet processing completed successfully:', walletResult);
+            // Chỉ xử lý nếu đơn hàng đã paid và có amount
+            if (orderWithProduct.status === 'paid' && (orderWithProduct.bank_amount > 0 || (result.transaction_amount || transaction.amount) > 0)) {
+              const amountToProcess = orderWithProduct.bank_amount || result.transaction_amount || transaction.amount;
+              
+              console.log(`💰 Processing wallet for order: ${orderWithProduct.id}, amount: ${amountToProcess}`);
+              
+              const walletResult = await processSellerEarning(
+                orderWithProduct, 
+                amountToProcess, 
+                supabase
+              );
+              
+              if (walletResult.success) {
+                console.log('✅ Wallet processing completed successfully:', walletResult);
+              } else {
+                console.error('❌ Wallet processing failed:', walletResult.error);
+              }
             } else {
-              console.error('❌ Wallet processing failed:', walletResult.error);
+              console.log('⚠️ Skipping wallet processing - order not paid or invalid amount');
+              console.log(`⚠️ Status: ${orderWithProduct.status}, Bank amount: ${orderWithProduct.bank_amount}, Transaction amount: ${result.transaction_amount || transaction.amount}`);
             }
           } catch (walletError) {
             console.error('❌ Wallet processing exception:', walletError);
