@@ -17,7 +17,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== CASSO WEBHOOK V7 REQUEST START ===')
+    console.log('=== CASSO WEBHOOK V8 REQUEST START ===')
     console.log('Request method:', req.method)
     console.log('Request URL:', req.url)
 
@@ -65,12 +65,13 @@ serve(async (req) => {
       const result = await processTransaction(transaction, supabase)
       console.log('🔄 Transaction processing result:', result)
       
-      // 🎯 QUAN TRỌNG: Xử lý wallet NGAY sau khi transaction thành công
+      // ⭐ QUAN TRỌNG: Xử lý wallet NGAY khi order được xác nhận thành công
       if (result.status === 'success' && result.order) {
-        console.log('🎉 Transaction processed successfully, now processing wallet...')
+        console.log('🎯 Order processed successfully, checking wallet processing...')
+        console.log(`📊 Order details: ID=${result.order.id}, Status=${result.order.status}, Amount=${result.transaction_amount}`)
         
-        // Get the order with updated status after payment processing
-        const { data: updatedOrder, error: orderError } = await supabase
+        // Fetch order với thông tin seller để xử lý wallet
+        const { data: orderWithSeller, error: orderError } = await supabase
           .from('orders')
           .select(`
             *,
@@ -86,54 +87,52 @@ serve(async (req) => {
           .single();
 
         if (orderError) {
-          console.error('❌ Error fetching updated order:', orderError);
+          console.error('❌ Error fetching order with seller info:', orderError);
         } else {
-          console.log('📦 Updated order details:', updatedOrder);
+          console.log('📦 Order with seller info:', orderWithSeller);
           
-          // 💰 XỬ LÝ VÍ TIỀN - ĐIỂM QUAN TRỌNG NHẤT
-          try {
-            console.log('💰 Starting wallet processing...');
-            console.log(`💰 Order status: ${updatedOrder.status}`);
-            console.log(`💰 Bank amount: ${updatedOrder.bank_amount}`);
-            console.log(`💰 Seller ID: ${updatedOrder.products?.seller_id}`);
-            
-            // Kiểm tra điều kiện cộng PI
-            const shouldProcessWallet = (
-              updatedOrder.status === 'paid' && 
-              updatedOrder.bank_amount && 
-              updatedOrder.bank_amount > 0 &&
-              updatedOrder.products?.seller_id
-            );
+          // 🔥 ĐIỀU KIỆN CHÍNH: Kiểm tra có đủ điều kiện cộng PI không
+          const shouldProcessPI = (
+            orderWithSeller.status === 'paid' && 
+            orderWithSeller.bank_amount && 
+            orderWithSeller.bank_amount > 0 &&
+            orderWithSeller.products?.seller_id
+          );
 
-            console.log(`💰 Should process wallet: ${shouldProcessWallet}`);
+          console.log(`🎯 PI Processing Check:`);
+          console.log(`  - Order Status: ${orderWithSeller.status}`);
+          console.log(`  - Bank Amount: ${orderWithSeller.bank_amount}`);
+          console.log(`  - Seller ID: ${orderWithSeller.products?.seller_id}`);
+          console.log(`  - Should Process PI: ${shouldProcessPI}`);
 
-            if (shouldProcessWallet) {
-              console.log(`💰 Processing wallet for order: ${updatedOrder.id}, amount: ${updatedOrder.bank_amount}`);
+          if (shouldProcessPI) {
+            try {
+              console.log('💰 Starting PI wallet processing...');
               
               const walletResult = await processSellerEarning(
-                updatedOrder, 
-                updatedOrder.bank_amount, 
+                orderWithSeller, 
+                orderWithSeller.bank_amount, 
                 supabase
               );
               
+              console.log('💰 Wallet processing result:', walletResult);
+              
               if (walletResult.success) {
-                console.log('✅ Wallet processing completed successfully:', walletResult);
+                console.log('✅ ✅ ✅ PI WALLET PROCESSING COMPLETED SUCCESSFULLY!');
+                console.log(`💎 Added ${walletResult.piAmount} PI to seller ${orderWithSeller.products?.seller_id}'s wallet`);
               } else {
-                console.error('❌ Wallet processing failed:', walletResult.error);
+                console.error('❌ ❌ ❌ PI WALLET PROCESSING FAILED:', walletResult.error);
               }
-            } else {
-              console.log('⚠️ Skipping wallet processing - conditions not met');
-              console.log(`⚠️ Status: ${updatedOrder.status}`);
-              console.log(`⚠️ Bank amount: ${updatedOrder.bank_amount}`);
-              console.log(`⚠️ Seller ID: ${updatedOrder.products?.seller_id}`);
+            } catch (walletError) {
+              console.error('💥 WALLET PROCESSING EXCEPTION:', walletError);
             }
-          } catch (walletError) {
-            console.error('❌ Wallet processing exception:', walletError);
+          } else {
+            console.log('⚠️ Skipping PI processing - conditions not met');
           }
         }
         
+        // Create order support chat
         try {
-          // Create order support chat
           console.log('💬 Creating order support chat...')
           const conversationId = await createOrderSupportChat(result.order, supabase)
           console.log('✅ Chat creation completed')
@@ -144,20 +143,20 @@ serve(async (req) => {
             order_id: result.order.id,
             transaction_id: result.transaction_id,
             conversation_id: conversationId,
-            wallet_processed: true
+            wallet_processed: shouldProcessPI || false
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           })
         } catch (chatError) {
           console.error('❌ Chat creation failed:', chatError)
           
-          // Return success vì wallet đã xử lý thành công
+          // Return success vì main processing đã thành công
           return new Response(JSON.stringify({
             success: true,
-            message: 'Payment and wallet processed successfully, chat creation failed',
+            message: 'Payment processed successfully, chat creation failed',
             order_id: result.order.id,
             transaction_id: result.transaction_id,
-            wallet_processed: true,
+            wallet_processed: shouldProcessPI || false,
             chat_error: chatError.message
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -181,7 +180,7 @@ serve(async (req) => {
     })
 
   } catch (error) {
-    console.error('Webhook error:', error)
+    console.error('💥 WEBHOOK ERROR:', error)
     return new Response(JSON.stringify({
       success: false,
       error: 'Internal server error',

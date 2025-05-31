@@ -1,20 +1,22 @@
 
 export async function processSellerEarning(order: any, bankAmount: number, supabase: any) {
   try {
-    console.log(`💰 [WALLET] Processing seller earning for order: ${order.id}`);
-    console.log(`💰 [WALLET] Bank amount: ${bankAmount} VNĐ`);
+    console.log(`🚀 [WALLET] === PROCESSING SELLER EARNING START ===`);
+    console.log(`🚀 [WALLET] Order ID: ${order.id}`);
+    console.log(`🚀 [WALLET] Bank Amount: ${bankAmount} VNĐ`);
     
     const sellerId = order.products?.seller_id;
     if (!sellerId) {
-      console.error('❌ [WALLET] No seller ID found for order');
+      console.error('❌ [WALLET] No seller ID found in order.products.seller_id');
+      console.log('❌ [WALLET] Order structure:', JSON.stringify(order, null, 2));
       return { success: false, error: 'No seller ID found' };
     }
 
     console.log(`💰 [WALLET] Seller ID: ${sellerId}`);
 
-    // Kiểm tra điều kiện cộng PI
+    // Kiểm tra điều kiện cơ bản
     if (order.status !== 'paid') {
-      console.log('⚠️ [WALLET] Order is not paid, skipping PI processing');
+      console.log('⚠️ [WALLET] Order is not paid, current status:', order.status);
       return { success: false, error: 'Order is not paid' };
     }
 
@@ -25,14 +27,14 @@ export async function processSellerEarning(order: any, bankAmount: number, supab
 
     // Tính PI amount (1 PI = 1000 VNĐ)
     const piAmount = Math.floor(bankAmount / 1000);
-    console.log(`💰 [WALLET] PI Amount calculated: ${piAmount} PI from ${bankAmount} VNĐ`);
+    console.log(`💰 [WALLET] PI Amount calculated: ${piAmount} PI from ${bankAmount} VNĐ (rate: 1 PI = 1000 VNĐ)`);
 
     if (piAmount <= 0) {
-      console.error('❌ [WALLET] PI amount is zero or negative:', piAmount);
+      console.error('❌ [WALLET] PI amount is zero or negative after calculation:', piAmount);
       return { success: false, error: 'PI amount is zero or negative' };
     }
 
-    // BƯỚC 1: Kiểm tra xem đã có wallet log cho order này chưa (tránh trùng lặp)
+    // 🔍 BƯỚC 1: Kiểm tra trùng lặp TRƯỚC KHI xử lý
     console.log(`🔍 [WALLET] Checking for existing wallet log for order: ${order.id}`);
     const { data: existingLog, error: logCheckError } = await supabase
       .from('wallet_logs')
@@ -48,12 +50,14 @@ export async function processSellerEarning(order: any, bankAmount: number, supab
 
     if (existingLog) {
       console.log('✅ [WALLET] Wallet log already exists for this order, skipping duplicate processing');
-      console.log('📋 [WALLET] Existing log:', existingLog);
+      console.log('📋 [WALLET] Existing log details:', existingLog);
       return { success: true, message: 'Already processed', logId: existingLog.id };
     }
 
-    // BƯỚC 2: Lấy hoặc tạo ví cho seller
-    console.log(`🔍 [WALLET] Finding or creating wallet for seller: ${sellerId}`);
+    console.log('✅ [WALLET] No existing log found, proceeding with wallet processing...');
+
+    // 💰 BƯỚC 2: Lấy hoặc tạo ví cho seller
+    console.log(`🔍 [WALLET] Finding wallet for seller: ${sellerId}`);
     let { data: wallet, error: walletError } = await supabase
       .from('wallets')
       .select('*')
@@ -66,7 +70,7 @@ export async function processSellerEarning(order: any, bankAmount: number, supab
     }
 
     if (!wallet) {
-      console.log('🆕 [WALLET] Creating new wallet for seller');
+      console.log('🆕 [WALLET] No wallet found, creating new wallet for seller');
       const { data: newWallet, error: createError } = await supabase
         .from('wallets')
         .insert({
@@ -83,21 +87,24 @@ export async function processSellerEarning(order: any, bankAmount: number, supab
         return { success: false, error: 'Error creating wallet' };
       }
 
-      console.log('✅ [WALLET] New wallet created:', newWallet);
+      console.log('✅ [WALLET] New wallet created successfully:', newWallet);
       wallet = newWallet;
     } else {
-      console.log('📈 [WALLET] Updating existing wallet with PI');
+      console.log('📈 [WALLET] Found existing wallet, updating with PI');
       console.log('💵 [WALLET] Current wallet state:', {
+        id: wallet.id,
         pending: wallet.pending,
         available: wallet.available,
         total_earned: wallet.total_earned
       });
       
-      // BƯỚC 3: Cập nhật ví hiện tại - cộng PI vào pending và total_earned
+      // Tính toán giá trị mới
       const newPending = Number(wallet.pending) + piAmount;
       const newTotalEarned = Number(wallet.total_earned) + piAmount;
       
-      console.log(`💵 [WALLET] Wallet update: pending ${wallet.pending} → ${newPending}, total_earned ${wallet.total_earned} → ${newTotalEarned}`);
+      console.log(`💵 [WALLET] Wallet update calculation:`);
+      console.log(`  - Current pending: ${wallet.pending} → New pending: ${newPending}`);
+      console.log(`  - Current total_earned: ${wallet.total_earned} → New total_earned: ${newTotalEarned}`);
       
       const { data: updatedWallet, error: updateError } = await supabase
         .from('wallets')
@@ -119,7 +126,7 @@ export async function processSellerEarning(order: any, bankAmount: number, supab
       wallet = updatedWallet;
     }
 
-    // BƯỚC 4: Tạo wallet log để tracking
+    // 📝 BƯỚC 3: Tạo wallet log
     console.log(`📝 [WALLET] Creating wallet log for order: ${order.id}`);
     const logResult = await createWalletLog(supabase, wallet.id, order.id, piAmount, bankAmount, sellerId);
     
@@ -128,27 +135,30 @@ export async function processSellerEarning(order: any, bankAmount: number, supab
       return { success: false, error: 'Failed to create wallet log' };
     }
 
-    console.log(`🎉 [WALLET] Successfully added ${piAmount} PI to seller's wallet for order ${order.id}`);
-    console.log(`📊 [WALLET] Final wallet state:`, {
-      sellerId: sellerId,
-      orderId: order.id,
-      piAdded: piAmount,
-      vndAmount: bankAmount,
-      walletPending: wallet.pending,
-      walletAvailable: wallet.available,
-      walletTotalEarned: wallet.total_earned
-    });
+    // 🎉 THÀNH CÔNG!
+    console.log(`🎉 🎉 🎉 [WALLET] === SELLER EARNING PROCESSING COMPLETED SUCCESSFULLY ===`);
+    console.log(`💎 [WALLET] Summary:`);
+    console.log(`  - Seller ID: ${sellerId}`);
+    console.log(`  - Order ID: ${order.id}`);
+    console.log(`  - VND Amount: ${bankAmount}`);
+    console.log(`  - PI Added: ${piAmount}`);
+    console.log(`  - Wallet ID: ${wallet.id}`);
+    console.log(`  - New Pending: ${wallet.pending}`);
+    console.log(`  - New Total Earned: ${wallet.total_earned}`);
+    console.log(`  - Log ID: ${logResult.logId}`);
+    console.log(`🎉 🎉 🎉 === END PROCESSING ===`);
 
     return { 
       success: true, 
       piAmount, 
       walletId: wallet.id,
       logId: logResult.logId,
-      message: `Added ${piAmount} PI to seller wallet from order ${order.id}`
+      message: `Successfully added ${piAmount} PI to seller wallet from order ${order.id}`
     };
 
   } catch (error) {
-    console.error('❌ [WALLET] Error in processSellerEarning:', error);
+    console.error('💥 [WALLET] CRITICAL ERROR in processSellerEarning:', error);
+    console.error('💥 [WALLET] Error stack:', error.stack);
     return { success: false, error: error.message || 'Unknown error' };
   }
 }
@@ -159,7 +169,14 @@ async function createWalletLog(supabase: any, walletId: string, orderId: string,
     const releaseDate = new Date();
     releaseDate.setDate(releaseDate.getDate() + 3);
 
-    console.log(`📝 [WALLET] Creating wallet log for seller ${sellerId}, order ${orderId}, ${piAmount} PI`);
+    console.log(`📝 [WALLET LOG] Creating wallet log...`);
+    console.log(`📝 [WALLET LOG] Details:`);
+    console.log(`  - Wallet ID: ${walletId}`);
+    console.log(`  - Order ID: ${orderId}`);
+    console.log(`  - Seller ID: ${sellerId}`);
+    console.log(`  - PI Amount: ${piAmount}`);
+    console.log(`  - VND Amount: ${vndAmount}`);
+    console.log(`  - Release Date: ${releaseDate.toISOString()}`);
 
     const { data: logResult, error } = await supabase
       .from('wallet_logs')
@@ -170,17 +187,17 @@ async function createWalletLog(supabase: any, walletId: string, orderId: string,
         pi_amount: piAmount,
         vnd_amount: vndAmount,
         status: 'pending',
-        description: `Earnings from order ${orderId.slice(0, 8)}`,
+        description: `Thu nhập từ đơn hàng ${orderId.slice(0, 8)}`,
         release_date: releaseDate.toISOString()
       })
       .select()
       .single();
 
     if (error) {
-      console.error('❌ [WALLET] Error creating wallet log:', error);
+      console.error('❌ [WALLET LOG] Error creating wallet log:', error);
       return { success: false, error: error.message };
     } else {
-      console.log(`✅ [WALLET] Wallet log created successfully:`, {
+      console.log(`✅ [WALLET LOG] Wallet log created successfully:`, {
         logId: logResult.id,
         sellerId: sellerId,
         orderId: orderId,
@@ -191,7 +208,7 @@ async function createWalletLog(supabase: any, walletId: string, orderId: string,
       return { success: true, logId: logResult.id };
     }
   } catch (error) {
-    console.error('❌ [WALLET] Error in createWalletLog:', error);
+    console.error('💥 [WALLET LOG] Error in createWalletLog:', error);
     return { success: false, error: error.message || 'Unknown error' };
   }
 }
