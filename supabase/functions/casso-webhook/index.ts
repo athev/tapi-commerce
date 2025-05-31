@@ -17,7 +17,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== CASSO WEBHOOK V6 REQUEST START ===')
+    console.log('=== CASSO WEBHOOK V7 REQUEST START ===')
     console.log('Request method:', req.method)
     console.log('Request URL:', req.url)
 
@@ -67,10 +67,10 @@ serve(async (req) => {
       
       // 🎯 QUAN TRỌNG: Xử lý wallet NGAY sau khi transaction thành công
       if (result.status === 'success' && result.order) {
-        console.log('🎉 Transaction processed successfully, now processing wallet and chat...')
+        console.log('🎉 Transaction processed successfully, now processing wallet...')
         
-        // Ensure we have the order with product details
-        const { data: orderWithProduct, error: orderError } = await supabase
+        // Get the order with updated status after payment processing
+        const { data: updatedOrder, error: orderError } = await supabase
           .from('orders')
           .select(`
             *,
@@ -86,26 +86,33 @@ serve(async (req) => {
           .single();
 
         if (orderError) {
-          console.error('❌ Error fetching order with product details:', orderError);
+          console.error('❌ Error fetching updated order:', orderError);
         } else {
-          console.log('📦 Order with product details:', orderWithProduct);
+          console.log('📦 Updated order details:', updatedOrder);
           
-          // 💰 XỬ LÝ VÍ TIỀN - ĐÂY LÀ ĐIỂM QUAN TRỌNG NHẤT
+          // 💰 XỬ LÝ VÍ TIỀN - ĐIỂM QUAN TRỌNG NHẤT
           try {
-            console.log('💰 Starting wallet processing for seller...');
-            console.log(`💰 Order status: ${orderWithProduct.status}`);
-            console.log(`💰 Bank amount: ${orderWithProduct.bank_amount}`);
-            console.log(`💰 Transaction amount: ${result.transaction_amount || transaction.amount}`);
+            console.log('💰 Starting wallet processing...');
+            console.log(`💰 Order status: ${updatedOrder.status}`);
+            console.log(`💰 Bank amount: ${updatedOrder.bank_amount}`);
+            console.log(`💰 Seller ID: ${updatedOrder.products?.seller_id}`);
             
-            // Chỉ xử lý nếu đơn hàng đã paid và có amount
-            if (orderWithProduct.status === 'paid' && (orderWithProduct.bank_amount > 0 || (result.transaction_amount || transaction.amount) > 0)) {
-              const amountToProcess = orderWithProduct.bank_amount || result.transaction_amount || transaction.amount;
-              
-              console.log(`💰 Processing wallet for order: ${orderWithProduct.id}, amount: ${amountToProcess}`);
+            // Kiểm tra điều kiện cộng PI
+            const shouldProcessWallet = (
+              updatedOrder.status === 'paid' && 
+              updatedOrder.bank_amount && 
+              updatedOrder.bank_amount > 0 &&
+              updatedOrder.products?.seller_id
+            );
+
+            console.log(`💰 Should process wallet: ${shouldProcessWallet}`);
+
+            if (shouldProcessWallet) {
+              console.log(`💰 Processing wallet for order: ${updatedOrder.id}, amount: ${updatedOrder.bank_amount}`);
               
               const walletResult = await processSellerEarning(
-                orderWithProduct, 
-                amountToProcess, 
+                updatedOrder, 
+                updatedOrder.bank_amount, 
                 supabase
               );
               
@@ -115,8 +122,10 @@ serve(async (req) => {
                 console.error('❌ Wallet processing failed:', walletResult.error);
               }
             } else {
-              console.log('⚠️ Skipping wallet processing - order not paid or invalid amount');
-              console.log(`⚠️ Status: ${orderWithProduct.status}, Bank amount: ${orderWithProduct.bank_amount}, Transaction amount: ${result.transaction_amount || transaction.amount}`);
+              console.log('⚠️ Skipping wallet processing - conditions not met');
+              console.log(`⚠️ Status: ${updatedOrder.status}`);
+              console.log(`⚠️ Bank amount: ${updatedOrder.bank_amount}`);
+              console.log(`⚠️ Seller ID: ${updatedOrder.products?.seller_id}`);
             }
           } catch (walletError) {
             console.error('❌ Wallet processing exception:', walletError);
