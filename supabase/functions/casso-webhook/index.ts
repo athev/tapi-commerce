@@ -17,7 +17,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== CASSO WEBHOOK V8 REQUEST START ===')
+    console.log('=== CASSO WEBHOOK V9 REQUEST START ===')
     console.log('Request method:', req.method)
     console.log('Request URL:', req.url)
 
@@ -67,10 +67,11 @@ serve(async (req) => {
       
       // ⭐ QUAN TRỌNG: Xử lý wallet NGAY khi order được xác nhận thành công
       if (result.status === 'success' && result.order) {
-        console.log('🎯 Order processed successfully, checking wallet processing...')
+        console.log('🎯 Order processed successfully, starting wallet processing...')
         console.log(`📊 Order details: ID=${result.order.id}, Status=${result.order.status}, Amount=${result.transaction_amount}`)
         
-        // Fetch order với thông tin seller để xử lý wallet
+        // 🔥 LẤY THÔNG TIN SELLER ĐỂ XỬ LÝ WALLET
+        console.log('🔍 Fetching order with seller information...')
         const { data: orderWithSeller, error: orderError } = await supabase
           .from('orders')
           .select(`
@@ -88,47 +89,58 @@ serve(async (req) => {
 
         if (orderError) {
           console.error('❌ Error fetching order with seller info:', orderError);
-        } else {
-          console.log('📦 Order with seller info:', orderWithSeller);
-          
-          // 🔥 ĐIỀU KIỆN CHÍNH: Kiểm tra có đủ điều kiện cộng PI không
-          const shouldProcessPI = (
-            orderWithSeller.status === 'paid' && 
-            orderWithSeller.bank_amount && 
-            orderWithSeller.bank_amount > 0 &&
-            orderWithSeller.products?.seller_id
-          );
+          return new Response(JSON.stringify({
+            success: true,
+            message: 'Payment processed successfully, wallet processing failed',
+            order_id: result.order.id,
+            transaction_id: result.transaction_id,
+            wallet_error: 'Failed to fetch order details'
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
 
-          console.log(`🎯 PI Processing Check:`);
-          console.log(`  - Order Status: ${orderWithSeller.status}`);
-          console.log(`  - Bank Amount: ${orderWithSeller.bank_amount}`);
-          console.log(`  - Seller ID: ${orderWithSeller.products?.seller_id}`);
-          console.log(`  - Should Process PI: ${shouldProcessPI}`);
+        console.log('📦 Order with seller info fetched:', orderWithSeller);
+        
+        // 🔥 ĐIỀU KIỆN CHÍNH: Kiểm tra có đủ điều kiện cộng PI không
+        const shouldProcessPI = (
+          orderWithSeller.status === 'paid' && 
+          orderWithSeller.bank_amount && 
+          orderWithSeller.bank_amount > 0 &&
+          orderWithSeller.products?.seller_id
+        );
 
-          if (shouldProcessPI) {
-            try {
-              console.log('💰 Starting PI wallet processing...');
-              
-              const walletResult = await processSellerEarning(
-                orderWithSeller, 
-                orderWithSeller.bank_amount, 
-                supabase
-              );
-              
-              console.log('💰 Wallet processing result:', walletResult);
-              
-              if (walletResult.success) {
-                console.log('✅ ✅ ✅ PI WALLET PROCESSING COMPLETED SUCCESSFULLY!');
-                console.log(`💎 Added ${walletResult.piAmount} PI to seller ${orderWithSeller.products?.seller_id}'s wallet`);
-              } else {
-                console.error('❌ ❌ ❌ PI WALLET PROCESSING FAILED:', walletResult.error);
-              }
-            } catch (walletError) {
-              console.error('💥 WALLET PROCESSING EXCEPTION:', walletError);
+        console.log(`🎯 PI Processing Check:`);
+        console.log(`  - Order Status: ${orderWithSeller.status}`);
+        console.log(`  - Bank Amount: ${orderWithSeller.bank_amount}`);
+        console.log(`  - Seller ID: ${orderWithSeller.products?.seller_id}`);
+        console.log(`  - Should Process PI: ${shouldProcessPI}`);
+
+        let walletProcessed = false;
+        if (shouldProcessPI) {
+          try {
+            console.log('💰 Starting PI wallet processing...');
+            
+            const walletResult = await processSellerEarning(
+              orderWithSeller, 
+              orderWithSeller.bank_amount, 
+              supabase
+            );
+            
+            console.log('💰 Wallet processing result:', walletResult);
+            
+            if (walletResult.success) {
+              console.log('✅ ✅ ✅ PI WALLET PROCESSING COMPLETED SUCCESSFULLY!');
+              console.log(`💎 Added ${walletResult.piAmount} PI to seller ${orderWithSeller.products?.seller_id}'s wallet`);
+              walletProcessed = true;
+            } else {
+              console.error('❌ ❌ ❌ PI WALLET PROCESSING FAILED:', walletResult.error);
             }
-          } else {
-            console.log('⚠️ Skipping PI processing - conditions not met');
+          } catch (walletError) {
+            console.error('💥 WALLET PROCESSING EXCEPTION:', walletError);
           }
+        } else {
+          console.log('⚠️ Skipping PI processing - conditions not met');
         }
         
         // Create order support chat
@@ -143,7 +155,7 @@ serve(async (req) => {
             order_id: result.order.id,
             transaction_id: result.transaction_id,
             conversation_id: conversationId,
-            wallet_processed: shouldProcessPI || false
+            wallet_processed: walletProcessed
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           })
@@ -156,7 +168,7 @@ serve(async (req) => {
             message: 'Payment processed successfully, chat creation failed',
             order_id: result.order.id,
             transaction_id: result.transaction_id,
-            wallet_processed: shouldProcessPI || false,
+            wallet_processed: walletProcessed,
             chat_error: chatError.message
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }

@@ -51,7 +51,12 @@ export async function processSellerEarning(order: any, bankAmount: number, supab
     if (existingLog) {
       console.log('✅ [WALLET] Wallet log already exists for this order, skipping duplicate processing');
       console.log('📋 [WALLET] Existing log details:', existingLog);
-      return { success: true, message: 'Already processed', logId: existingLog.id };
+      return { 
+        success: true, 
+        message: 'Already processed', 
+        logId: existingLog.id,
+        piAmount: existingLog.pi_amount
+      };
     }
 
     console.log('✅ [WALLET] No existing log found, proceeding with wallet processing...');
