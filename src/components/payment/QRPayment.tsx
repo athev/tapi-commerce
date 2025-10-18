@@ -88,7 +88,7 @@ const QRPayment = ({ orderId, amount, onManualConfirmation, actualDescription }:
 
       <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
         <p className="text-blue-700 text-sm">
-          <span className="font-medium">Lưu ý:</span> Hệ thống sẽ tự động xác nhận thanh toán qua Casso trong vòng 1-2 phút sau khi bạn chuyển khoản thành công với đúng nội dung chuyển khoản.
+          <span className="font-medium">Lưu ý:</span> Hệ thống sẽ tự động xác nhận thanh toán qua SEPAY trong vòng 1-2 phút sau khi bạn chuyển khoản thành công với đúng nội dung chuyển khoản.
         </p>
       </div>
     </div>

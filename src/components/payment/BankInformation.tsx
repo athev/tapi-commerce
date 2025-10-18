@@ -110,7 +110,7 @@ const BankInformation = ({ amount, orderId, actualDescription }: BankInformation
               </Button>
             </div>
             <p className="text-xs text-green-600 mt-2">
-              ✅ Đây là nội dung chuyển khoản đã được hệ thống xử lý từ Casso
+              ✅ Đây là nội dung chuyển khoản đã được hệ thống xử lý từ SEPAY
             </p>
           </div>
         )}
