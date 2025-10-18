@@ -1,15 +1,16 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { Session, User } from '@supabase/supabase-js';
+import { UserProfile } from '@/lib/supabase';
 
 export const useAuthInitialization = (
   isOnline: boolean,
-  setSession: ReturnType<typeof useSupabaseAuth>['setSession'],
-  setUser: ReturnType<typeof useSupabaseAuth>['setUser'],
-  setProfile: ReturnType<typeof useSupabaseAuth>['setProfile'],
-  setLoading: ReturnType<typeof useSupabaseAuth>['setLoading'],
-  fetchProfile: ReturnType<typeof useSupabaseAuth>['fetchProfile']
+  setSession: (session: Session | null) => void,
+  setUser: (user: User | null) => void,
+  setProfile: (profile: UserProfile | null) => void,
+  setLoading: (loading: boolean) => void,
+  fetchProfile: (userId: string) => Promise<UserProfile | null>
 ) => {
   const [profileLoading, setProfileLoading] = useState(true);
 
@@ -83,31 +84,29 @@ export const useAuthInitialization = (
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, newSession) => {
+      (event, newSession) => {
         console.log('AuthProvider: Auth state changed:', event, newSession ? 'Session exists' : 'No session');
         
         if (!mounted) return;
 
-        // Handle sign out immediately
+        // Synchronous state updates only
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+
+        // Handle sign out
         if (event === 'SIGNED_OUT') {
           console.log('AuthProvider: User signed out, clearing all state');
-          setSession(null);
-          setUser(null);
           setProfile(null);
           setProfileLoading(false);
           setLoading(false);
           return;
         }
-
-        // Handle other events
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
         
+        // Handle sign in - defer profile fetch
         if (event === 'SIGNED_IN' && newSession?.user && isOnline) {
-          console.log('AuthProvider: User signed in, fetching profile...');
+          console.log('AuthProvider: User signed in, scheduling profile fetch...');
           setProfileLoading(true);
           
-          // Use setTimeout to avoid blocking the auth state change
           setTimeout(async () => {
             if (!mounted) return;
             
@@ -128,7 +127,6 @@ export const useAuthInitialization = (
             }
           }, 0);
         } else if (!newSession?.user) {
-          // Clear profile if no user session
           setProfile(null);
           setProfileLoading(false);
         }
