@@ -88,8 +88,8 @@ serve(async (req) => {
       console.log('New wallet created:', wallet.id)
     }
 
-    // Update wallet - move pending PI to available (early release)
-    // Also handle case where PI hasn't been added to pending yet
+    // Check for existing wallet log
+    console.log(`🔍 Checking for existing wallet log for order: ${orderId}`)
     const { data: existingLog, error: logError } = await supabase
       .from('wallet_logs')
       .select('*')
@@ -97,13 +97,39 @@ serve(async (req) => {
       .eq('type', 'earning')
       .maybeSingle()
 
+    if (logError) {
+      console.error('❌ Error checking wallet log:', logError)
+      throw new Error(`Wallet log check error: ${logError.message}`)
+    }
+
     let currentPending = Number(wallet.pending)
     let currentAvailable = Number(wallet.available)
     let currentTotal = Number(wallet.total_earned)
 
+    console.log(`💰 Current wallet state:`, {
+      pending: currentPending,
+      available: currentAvailable,
+      total_earned: currentTotal
+    })
+
+    // CASE 1: Log exists and is already released
+    if (existingLog && existingLog.status === 'released') {
+      console.log('✅ PI already released for this order')
+      return new Response(JSON.stringify({
+        success: true,
+        message: 'PI already released',
+        orderId,
+        piAmount,
+        released: true,
+        alreadyProcessed: true
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // CASE 2: Log exists with pending status - move from pending to available
     if (existingLog && existingLog.status === 'pending') {
-      // PI already in pending, move to available
-      console.log('Moving existing pending PI to available')
+      console.log('📦 Moving PI from pending to available')
       
       const { error: updateError } = await supabase
         .from('wallets')
@@ -114,7 +140,7 @@ serve(async (req) => {
         .eq('id', wallet.id)
 
       if (updateError) {
-        console.error('Error updating wallet (move pending to available):', updateError)
+        console.error('❌ Error updating wallet (pending → available):', updateError)
         throw new Error(`Wallet update error: ${updateError.message}`)
       }
 
@@ -128,12 +154,14 @@ serve(async (req) => {
         .eq('id', existingLog.id)
 
       if (logUpdateError) {
-        console.error('Error updating wallet log:', logUpdateError)
+        console.error('⚠️ Error updating wallet log:', logUpdateError)
       }
 
-    } else {
-      // PI not in system yet, add directly to available
-      console.log('Adding PI directly to available (no pending found)')
+      console.log('✅ Successfully moved PI from pending to available')
+    } 
+    // CASE 3: No log exists - add directly to available (old orders)
+    else {
+      console.log('💎 No wallet log found - creating new log with released status (old order)')
       
       const { error: updateError } = await supabase
         .from('wallets')
@@ -144,7 +172,7 @@ serve(async (req) => {
         .eq('id', wallet.id)
 
       if (updateError) {
-        console.error('Error updating wallet (direct to available):', updateError)
+        console.error('❌ Error updating wallet (direct to available):', updateError)
         throw new Error(`Wallet update error: ${updateError.message}`)
       }
 
@@ -162,8 +190,11 @@ serve(async (req) => {
         })
 
       if (createLogError) {
-        console.error('Error creating wallet log:', createLogError)
+        console.error('⚠️ Error creating wallet log:', createLogError)
+        // Don't throw - wallet update succeeded
       }
+
+      console.log('✅ Successfully added PI directly to available')
     }
 
     console.log(`✅ PI successfully released early for order ${orderId}`)

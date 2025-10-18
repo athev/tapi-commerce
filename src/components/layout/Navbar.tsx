@@ -139,15 +139,9 @@ const Navbar = () => {
                     <DropdownMenuSeparator />
                     <DropdownMenuGroup>
                       <DropdownMenuItem asChild>
-                        <Link to="/my-account">
+                        <Link to="/my-purchases">
                           <User className="mr-2 h-4 w-4" />
                           <span>Tài khoản</span>
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to="/my-purchases">
-                          <Package className="mr-2 h-4 w-4" />
-                          <span>Đơn hàng</span>
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>

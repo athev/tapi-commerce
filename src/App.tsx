@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context";
 import Index from "./pages/Index";
 import ProductDetail from "./pages/ProductDetail";
@@ -13,7 +13,6 @@ import Register from "./pages/Register";
 import RegisterChoice from "./pages/RegisterChoice";
 import RegisterUser from "./pages/RegisterUser";
 import RegisterSeller from "./pages/RegisterSeller";
-import MyAccount from "./pages/MyAccount";
 import MyPurchases from "./pages/MyPurchases";
 import NotFound from "./pages/NotFound";
 import Payment from "./pages/Payment";
@@ -39,7 +38,7 @@ const App = () => (
             <Route path="/register-choice" element={<RegisterChoice />} />
             <Route path="/register-user" element={<RegisterUser />} />
             <Route path="/register-seller" element={<RegisterSeller />} />
-            <Route path="/my-account" element={<MyAccount />} />
+            <Route path="/my-account" element={<Navigate to="/my-purchases" replace />} />
             <Route path="/my-purchases" element={<MyPurchases />} />
             <Route path="/payment/:orderId" element={<Payment />} />
             <Route path="/chat" element={<Chat />} />
