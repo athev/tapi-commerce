@@ -23,42 +23,11 @@ export const createOrderSupportConversation = async (
     .eq('seller_id', sellerId)
     .eq('chat_type', 'order_support')
     .eq('order_id', orderId)
-    .single();
+    .maybeSingle();
 
   if (existingOrderConv) {
     console.log('Found existing order support conversation for this order:', existingOrderConv.id);
     return existingOrderConv.id;
-  }
-
-  // If no order-specific conversation, check for existing conversation between buyer and seller for this product
-  const { data: existingProductConv } = await supabase
-    .from('conversations')
-    .select('id')
-    .eq('buyer_id', buyerId)
-    .eq('seller_id', sellerId)
-    .eq('product_id', productId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single();
-
-  if (existingProductConv) {
-    console.log('Found existing conversation for this product, updating it for order support:', existingProductConv.id);
-    
-    // Update the existing conversation to be an order support conversation
-    const { error: updateError } = await supabase
-      .from('conversations')
-      .update({
-        chat_type: 'order_support',
-        order_id: orderId,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', existingProductConv.id);
-
-    if (updateError) {
-      console.error('Error updating existing conversation:', updateError);
-    }
-
-    return existingProductConv.id;
   }
 
   // Create new order support conversation
@@ -112,7 +81,7 @@ export const createConversation = async (
       .eq('chat_type', 'product_consultation')
       .order('last_message_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (existingConv) {
       console.log('Found existing product consultation conversation:', existingConv.id);
