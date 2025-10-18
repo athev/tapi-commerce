@@ -28,12 +28,12 @@ const OrderConfirmButton = ({
     mutationFn: async () => {
       console.log('[OrderConfirm] Starting confirmation for order:', orderId);
       
-      // Update order status to completed with verification
-      console.log('[OrderConfirm] Updating order delivery_status to completed');
+      // Update order status to delivered with verification
+      console.log('[OrderConfirm] Updating order delivery_status to delivered');
       const { data: updatedOrder, error: orderError } = await supabase
         .from('orders')
         .update({
-          delivery_status: 'completed',
+          delivery_status: 'delivered',
           updated_at: new Date().toISOString()
         })
         .eq('id', orderId)
@@ -112,9 +112,10 @@ const OrderConfirmButton = ({
     }
   });
 
-  // Show button only for paid orders that are not completed yet
+  // Show button only for paid orders that are not delivered yet
   const shouldShow = status === 'paid' && 
-                    deliveryStatus !== 'completed' && 
+                    deliveryStatus !== 'delivered' && 
+                    deliveryStatus !== 'completed' &&
                     deliveryStatus !== 'failed';
 
   if (!shouldShow) return null;
