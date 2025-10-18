@@ -13,6 +13,7 @@ import AdminOrders from "@/components/admin/AdminOrders";
 import AdminProducts from "@/components/admin/AdminProducts";
 import AdminSellerApplications from "@/components/admin/AdminSellerApplications";
 import { AdminWalletBackfill } from "@/components/admin/AdminWalletBackfill";
+import AdminWithdrawals from "@/components/admin/AdminWithdrawals";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("stats");
@@ -49,13 +50,14 @@ const AdminDashboard = () => {
         <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-8">
             <TabsTrigger value="stats">Thống kê</TabsTrigger>
             <TabsTrigger value="users">Người dùng</TabsTrigger>
             <TabsTrigger value="orders">Đơn hàng</TabsTrigger>
             <TabsTrigger value="products">Sản phẩm</TabsTrigger>
             <TabsTrigger value="sellers">Seller Applications</TabsTrigger>
             <TabsTrigger value="manual-payments">Thanh toán thủ công</TabsTrigger>
+            <TabsTrigger value="withdrawals">Rút tiền</TabsTrigger>
             <TabsTrigger value="wallet-backfill">Wallet Backfill</TabsTrigger>
           </TabsList>
 
@@ -81,6 +83,10 @@ const AdminDashboard = () => {
           
           <TabsContent value="manual-payments">
             <ManualPaymentOrders />
+          </TabsContent>
+
+          <TabsContent value="withdrawals">
+            <AdminWithdrawals />
           </TabsContent>
 
           <TabsContent value="wallet-backfill">
