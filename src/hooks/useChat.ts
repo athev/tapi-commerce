@@ -134,13 +134,10 @@ export const useChat = () => {
   // Create order support conversation
   const createOrderSupportConversation = async (orderId: string, sellerId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      // Get product info from order
+      // Get buyer_id and product_id from order
       const { data: order, error: orderError } = await supabase
         .from('orders')
-        .select('product_id')
+        .select('user_id, product_id')
         .eq('id', orderId)
         .single();
 
@@ -148,7 +145,19 @@ export const useChat = () => {
         throw new Error('Could not find order');
       }
 
-      return await createOrGetConversation(sellerId, order.product_id, orderId, 'order_support');
+      // Use the actual buyer_id from the order, not current user
+      const conversationId = await createConversation(
+        order.user_id,    // Actual buyer_id from order
+        sellerId,         // Seller_id from props
+        order.product_id, // Product_id from order
+        orderId,          // Order_id
+        'order_support'
+      );
+      
+      // Refresh conversations to get the new one
+      await fetchConversations();
+      
+      return conversationId;
     } catch (error) {
       console.error('Error creating order support conversation:', error);
       throw error;

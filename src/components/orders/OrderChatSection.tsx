@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useChat } from "@/hooks/useChat";
 import { Loader2 } from "lucide-react";
 import CompactChatWindow from "@/components/chat/CompactChatWindow";
+import { supabase } from "@/integrations/supabase/client";
 
 interface OrderChatSectionProps {
   orderId: string;
@@ -9,50 +10,62 @@ interface OrderChatSectionProps {
 }
 
 const OrderChatSection = ({ orderId, sellerId }: OrderChatSectionProps) => {
-  const { createOrderSupportConversation, conversations, fetchConversations } = useChat();
+  const { createOrderSupportConversation } = useChat();
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let mounted = true;
+    
     const initChat = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Check if conversations are loaded
-        if (conversations.length === 0) {
-          await fetchConversations();
+        // Query DB directly for existing conversation
+        const { data: existing, error: exErr } = await supabase
+          .from('conversations')
+          .select('id')
+          .eq('order_id', orderId)
+          .eq('chat_type', 'order_support')
+          .maybeSingle();
+
+        if (exErr) {
+          console.warn('Error finding conversation:', exErr);
         }
 
-        // Try to find existing order support conversation
-        const existingConv = conversations.find(
-          c => c.order_id === orderId && c.chat_type === 'order_support'
-        );
-
-        if (existingConv) {
-          console.log('Found existing order conversation:', existingConv.id);
-          setConversationId(existingConv.id);
+        if (mounted && existing?.id) {
+          console.log('Found existing order conversation:', existing.id);
+          setConversationId(existing.id);
         } else {
-          // Create new order support conversation
+          // Create new conversation with correct buyer_id
           console.log('Creating new order support conversation');
           const convId = await createOrderSupportConversation(orderId, sellerId);
-          if (convId) {
+          if (mounted && convId) {
             setConversationId(convId);
-          } else {
+          } else if (mounted) {
             setError('Không thể tạo cuộc trò chuyện');
           }
         }
       } catch (err) {
         console.error('Error initializing chat:', err);
-        setError('Có lỗi xảy ra khi tải chat');
+        if (mounted) {
+          setError('Có lỗi xảy ra khi tải chat');
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
     initChat();
-  }, [orderId, sellerId, conversations, fetchConversations, createOrderSupportConversation]);
+    
+    return () => {
+      mounted = false;
+    };
+  }, [orderId, sellerId, createOrderSupportConversation]);
 
   if (loading) {
     return (
