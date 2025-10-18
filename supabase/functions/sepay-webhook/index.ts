@@ -94,8 +94,25 @@ Deno.serve(async (req) => {
     }
 
     // Lưu transaction vào database
-    const { transactionId } = await saveTransaction(payload, supabase)
+    const { transactionId, alreadyExists, insertResult } = await saveTransaction(payload, supabase)
     console.log(`💾 [SEPAY] Transaction saved with ID: ${transactionId}`)
+
+    // Skip processing if already processed
+    if (alreadyExists && insertResult[0]?.processed) {
+      console.log(`⏭️ [SEPAY] Transaction already processed, skipping`)
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Transaction already processed',
+          transaction_id: transactionId,
+          status: 'already_processed'
+        }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
 
     // Xử lý order payment
     console.log('🔄 [SEPAY] Processing order payment...')

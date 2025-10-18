@@ -4,6 +4,23 @@ import { SepayWebhookPayload } from './types.ts'
 export async function saveTransaction(transaction: SepayWebhookPayload, supabase: any) {
   const transactionId = `SEPAY_${transaction.id}`
   
+  // Check if transaction already exists
+  const { data: existing } = await supabase
+    .from('casso_transactions')
+    .select('id, processed')
+    .eq('transaction_id', transactionId)
+    .single()
+  
+  if (existing) {
+    console.log(`ℹ️ [SEPAY] Transaction ${transactionId} already exists (processed: ${existing.processed})`)
+    return { 
+      transactionId, 
+      insertResult: [existing],
+      alreadyExists: true 
+    }
+  }
+  
+  // Insert new transaction
   const insertData = {
     transaction_id: transactionId,
     amount: transaction.transferAmount,
@@ -25,7 +42,7 @@ export async function saveTransaction(transaction: SepayWebhookPayload, supabase
   }
 
   console.log(`✅ [SEPAY] Transaction saved successfully`)
-  return { transactionId, insertResult }
+  return { transactionId, insertResult, alreadyExists: false }
 }
 
 export async function linkTransactionToOrder(transactionId: string, orderId: string, supabase: any) {
