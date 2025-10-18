@@ -37,6 +37,7 @@ const formatDate = (dateString: string) => {
 
 const MyPurchases = () => {
   const { user, profile } = useAuth();
+  const [isUsingMockData, setIsUsingMockData] = useState(false);
 
   // Mock data for development
   const mockOrders = [
@@ -82,7 +83,10 @@ const MyPurchases = () => {
     queryKey: ['user-purchases', user?.id],
     queryFn: async () => {
       try {
-        if (!user) return mockOrders;
+        if (!user) {
+          setIsUsingMockData(true);
+          return mockOrders;
+        }
         
         console.log('Fetching user purchases for:', user.id);
         
@@ -94,12 +98,14 @@ const MyPurchases = () => {
         
         if (ordersError) {
           console.error('Error fetching orders:', ordersError);
+          setIsUsingMockData(true);
           return mockOrders;
         }
 
         if (!ordersData || ordersData.length === 0) {
-          console.log('No orders found, using mock data');
-          return mockOrders;
+          console.log('No orders found');
+          setIsUsingMockData(false);
+          return [];
         }
 
         // Get product details for the orders
@@ -111,7 +117,11 @@ const MyPurchases = () => {
 
         if (productError) {
           console.error('Error fetching products:', productError);
-          return mockOrders;
+          // Don't use mock data if we have real orders
+          return ordersData.map(order => ({
+            ...order,
+            product: mockProducts[0]
+          })) as (Order & { product: Product })[];
         }
 
         // Combine orders with product details
@@ -119,18 +129,20 @@ const MyPurchases = () => {
           const product = productsData?.find(p => p.id === order.product_id);
           return {
             ...order,
-            product: product || mockProducts.find(p => p.id === order.product_id) || mockProducts[0]
+            product: product || mockProducts[0]
           };
         });
 
         console.log('User purchases:', ordersWithProducts);
+        setIsUsingMockData(false);
         return ordersWithProducts as (Order & { product: Product })[];
       } catch (error) {
         console.error('Error fetching user purchases:', error);
+        setIsUsingMockData(true);
         return mockOrders;
       }
     },
-    enabled: true, // Always enabled for development
+    enabled: true,
   });
 
   const handleDownload = (product: Product) => {
@@ -261,7 +273,7 @@ const MyPurchases = () => {
                                 </Button>
                               )}
                               
-                              {purchase.status === 'pending' && (
+                              {purchase.status === 'pending' && !isUsingMockData && (
                                 <Button asChild>
                                   <Link to={`/payment/${purchase.id}`}>
                                     Hoàn tất thanh toán
@@ -269,37 +281,41 @@ const MyPurchases = () => {
                                 </Button>
                               )}
 
-                              <OrderConfirmButton 
-                                orderId={purchase.id}
-                                status={purchase.status}
-                                deliveryStatus={purchase.delivery_status}
-                                variant="outline"
-                                size="default"
-                              />
+                              {!isUsingMockData && (
+                                <>
+                                  <OrderConfirmButton 
+                                    orderId={purchase.id}
+                                    status={purchase.status}
+                                    deliveryStatus={purchase.delivery_status}
+                                    variant="outline"
+                                    size="default"
+                                  />
 
-                              <OrderDisputeButton 
-                                orderId={purchase.id}
-                                status={purchase.status}
-                                deliveryStatus={purchase.delivery_status}
-                                variant="outline"
-                                size="default"
-                              />
+                                  <OrderDisputeButton 
+                                    orderId={purchase.id}
+                                    status={purchase.status}
+                                    deliveryStatus={purchase.delivery_status}
+                                    variant="outline"
+                                    size="default"
+                                  />
 
-                              <OrderSupportChatButton 
-                                order={{
-                                  id: purchase.id,
-                                  status: purchase.status,
-                                  created_at: purchase.created_at,
-                                  delivery_status: purchase.delivery_status,
-                                  products: {
-                                    title: purchase.product.title,
-                                    price: purchase.product.price
-                                  },
-                                  user_id: purchase.user_id
-                                }}
-                                sellerId={purchase.product.seller_id || 'default-seller'}
-                                variant="outline"
-                              />
+                                  <OrderSupportChatButton 
+                                    order={{
+                                      id: purchase.id,
+                                      status: purchase.status,
+                                      created_at: purchase.created_at,
+                                      delivery_status: purchase.delivery_status,
+                                      products: {
+                                        title: purchase.product.title,
+                                        price: purchase.product.price
+                                      },
+                                      user_id: purchase.user_id
+                                    }}
+                                    sellerId={purchase.product.seller_id || 'default-seller'}
+                                    variant="outline"
+                                  />
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>

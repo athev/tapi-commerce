@@ -26,36 +26,68 @@ const OrderConfirmButton = ({
 
   const confirmOrderMutation = useMutation({
     mutationFn: async () => {
-      console.log('Confirming order completion:', orderId);
+      console.log('[OrderConfirm] Starting confirmation for order:', orderId);
       
-      // Update order status to completed
-      const { error: orderError } = await supabase
+      // Update order status to completed with verification
+      console.log('[OrderConfirm] Updating order delivery_status to completed');
+      const { data: updatedOrder, error: orderError } = await supabase
         .from('orders')
         .update({
           delivery_status: 'completed',
           updated_at: new Date().toISOString()
         })
-        .eq('id', orderId);
+        .eq('id', orderId)
+        .select()
+        .single();
 
-      if (orderError) {
-        console.error('Error confirming order:', orderError);
-        throw new Error(`Không thể cập nhật đơn hàng: ${orderError.message}`);
+      if (orderError || !updatedOrder) {
+        console.error('[OrderConfirm] Failed to update order:', orderError);
+        throw new Error(`Không thể cập nhật đơn hàng: ${orderError?.message || 'Không tìm thấy đơn hàng'}`);
       }
 
+      console.log('[OrderConfirm] Order updated successfully:', updatedOrder);
+
       // Call edge function to process early PI release
+      console.log('[OrderConfirm] Invoking release-pi-early edge function');
       try {
-        const { error: releaseError } = await supabase.functions.invoke('release-pi-early', {
+        const { data: releaseData, error: releaseError } = await supabase.functions.invoke('release-pi-early', {
           body: { orderId }
         });
 
+        console.log('[OrderConfirm] Edge function response:', { data: releaseData, error: releaseError });
+
         if (releaseError) {
-          console.error('Error releasing PI early:', releaseError);
-          // Don't throw here as the order update was successful
-          console.log('Order confirmed but PI release may have issues');
+          console.error('[OrderConfirm] Edge function returned error:', releaseError);
+          toast({
+            title: "Cảnh báo",
+            description: "Đã xác nhận đơn nhưng cộng PI gặp vấn đề. Vui lòng liên hệ admin.",
+            variant: "destructive",
+          });
+          return; // Don't throw, order was updated successfully
         }
+
+        if (releaseData && !releaseData.success) {
+          console.error('[OrderConfirm] Edge function failed:', releaseData);
+          toast({
+            title: "Cảnh báo", 
+            description: releaseData.message || "Đã xác nhận đơn nhưng cộng PI gặp vấn đề",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        console.log('[OrderConfirm] PI released successfully');
+        toast({
+          title: "Thành công",
+          description: "Đã cộng PI cho người bán",
+        });
       } catch (error) {
-        console.error('Edge function error:', error);
-        // Continue as order confirmation is still valid
+        console.error('[OrderConfirm] Edge function network error:', error);
+        toast({
+          title: "Cảnh báo",
+          description: "Đã xác nhận đơn nhưng không thể kết nối với hệ thống PI",
+          variant: "destructive",
+        });
       }
     },
     onSuccess: () => {
