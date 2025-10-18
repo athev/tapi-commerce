@@ -7,7 +7,7 @@ import OrderTimeline from "./OrderTimeline";
 import UpdateDeliveryStatusButton from "@/components/seller/UpdateDeliveryStatusButton";
 import OrderConfirmButton from "@/components/buyer/OrderConfirmButton";
 import OrderDisputeButton from "@/components/buyer/OrderDisputeButton";
-import OrderSupportChatButton from "@/components/chat/OrderSupportChatButton";
+import OrderInlineChat from "@/components/chat/OrderInlineChat";
 import { useAuth } from "@/context/AuthContext";
 import { Package, User, CreditCard, FileText, Calendar, Mail, MessageCircle } from "lucide-react";
 
@@ -155,17 +155,15 @@ const OrderDetailsModal = ({ open, onOpenChange, order }: OrderDetailsModalProps
 
           <Separator />
 
-          {/* Chat Button */}
+          {/* Chat - mở sẵn trong modal, tự tạo khi gửi lần đầu */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-medium">
               <MessageCircle className="h-4 w-4" />
               <span>Liên hệ {isSeller ? 'khách hàng' : 'người bán'}</span>
             </div>
-            <OrderSupportChatButton 
+            <OrderInlineChat
               order={order}
               sellerId={product.seller_id}
-              variant="default"
-              className="w-full"
             />
           </div>
 

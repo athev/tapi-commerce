@@ -15,7 +15,7 @@ export const createOrderSupportConversation = async (
     productId
   });
 
-  // First, check if conversation already exists for this specific order
+  // 1) Check if conversation already exists for this specific order
   const { data: existingOrderConv } = await supabase
     .from('conversations')
     .select('id')
@@ -30,26 +30,100 @@ export const createOrderSupportConversation = async (
     return existingOrderConv.id;
   }
 
-  // Create new order support conversation
-  const { data: newConv, error } = await supabase
+  // 2) Find existing conversation by (buyer, seller, product) regardless of chat_type
+  const { data: existingByProduct } = await supabase
     .from('conversations')
-    .insert({
-      buyer_id: buyerId,
-      seller_id: sellerId,
-      product_id: productId,
-      order_id: orderId,
-      chat_type: 'order_support'
-    })
-    .select('id')
-    .single();
+    .select('id, chat_type, order_id')
+    .eq('buyer_id', buyerId)
+    .eq('seller_id', sellerId)
+    .eq('product_id', productId)
+    .order('last_message_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-  if (error) {
-    console.error('Error creating order support conversation:', error);
-    throw error;
+  if (existingByProduct) {
+    // If it's not order_support or doesn't have order_id, upgrade it
+    const needsUpgrade =
+      existingByProduct.chat_type !== 'order_support' || !existingByProduct.order_id;
+
+    if (needsUpgrade) {
+      console.log('Upgrading existing conversation to order_support:', existingByProduct.id);
+      const { data: upgraded, error: upgradeError } = await supabase
+        .from('conversations')
+        .update({ 
+          chat_type: 'order_support', 
+          order_id: orderId
+        })
+        .eq('id', existingByProduct.id)
+        .select('id')
+        .single();
+
+      if (upgradeError) {
+        console.error('Error upgrading conversation:', upgradeError);
+        throw upgradeError;
+      }
+      console.log('Upgraded conversation:', upgraded.id);
+      return upgraded.id;
+    }
+
+    console.log('Found existing conversation:', existingByProduct.id);
+    return existingByProduct.id;
   }
 
-  console.log('Created new order support conversation:', newConv.id);
-  return newConv.id;
+  // 3) No existing conversation, use upsert to avoid 409 conflicts
+  try {
+    const { data: upserted, error } = await supabase
+      .from('conversations')
+      .upsert(
+        [{
+          buyer_id: buyerId,
+          seller_id: sellerId,
+          product_id: productId,
+          order_id: orderId,
+          chat_type: 'order_support'
+        }],
+        { onConflict: 'buyer_id,seller_id,product_id' }
+      )
+      .select('id')
+      .single();
+
+    if (error) throw error;
+    console.log('Created new order support conversation:', upserted.id);
+    return upserted.id;
+  } catch (e: any) {
+    // 4) Edge case: if still 23505 error, fallback to query and update
+    if (e?.code === '23505') {
+      console.log('Conflict detected, fetching existing conversation...');
+      const { data: conflictRow } = await supabase
+        .from('conversations')
+        .select('id, order_id, chat_type')
+        .eq('buyer_id', buyerId)
+        .eq('seller_id', sellerId)
+        .eq('product_id', productId)
+        .maybeSingle();
+
+      if (conflictRow) {
+        if (conflictRow.chat_type !== 'order_support' || !conflictRow.order_id) {
+          const { data: upgraded } = await supabase
+            .from('conversations')
+            .update({ 
+              chat_type: 'order_support', 
+              order_id: orderId
+            })
+            .eq('id', conflictRow.id)
+            .select('id')
+            .single();
+
+          console.log('Updated conflict conversation:', upgraded?.id);
+          return upgraded?.id ?? conflictRow.id;
+        }
+        console.log('Using existing conflict conversation:', conflictRow.id);
+        return conflictRow.id;
+      }
+    }
+    console.error('Error creating order support conversation:', e);
+    throw e;
+  }
 };
 
 export const createConversation = async (
