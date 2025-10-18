@@ -10,7 +10,6 @@ import OrderDisputeButton from "@/components/buyer/OrderDisputeButton";
 import OrderSupportChatButton from "@/components/chat/OrderSupportChatButton";
 import { useAuth } from "@/context/AuthContext";
 import { Package, User, CreditCard, FileText, Calendar, Mail, MessageCircle } from "lucide-react";
-import OrderChatSection from "./OrderChatSection";
 
 interface OrderDetailsModalProps {
   open: boolean;
@@ -156,15 +155,17 @@ const OrderDetailsModal = ({ open, onOpenChange, order }: OrderDetailsModalProps
 
           <Separator />
 
-          {/* Chat Section - Realtime */}
+          {/* Chat Button */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-medium">
               <MessageCircle className="h-4 w-4" />
-              <span>Trao đổi với {isSeller ? 'khách hàng' : 'người bán'}</span>
+              <span>Liên hệ {isSeller ? 'khách hàng' : 'người bán'}</span>
             </div>
-            <OrderChatSection 
-              orderId={order.id} 
-              sellerId={product.seller_id} 
+            <OrderSupportChatButton 
+              order={order}
+              sellerId={product.seller_id}
+              variant="default"
+              className="w-full"
             />
           </div>
 
