@@ -1,6 +1,8 @@
-
 import { SepayWebhookPayload, SepayProcessingResult } from './types.ts'
-import { saveUnmatchedTransaction } from './transactionStorage.ts'
+import { saveUnmatchedTransaction, linkTransactionToOrder } from './transactionStorage.ts'
+import { extractOrderId } from '../casso-webhook/orderIdExtractor.ts'
+import { findMatchingOrder, verifyPaymentAmount } from '../casso-webhook/orderMatcher.ts'
+import { updateOrderStatus, processOrderCompletion } from '../casso-webhook/orderUpdater.ts'
 
 // Reuse các module từ casso-webhook
 export async function processOrderPayment(
@@ -9,12 +11,6 @@ export async function processOrderPayment(
   supabase: any
 ): Promise<SepayProcessingResult> {
   console.log(`🔍 [SEPAY] Starting order payment processing...`)
-  
-  // Import các hàm từ casso-webhook modules
-  const { extractOrderId } = await import('../casso-webhook/orderIdExtractor.ts')
-  const { findMatchingOrder, verifyPaymentAmount } = await import('../casso-webhook/orderMatcher.ts')
-  const { updateOrderStatus, processOrderCompletion } = await import('../casso-webhook/orderUpdater.ts')
-  const { linkTransactionToOrder } = await import('./transactionStorage.ts')
 
   // Extract order ID từ content (tương tự Casso)
   const extractedOrderId = extractOrderId(transaction.content)
