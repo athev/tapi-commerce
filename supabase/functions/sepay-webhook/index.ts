@@ -125,14 +125,18 @@ Deno.serve(async (req) => {
       console.log('💰 [SEPAY] Processing wallet updates...')
       
       try {
-        const { processWalletUpdate } = await import('../casso-webhook/walletService.ts')
-        await processWalletUpdate(
+        const { processSellerEarning } = await import('./walletService.ts')
+        const walletResult = await processSellerEarning(
           processingResult.order,
           processingResult.transaction_amount!,
-          transactionId,
           supabase
         )
-        console.log('✅ [SEPAY] Wallet updated successfully')
+        
+        if (walletResult.success) {
+          console.log('✅ [SEPAY] Wallet updated successfully:', walletResult)
+        } else {
+          console.error('⚠️ [SEPAY] Wallet update failed:', walletResult.error)
+        }
       } catch (walletError) {
         console.error('⚠️ [SEPAY] Wallet update error (non-critical):', walletError)
       }
