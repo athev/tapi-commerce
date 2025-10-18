@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Check, ArrowLeft, Clock, AlertCircle, Download, Key, UserPlus, MessageCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 import QRPayment from "@/components/payment/QRPayment";
 import ManualConfirmation from "@/components/payment/ManualConfirmation";
 import OrderSupportChatButton from "@/components/chat/OrderSupportChatButton";

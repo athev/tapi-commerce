@@ -1,10 +1,6 @@
 
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = 'https://vpogvgilorgkeulvnpbb.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZwb2d2Z2lsb3Jna2V1bHZucGJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgwMTY1MjAsImV4cCI6MjA2MzU5MjUyMH0.fnYnpeGNV_FDZTswcjTdoyfaSUc4Rkt_a9F7BdH2oFw'
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+// Re-export supabase client from the correct location
+export { supabase } from '@/integrations/supabase/client';
 
 // Types
 export interface Product {

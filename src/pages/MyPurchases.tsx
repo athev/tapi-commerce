@@ -1,7 +1,8 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase, Order, Product, mockProducts } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
+import { Order, Product, mockProducts } from "@/lib/supabase";
 import { useAuth } from "@/context";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";

@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context";
-import { supabase, Order, Product } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
+import { Order, Product } from "@/lib/supabase";
 import { Download, User, ShoppingBag } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
