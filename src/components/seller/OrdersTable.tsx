@@ -1,7 +1,8 @@
-
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, Mail, MessageCircle } from "lucide-react";
+import OrderDetailsModal from "@/components/orders/OrderDetailsModal";
 import { 
   Table,
   TableBody,
@@ -33,6 +34,7 @@ interface OrdersTableProps {
 }
 
 const OrdersTable = ({ orders }: OrdersTableProps) => {
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   return (
     <div className="bg-white rounded-lg border">
       <Table>
@@ -98,31 +100,28 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
               
               <TableCell className="text-right">
                 <div className="flex justify-end space-x-2">
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setSelectedOrder(order)}
+                  >
                     <Eye className="h-4 w-4 mr-1" />
                     Chi tiết
                   </Button>
-                  
-                  {order.products?.product_type === 'shared_account' && (
-                    <Button variant="outline" size="sm">
-                      <MessageCircle className="h-4 w-4 mr-1" />
-                      CSKH
-                    </Button>
-                  )}
-                  
-                  {(order.products?.product_type === 'upgrade_account_no_pass' || 
-                    order.products?.product_type === 'upgrade_account_with_pass') && (
-                    <Button variant="outline" size="sm">
-                      <Mail className="h-4 w-4 mr-1" />
-                      Gửi
-                    </Button>
-                  )}
                 </div>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
+
+      {selectedOrder && (
+        <OrderDetailsModal
+          open={!!selectedOrder}
+          onOpenChange={(open) => !open && setSelectedOrder(null)}
+          order={selectedOrder}
+        />
+      )}
     </div>
   );
 };

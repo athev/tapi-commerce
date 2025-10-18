@@ -1,4 +1,5 @@
 
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -6,9 +7,13 @@ import OrdersLoadingSkeleton from "./OrdersLoadingSkeleton";
 import OrdersTable from "./OrdersTable";
 import OrdersEmptyState from "./OrdersEmptyState";
 import OrdersErrorState from "./OrdersErrorState";
+import OrdersFilters from "./OrdersFilters";
 
 const SellerOrders = () => {
   const { user, profile } = useAuth();
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [deliveryFilter, setDeliveryFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   console.log('SellerOrders component - auth state:', { 
     user: !!user, 
@@ -79,6 +84,37 @@ const SellerOrders = () => {
 
   console.log('Query state:', { isLoading, hasError: !!error, ordersCount: orders?.length || 0 });
 
+  // Filter and search orders
+  const filteredOrders = useMemo(() => {
+    if (!orders) return [];
+
+    return orders.filter(order => {
+      // Status filter
+      if (statusFilter !== 'all' && order.status !== statusFilter) {
+        return false;
+      }
+
+      // Delivery status filter
+      if (deliveryFilter !== 'all' && order.delivery_status !== deliveryFilter) {
+        return false;
+      }
+
+      // Search filter
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        const matchesId = order.id.toLowerCase().includes(query);
+        const matchesEmail = order.buyer_email?.toLowerCase().includes(query);
+        const matchesProduct = order.products?.title?.toLowerCase().includes(query);
+        
+        if (!matchesId && !matchesEmail && !matchesProduct) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [orders, statusFilter, deliveryFilter, searchQuery]);
+
   // Block access if not logged in
   if (!user) {
     return (
@@ -123,13 +159,26 @@ const SellerOrders = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-semibold">Đơn hàng</h2>
-        <div className="text-sm text-gray-600">
-          Tổng: {orders?.length || 0} đơn hàng
+        <div className="text-sm text-muted-foreground">
+          Hiển thị: {filteredOrders?.length || 0} / {orders?.length || 0} đơn hàng
         </div>
       </div>
+
+      <OrdersFilters
+        statusFilter={statusFilter}
+        deliveryFilter={deliveryFilter}
+        searchQuery={searchQuery}
+        onStatusChange={setStatusFilter}
+        onDeliveryChange={setDeliveryFilter}
+        onSearchChange={setSearchQuery}
+      />
       
-      {orders && orders.length > 0 ? (
-        <OrdersTable orders={orders} />
+      {filteredOrders && filteredOrders.length > 0 ? (
+        <OrdersTable orders={filteredOrders} />
+      ) : orders && orders.length > 0 ? (
+        <div className="text-center py-12 bg-muted/50 rounded-lg">
+          <p className="text-muted-foreground">Không tìm thấy đơn hàng phù hợp với bộ lọc</p>
+        </div>
       ) : (
         <OrdersEmptyState />
       )}

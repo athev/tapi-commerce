@@ -15,6 +15,7 @@ import { Link } from "react-router-dom";
 import OrderSupportChatButton from "@/components/chat/OrderSupportChatButton";
 import OrderConfirmButton from "@/components/buyer/OrderConfirmButton";
 import OrderDisputeButton from "@/components/buyer/OrderDisputeButton";
+import OrderDetailsModal from "@/components/orders/OrderDetailsModal";
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { 
@@ -37,6 +38,7 @@ const formatDate = (dateString: string) => {
 
 const MyPurchases = () => {
   const { user, profile } = useAuth();
+  const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
 
   // Mock data for development
@@ -256,16 +258,19 @@ const MyPurchases = () => {
                             
                             {/* Actions */}
                             <div className="flex flex-wrap gap-3">
-                              <Button asChild variant="outline">
-                                <Link to={`/product/${purchase.product.id}`}>
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  Xem chi tiết
-                                </Link>
+                              <Button 
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedOrder(purchase)}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Chi tiết
                               </Button>
                               
-                              {purchase.status === 'paid' && (
+                              {purchase.status === 'paid' && purchase.product.file_url && (
                                 <Button 
-                                  className="bg-green-600 hover:bg-green-700"
+                                  variant="default"
+                                  size="sm"
                                   onClick={() => handleDownload(purchase.product)}
                                 >
                                   <Download className="h-4 w-4 mr-2" />
@@ -274,7 +279,7 @@ const MyPurchases = () => {
                               )}
                               
                               {purchase.status === 'pending' && !isUsingMockData && (
-                                <Button asChild>
+                                <Button asChild size="sm">
                                   <Link to={`/payment/${purchase.id}`}>
                                     Hoàn tất thanh toán
                                   </Link>
@@ -287,8 +292,8 @@ const MyPurchases = () => {
                                     orderId={purchase.id}
                                     status={purchase.status}
                                     deliveryStatus={purchase.delivery_status}
-                                    variant="outline"
-                                    size="default"
+                                    variant="default"
+                                    size="sm"
                                   />
 
                                   <OrderDisputeButton 
@@ -296,7 +301,7 @@ const MyPurchases = () => {
                                     status={purchase.status}
                                     deliveryStatus={purchase.delivery_status}
                                     variant="outline"
-                                    size="default"
+                                    size="sm"
                                   />
 
                                   <OrderSupportChatButton 
@@ -389,6 +394,14 @@ const MyPurchases = () => {
       </main>
       
       <Footer />
+
+      {selectedOrder && (
+        <OrderDetailsModal
+          open={!!selectedOrder}
+          onOpenChange={(open) => !open && setSelectedOrder(null)}
+          order={selectedOrder}
+        />
+      )}
     </div>
   );
 };
