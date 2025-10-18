@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Wallet } from "lucide-react";
 import WalletSummaryCards from "./WalletSummaryCards";
 import WithdrawalSection from "./WithdrawalSection";
+import WithdrawalHistory from "./WithdrawalHistory";
 import TransactionHistory from "./TransactionHistory";
 
 const SellerWallet = () => {
@@ -175,7 +176,17 @@ const SellerWallet = () => {
       </div>
       
       <WalletSummaryCards wallet={wallet} />
-      <WithdrawalSection availablePI={Number(wallet.available)} />
+      
+      <WithdrawalSection 
+        availablePI={Number(wallet.available)} 
+        onWithdrawalSuccess={() => {
+          refetchWallet();
+          refetchLogs();
+        }}
+      />
+      
+      <WithdrawalHistory />
+      
       <TransactionHistory walletLogs={walletLogs || []} isLoading={logsLoading} />
     </div>
   );
