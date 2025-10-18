@@ -10,6 +10,7 @@ import OrderDisputeButton from "@/components/buyer/OrderDisputeButton";
 import OrderSupportChatButton from "@/components/chat/OrderSupportChatButton";
 import { useAuth } from "@/context/AuthContext";
 import { Package, User, CreditCard, FileText, Calendar, Mail } from "lucide-react";
+import OrderComments from "./OrderComments";
 
 interface OrderDetailsModalProps {
   open: boolean;
@@ -155,23 +156,25 @@ const OrderDetailsModal = ({ open, onOpenChange, order }: OrderDetailsModalProps
 
           <Separator />
 
-          {/* Actions */}
+          {/* Comments Section */}
+          <OrderComments orderId={order.id} sellerId={product.seller_id} />
+
+          <Separator />
+
+          {/* Actions - Role-based permissions */}
           <div className="flex flex-wrap gap-3">
             {isSeller ? (
               <>
+                {/* Seller can only update delivery status */}
                 <UpdateDeliveryStatusButton 
                   orderId={order.id}
                   currentStatus={order.delivery_status}
                   currentNotes={order.delivery_notes}
                 />
-                <OrderSupportChatButton
-                  order={order}
-                  sellerId={user?.id || ''}
-                  variant="outline"
-                />
               </>
             ) : (
               <>
+                {/* Buyer can only confirm completion or dispute */}
                 <OrderConfirmButton
                   orderId={order.id}
                   status={order.status}
@@ -185,11 +188,6 @@ const OrderDetailsModal = ({ open, onOpenChange, order }: OrderDetailsModalProps
                   deliveryStatus={order.delivery_status}
                   variant="outline"
                   size="default"
-                />
-                <OrderSupportChatButton
-                  order={order}
-                  sellerId={product.seller_id || ''}
-                  variant="outline"
                 />
               </>
             )}

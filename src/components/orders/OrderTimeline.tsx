@@ -5,8 +5,16 @@ interface OrderTimelineProps {
   order: any;
 }
 
+interface TimelineEvent {
+  icon: any;
+  label: string;
+  time: string | null;
+  status: string;
+  notes?: string;
+}
+
 const OrderTimeline = ({ order }: OrderTimelineProps) => {
-  const events = [];
+  const events: TimelineEvent[] = [];
 
   // Order created
   events.push({
@@ -39,21 +47,24 @@ const OrderTimeline = ({ order }: OrderTimelineProps) => {
       icon: Package,
       label: "Đang xử lý giao hàng",
       time: order.updated_at,
-      status: "active"
+      status: "active",
+      notes: order.delivery_notes
     });
   } else if (order.delivery_status === 'delivered') {
     events.push({
       icon: Check,
       label: "Đã giao hàng",
       time: order.updated_at,
-      status: "completed"
+      status: "completed",
+      notes: order.delivery_notes
     });
   } else if (order.delivery_status === 'failed') {
     events.push({
       icon: AlertCircle,
       label: "Giao hàng thất bại",
       time: order.updated_at,
-      status: "failed"
+      status: "failed",
+      notes: order.delivery_notes
     });
   }
 
@@ -94,6 +105,12 @@ const OrderTimeline = ({ order }: OrderTimelineProps) => {
                 <p className="text-xs text-muted-foreground mt-1">
                   {formatDate(event.time)}
                 </p>
+              )}
+              {event.notes && (
+                <div className="mt-2 p-2 bg-muted/50 rounded text-xs">
+                  <p className="font-medium mb-1">Ghi chú từ người bán:</p>
+                  <p className="whitespace-pre-wrap">{event.notes}</p>
+                </div>
               )}
             </div>
           </div>
