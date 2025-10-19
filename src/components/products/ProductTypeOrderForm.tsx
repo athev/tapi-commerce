@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ShoppingCart, Mail, User, Key, Users, Info, Download, FileText } from "lucide-react";
 import PurchaseConfirmationModal from "./PurchaseConfirmationModal";
 import { useNavigate } from "react-router-dom";
+import { upgradeAccountNoPassSchema, upgradeAccountWithPassSchema } from "@/lib/validationSchemas";
 
 interface ProductTypeOrderFormProps {
   productType: string;
@@ -34,34 +35,23 @@ const ProductTypeOrderForm = ({
   const validateInputs = () => {
     const newErrors: Record<string, string> = {};
 
-    if (productType === 'upgrade_account_no_pass') {
-      if (!buyerData.email.trim()) {
-        newErrors.email = 'Email là bắt buộc';
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(buyerData.email)) {
-        newErrors.email = 'Email không hợp lệ';
+    try {
+      if (productType === 'upgrade_account_no_pass') {
+        upgradeAccountNoPassSchema.parse(buyerData);
+      } else if (productType === 'upgrade_account_with_pass') {
+        upgradeAccountWithPassSchema.parse(buyerData);
       }
+      return true;
+    } catch (error: any) {
+      if (error.errors) {
+        error.errors.forEach((err: any) => {
+          const field = err.path[0];
+          newErrors[field] = err.message;
+        });
+      }
+      setErrors(newErrors);
+      return false;
     }
-
-    if (productType === 'upgrade_account_with_pass') {
-      if (!buyerData.email.trim()) {
-        newErrors.email = 'Email là bắt buộc';
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(buyerData.email)) {
-        newErrors.email = 'Email không hợp lệ';
-      }
-
-      if (!buyerData.username.trim()) {
-        newErrors.username = 'Tên đăng nhập là bắt buộc';
-      }
-
-      if (!buyerData.password.trim()) {
-        newErrors.password = 'Mật khẩu là bắt buộc';
-      } else if (buyerData.password.length < 6) {
-        newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
   };
 
   const handlePurchaseClick = () => {
@@ -77,24 +67,15 @@ const ProductTypeOrderForm = ({
     setShowConfirmModal(false);
     
     try {
-      console.log('Starting order creation with buyer data:', buyerData);
-      
-      // Create new order and wait for the response
       const newOrder = await onPurchase(buyerData);
       
-      console.log('Order creation response:', newOrder);
-      
       if (newOrder && newOrder.id) {
-        console.log('Navigating to payment page with order ID:', newOrder.id);
-        // Redirect to payment page with the new order ID
         navigate(`/payment/${newOrder.id}`);
       } else {
-        console.error('No order ID returned from onPurchase:', newOrder);
         throw new Error('Không thể tạo đơn hàng. Vui lòng thử lại.');
       }
     } catch (error) {
-      console.error('Order creation failed:', error);
-      // You might want to show an error toast here
+      console.error('Order creation failed');
     }
   };
 

@@ -17,23 +17,18 @@ serve(async (req) => {
   }
 
   try {
-    console.log('=== CASSO WEBHOOK V9 REQUEST START ===')
-    console.log('Request method:', req.method)
-    console.log('Request URL:', req.url)
+    console.log('=== CASSO WEBHOOK REQUEST START ===')
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Parse request body
     let payload: any
     try {
       const rawBody = await req.text()
-      console.log('Raw body received:', rawBody)
       payload = JSON.parse(rawBody)
     } catch (error) {
-      console.error('Failed to parse JSON:', error)
+      console.error('Failed to parse JSON')
       return new Response(JSON.stringify({
         success: false,
         error: 'Invalid JSON payload'
@@ -42,8 +37,6 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       })
     }
-
-    console.log('Parsed payload:', JSON.stringify(payload, null, 2))
 
     // Handle webhook test
     if (payload.error === 0 && payload.data && payload.data.id === 0) {
@@ -56,22 +49,12 @@ serve(async (req) => {
       })
     }
 
-    // Process real transaction
     if (payload.error === 0 && payload.data) {
       const transaction = payload.data
-      console.log('Processing transaction:', transaction)
 
-      // Process the transaction (existing logic)
       const result = await processTransaction(transaction, supabase)
-      console.log('🔄 Transaction processing result:', result)
       
-      // ⭐ QUAN TRỌNG: Xử lý wallet NGAY khi order được xác nhận thành công
       if (result.status === 'success' && result.order) {
-        console.log('🎯 Order processed successfully, starting wallet processing...')
-        console.log(`📊 Order details: ID=${result.order.id}, Status=${result.order.status}, Amount=${result.transaction_amount}`)
-        
-        // 🔥 LẤY THÔNG TIN SELLER ĐỂ XỬ LÝ WALLET
-        console.log('🔍 Fetching order with seller information...')
         const { data: orderWithSeller, error: orderError } = await supabase
           .from('orders')
           .select(`
@@ -88,7 +71,6 @@ serve(async (req) => {
           .single();
 
         if (orderError) {
-          console.error('❌ Error fetching order with seller info:', orderError);
           return new Response(JSON.stringify({
             success: true,
             message: 'Payment processed successfully, wallet processing failed',

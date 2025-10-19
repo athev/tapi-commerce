@@ -20,6 +20,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { withdrawalSchema } from "@/lib/validationSchemas";
 
 interface WithdrawalFormProps {
   open: boolean;
@@ -48,19 +49,23 @@ const WithdrawalForm = ({ open, onOpenChange, availablePI, onSuccess }: Withdraw
 
     const amount = parseFloat(piAmount);
 
-    // Validation
-    if (!amount || amount < 10) {
-      toast.error("Số tiền rút tối thiểu là 10 PI");
+    // Validation with Zod
+    try {
+      withdrawalSchema.parse({
+        pi_amount: amount,
+        bank_name: bankName,
+        bank_account_number: accountNumber,
+        bank_account_name: accountName,
+      });
+    } catch (error: any) {
+      if (error.errors && error.errors[0]) {
+        toast.error(error.errors[0].message);
+      }
       return;
     }
 
     if (amount > availablePI) {
       toast.error(`Số dư không đủ. Bạn chỉ có ${availablePI} PI khả dụng`);
-      return;
-    }
-
-    if (!bankName || !accountNumber || !accountName) {
-      toast.error("Vui lòng điền đầy đủ thông tin ngân hàng");
       return;
     }
 
@@ -91,7 +96,6 @@ const WithdrawalForm = ({ open, onOpenChange, availablePI, onSuccess }: Withdraw
         throw new Error(data.error || "Failed to submit withdrawal");
       }
     } catch (error: any) {
-      console.error("Withdrawal error:", error);
       toast.error(error.message || "Có lỗi xảy ra khi gửi yêu cầu rút tiền");
     } finally {
       setLoading(false);
