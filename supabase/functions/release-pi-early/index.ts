@@ -18,6 +18,19 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
+    // Verify user authorization
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      throw new Error('Authorization required')
+    }
+
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    
+    if (authError || !user) {
+      throw new Error('Unauthorized')
+    }
+
     const { orderId } = await req.json()
     console.log(`Processing early PI release for order: ${orderId}`)
 
@@ -43,6 +56,12 @@ serve(async (req) => {
     if (orderError || !order) {
       console.error('Order not found:', orderError)
       throw new Error(`Order not found: ${orderId}`)
+    }
+
+    // Verify the authenticated user is the buyer of this order
+    if (order.user_id !== user.id) {
+      console.error(`Unauthorized: User ${user.id} attempted to release PI for order ${orderId} owned by ${order.user_id}`)
+      throw new Error('Unauthorized: You can only confirm your own orders')
     }
 
     console.log('Order found:', order)
