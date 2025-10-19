@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
-import { Menu, Search, ShoppingCart, User, Bell, MessageCircle, LogOut, Settings, Package } from "lucide-react";
+import { Menu, Search, MessageCircle, LogOut, Settings, User } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import {
   DropdownMenu,
@@ -15,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { NotificationDropdown } from "./NotificationDropdown";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -97,15 +97,7 @@ const Navbar = () => {
             {user ? (
               <div className="flex items-center space-x-2">
                 {/* Notifications */}
-                <Button variant="ghost" size="sm" className="relative">
-                  <Bell className="h-4 w-4" />
-                  <Badge 
-                    variant="destructive" 
-                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs p-0"
-                  >
-                    3
-                  </Badge>
-                </Button>
+                <NotificationDropdown />
 
                 {/* Chat */}
                 <Button variant="ghost" size="sm" asChild>

@@ -30,6 +30,13 @@ const UpdateDeliveryStatusButton = ({
 
   const updateMutation = useMutation({
     mutationFn: async ({ status, notes }: { status: string; notes?: string }) => {
+      // Get order info first
+      const { data: order } = await supabase
+        .from('orders')
+        .select('user_id, product_id')
+        .eq('id', orderId)
+        .single();
+
       const { error } = await supabase
         .from('orders')
         .update({
@@ -40,6 +47,33 @@ const UpdateDeliveryStatusButton = ({
         .eq('id', orderId);
 
       if (error) throw error;
+
+      // Create notification for buyer about delivery status update
+      if (order) {
+        const { data: product } = await supabase
+          .from('products')
+          .select('title')
+          .eq('id', order.product_id)
+          .single();
+
+        const statusLabels: Record<string, string> = {
+          'pending': 'Chờ xử lý',
+          'processing': 'Đang xử lý',
+          'delivered': 'Đã giao',
+          'completed': 'Hoàn thành',
+          'failed': 'Thất bại'
+        };
+
+        await supabase.from('notifications').insert({
+          user_id: order.user_id,
+          type: 'delivery_status_updated',
+          title: 'Cập nhật trạng thái đơn hàng',
+          message: `Đơn hàng "${product?.title || 'Sản phẩm'}" đã được cập nhật: ${statusLabels[status] || status}`,
+          priority: 'normal',
+          action_url: '/my-purchases',
+          related_order_id: orderId
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['seller-orders'] });

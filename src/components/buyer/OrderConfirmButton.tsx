@@ -46,6 +46,37 @@ const OrderConfirmButton = ({
       }
 
       console.log('[OrderConfirm] Order updated successfully:', updatedOrder);
+      
+      // Get product and seller info for notifications
+      const { data: product } = await supabase
+        .from('products')
+        .select('seller_id, title')
+        .eq('id', updatedOrder.product_id)
+        .single();
+
+      // Create notification for buyer
+      await supabase.from('notifications').insert({
+        user_id: updatedOrder.user_id,
+        type: 'order_confirmed',
+        title: 'Đã xác nhận nhận hàng',
+        message: 'Bạn đã xác nhận nhận hàng thành công. Cảm ơn bạn đã mua hàng!',
+        priority: 'normal',
+        action_url: '/my-purchases',
+        related_order_id: updatedOrder.id
+      });
+
+      // Create notification for seller
+      if (product) {
+        await supabase.from('notifications').insert({
+          user_id: product.seller_id,
+          type: 'buyer_confirmed_delivery',
+          title: 'Khách hàng đã xác nhận nhận hàng',
+          message: `Đơn hàng "${product.title}" đã được xác nhận bởi khách hàng.`,
+          priority: 'high',
+          action_url: '/seller',
+          related_order_id: updatedOrder.id
+        });
+      }
 
       // Call edge function to process early PI release
       console.log('[OrderConfirm] Invoking release-pi-early edge function');

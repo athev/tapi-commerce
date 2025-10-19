@@ -47,6 +47,13 @@ const OrderDisputeButton = ({
     mutationFn: async () => {
       console.log('Creating dispute for order:', orderId);
       
+      // Get order info first
+      const { data: order } = await supabase
+        .from('orders')
+        .select('user_id, product_id')
+        .eq('id', orderId)
+        .single();
+      
       // Create dispute record
       const { error } = await supabase
         .from('order_disputes')
@@ -74,6 +81,39 @@ const OrderDisputeButton = ({
       if (updateError) {
         console.error('Error updating order status:', updateError);
         throw updateError;
+      }
+
+      // Get product and seller info for notifications
+      if (order) {
+        const { data: product } = await supabase
+          .from('products')
+          .select('seller_id, title')
+          .eq('id', order.product_id)
+          .single();
+
+        // Create notification for buyer
+        await supabase.from('notifications').insert({
+          user_id: order.user_id,
+          type: 'dispute_created',
+          title: 'Đã tạo tranh chấp',
+          message: 'Yêu cầu tranh chấp của bạn đã được gửi. Admin sẽ xử lý trong 24-48h.',
+          priority: 'high',
+          action_url: '/my-purchases',
+          related_order_id: orderId
+        });
+
+        // Create notification for seller
+        if (product) {
+          await supabase.from('notifications').insert({
+            user_id: product.seller_id,
+            type: 'dispute_from_buyer',
+            title: '⚠️ Có tranh chấp mới',
+            message: `Khách hàng đã tạo tranh chấp cho đơn hàng "${product.title}".`,
+            priority: 'high',
+            action_url: '/seller',
+            related_order_id: orderId
+          });
+        }
       }
     },
     onSuccess: () => {

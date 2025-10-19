@@ -18,6 +18,7 @@ import MyPurchases from "./pages/MyPurchases";
 import NotFound from "./pages/NotFound";
 import Payment from "./pages/Payment";
 import Chat from "./pages/Chat";
+import Notifications from "./pages/Notifications";
 import SellerDashboard from "./pages/SellerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import AccountantDashboard from "./pages/AccountantDashboard";
@@ -46,6 +47,7 @@ const App = () => (
             <Route path="/payment/:orderId" element={<Payment />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/chat/:conversationId" element={<Chat />} />
+            <Route path="/notifications" element={<Notifications />} />
             
             {/* Protected Routes */}
             <Route 

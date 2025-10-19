@@ -242,30 +242,42 @@ export type Database = {
       }
       notifications: {
         Row: {
+          action_url: string | null
           created_at: string | null
           id: string
           is_read: boolean | null
           message: string
+          metadata: Json | null
+          priority: string | null
+          read_at: string | null
           related_order_id: string | null
           title: string
           type: string | null
           user_id: string | null
         }
         Insert: {
+          action_url?: string | null
           created_at?: string | null
           id?: string
           is_read?: boolean | null
           message: string
+          metadata?: Json | null
+          priority?: string | null
+          read_at?: string | null
           related_order_id?: string | null
           title: string
           type?: string | null
           user_id?: string | null
         }
         Update: {
+          action_url?: string | null
           created_at?: string | null
           id?: string
           is_read?: boolean | null
           message?: string
+          metadata?: Json | null
+          priority?: string | null
+          read_at?: string | null
           related_order_id?: string | null
           title?: string
           type?: string | null
@@ -744,6 +756,10 @@ export type Database = {
       get_order_for_seller: {
         Args: { order_id: string; seller_id: string }
         Returns: Json
+      }
+      get_unread_notification_count: {
+        Args: { user_id_param: string }
+        Returns: number
       }
       has_role: {
         Args: {
