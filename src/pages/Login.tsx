@@ -6,16 +6,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context";
 import { useToast } from "@/hooks/use-toast";
+import { AlertCircle, Loader2 } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const { signIn, user, session } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -36,6 +40,7 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage("");
     
     try {
       console.log('Login page: Starting sign in process');
@@ -46,31 +51,28 @@ const Login = () => {
         
         // Check if error is due to unverified email
         if ((error as any).code === "email_not_confirmed") {
-          navigate("/verify-email", { 
-            state: { 
-              email: (error as any).email || email,
-              fromLogin: true 
-            } 
-          });
+          setErrorMessage("Tài khoản của bạn chưa được xác thực. Đang chuyển hướng đến trang xác thực email...");
+          setIsRedirecting(true);
+          
+          setTimeout(() => {
+            navigate("/verify-email", { 
+              state: { 
+                email: (error as any).email || email,
+                fromLogin: true 
+              } 
+            });
+          }, 2000);
           return;
         }
         
-        toast({
-          title: "Đăng nhập thất bại",
-          description: error.message || "Vui lòng kiểm tra lại email và mật khẩu",
-          variant: "destructive",
-        });
+        setErrorMessage(error.message || "Vui lòng kiểm tra lại email và mật khẩu");
       } else {
         console.log('Login page: Sign in successful, will redirect via useEffect');
-        // Don't navigate here - let the useEffect handle it when user/session updates
+        setErrorMessage("");
       }
     } catch (error) {
       console.error('Login page: Unexpected error:', error);
-      toast({
-        title: "Đăng nhập thất bại",
-        description: "Có lỗi xảy ra. Vui lòng thử lại sau.",
-        variant: "destructive",
-      });
+      setErrorMessage("Có lỗi xảy ra. Vui lòng thử lại sau.");
     } finally {
       setIsLoading(false);
     }
@@ -90,6 +92,14 @@ const Login = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {errorMessage && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Đăng nhập thất bại</AlertTitle>
+                  <AlertDescription>{errorMessage}</AlertDescription>
+                </Alert>
+              )}
+              
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
@@ -148,6 +158,17 @@ const Login = () => {
       </main>
       
       <Footer />
+      
+      {isRedirecting && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="p-6 max-w-sm">
+            <div className="flex items-center space-x-3">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <p className="text-sm">Đang chuyển hướng đến trang xác thực email...</p>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { CheckCircle2 } from "lucide-react";
 import RegisterFormFields from "@/components/auth/RegisterFormFields";
 import RegisterSellerFormSubmit from "@/components/auth/RegisterSellerFormSubmit";
 import { useRegisterFormValidation } from "@/components/auth/RegisterFormValidation";
@@ -20,6 +22,7 @@ const RegisterSellerForm = ({ networkError, handleRetry, userType }: RegisterSel
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const { signUp } = useAuth();
   const { validateForm } = useRegisterFormValidation();
   const navigate = useNavigate();
@@ -42,11 +45,12 @@ const RegisterSellerForm = ({ networkError, handleRetry, userType }: RegisterSel
       const { error, success } = await signUp(email, password, fullName);
       
       if (success && !error) {
-        toast.success("Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.");
+        setShowSuccess(true);
+        toast.success("Đăng ký thành công!");
         
         setTimeout(() => {
           navigate("/verify-email", { state: { email } });
-        }, 1500);
+        }, 2000);
       } else if (error) {
         console.error("Signup error details:", error);
         
@@ -71,6 +75,16 @@ const RegisterSellerForm = ({ networkError, handleRetry, userType }: RegisterSel
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {showSuccess && (
+        <Alert className="bg-green-50 border-green-200">
+          <CheckCircle2 className="h-4 w-4 text-green-600" />
+          <AlertTitle className="text-green-900">Đăng ký thành công!</AlertTitle>
+          <AlertDescription className="text-green-800">
+            Đang chuyển hướng đến trang xác thực email...
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <RegisterFormFields
         fullName={fullName}
         setFullName={setFullName}

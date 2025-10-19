@@ -37,15 +37,9 @@ export const useAuthOperations = (fetchProfile: (userId: string) => Promise<any>
         // Sign out the user immediately
         await supabase.auth.signOut();
         
-        toastNotification({
-          title: "Tài khoản chưa được xác thực",
-          description: "Vui lòng kiểm tra email và click vào link xác thực",
-          variant: "destructive",
-        });
-        
         return { 
           error: { 
-            message: "Email chưa được xác thực",
+            message: "Tài khoản của bạn chưa được xác thực. Vui lòng kiểm tra email để kích hoạt tài khoản.",
             code: "email_not_confirmed",
             email: email 
           } as any
