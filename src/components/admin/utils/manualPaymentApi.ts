@@ -4,11 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 export const fetchManualPaymentOrders = async () => {
   try {
     const { data: currentUser } = await supabase.auth.getUser();
-    const { data: profile } = await supabase
-      .from('profiles')
+    
+    // Check user roles from user_roles table for proper authorization
+    const { data: userRoles } = await supabase
+      .from('user_roles')
       .select('role')
-      .eq('id', currentUser.user?.id)
-      .single();
+      .eq('user_id', currentUser.user?.id);
+    
+    const isAdmin = userRoles?.some(r => r.role === 'admin') || false;
 
     let ordersQuery = supabase
       .from('orders')
@@ -28,7 +31,7 @@ export const fetchManualPaymentOrders = async () => {
       .order('created_at', { ascending: false });
 
     // If user is not admin, only show orders for their products
-    if (profile?.role !== 'admin') {
+    if (!isAdmin) {
       // First get products owned by this seller
       const { data: sellerProducts } = await supabase
         .from('products')
@@ -58,11 +61,14 @@ export const fetchManualPaymentOrders = async () => {
 export const confirmManualPayment = async (orderId: string) => {
   try {
     const { data: currentUser } = await supabase.auth.getUser();
-    const { data: profile } = await supabase
-      .from('profiles')
+    
+    // Check user roles from user_roles table for proper authorization
+    const { data: userRoles } = await supabase
+      .from('user_roles')
       .select('role')
-      .eq('id', currentUser.user?.id)
-      .single();
+      .eq('user_id', currentUser.user?.id);
+    
+    const isAdmin = userRoles?.some(r => r.role === 'admin') || false;
 
     const { data: orderData, error: fetchError } = await supabase
       .from('orders')
@@ -87,7 +93,6 @@ export const confirmManualPayment = async (orderId: string) => {
       throw new Error('Không tìm thấy thông tin đơn hàng');
     }
 
-    const isAdmin = profile?.role === 'admin';
     const isProductOwner = orderData.products?.seller_id === currentUser.user?.id;
 
     if (!isAdmin && !isProductOwner) {
@@ -148,11 +153,14 @@ export const confirmManualPayment = async (orderId: string) => {
 export const rejectManualPayment = async (orderId: string) => {
   try {
     const { data: currentUser } = await supabase.auth.getUser();
-    const { data: profile } = await supabase
-      .from('profiles')
+    
+    // Check user roles from user_roles table for proper authorization
+    const { data: userRoles } = await supabase
+      .from('user_roles')
       .select('role')
-      .eq('id', currentUser.user?.id)
-      .single();
+      .eq('user_id', currentUser.user?.id);
+    
+    const isAdmin = userRoles?.some(r => r.role === 'admin') || false;
 
     const { data: orderData, error: fetchError } = await supabase
       .from('orders')
@@ -167,7 +175,6 @@ export const rejectManualPayment = async (orderId: string) => {
       throw fetchError || new Error('Không tìm thấy thông tin đơn hàng');
     }
 
-    const isAdmin = profile?.role === 'admin';
     const isProductOwner = orderData.products?.seller_id === currentUser.user?.id;
     
     if (!isAdmin && !isProductOwner) {
