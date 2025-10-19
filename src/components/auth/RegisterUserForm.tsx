@@ -42,10 +42,10 @@ const RegisterUserForm = ({ networkError, handleRetry, userType }: RegisterUserF
       const { error, success } = await signUp(email, password, fullName);
       
       if (success && !error) {
-        toast.success("Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản.");
+        toast.success("Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản.");
         
         setTimeout(() => {
-          navigate("/login");
+          navigate("/verify-email", { state: { email } });
         }, 1500);
       } else if (error) {
         console.error("Signup error details:", error);

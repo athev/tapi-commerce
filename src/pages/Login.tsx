@@ -43,6 +43,18 @@ const Login = () => {
       
       if (error) {
         console.error('Login page: Sign in error:', error);
+        
+        // Check if error is due to unverified email
+        if ((error as any).code === "email_not_confirmed") {
+          navigate("/verify-email", { 
+            state: { 
+              email: (error as any).email || email,
+              fromLogin: true 
+            } 
+          });
+          return;
+        }
+        
         toast({
           title: "Đăng nhập thất bại",
           description: error.message || "Vui lòng kiểm tra lại email và mật khẩu",

@@ -30,6 +30,28 @@ export const useAuthOperations = (fetchProfile: (userId: string) => Promise<any>
         throw error;
       }
       
+      // Check if email is verified
+      if (data?.user && !data.user.email_confirmed_at) {
+        console.log('useAuthOperations: Email not verified');
+        
+        // Sign out the user immediately
+        await supabase.auth.signOut();
+        
+        toastNotification({
+          title: "Tài khoản chưa được xác thực",
+          description: "Vui lòng kiểm tra email và click vào link xác thực",
+          variant: "destructive",
+        });
+        
+        return { 
+          error: { 
+            message: "Email chưa được xác thực",
+            code: "email_not_confirmed",
+            email: email 
+          } as any
+        };
+      }
+      
       console.log('useAuthOperations: Sign in successful for user:', data.user?.id);
       
       // The onAuthStateChange listener will handle profile fetching
