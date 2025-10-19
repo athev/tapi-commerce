@@ -67,21 +67,30 @@ export type Database = {
           created_at: string
           icon: string | null
           id: string
+          is_active: boolean | null
           name: string
+          sort_order: number | null
+          updated_at: string | null
         }
         Insert: {
           count?: number | null
           created_at?: string
           icon?: string | null
           id?: string
+          is_active?: boolean | null
           name: string
+          sort_order?: number | null
+          updated_at?: string | null
         }
         Update: {
           count?: number | null
           created_at?: string
           icon?: string | null
           id?: string
+          is_active?: boolean | null
           name?: string
+          sort_order?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -486,6 +495,36 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      site_settings: {
+        Row: {
+          category: string
+          description: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          category: string
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          category?: string
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: Json
         }
         Relationships: []
       }

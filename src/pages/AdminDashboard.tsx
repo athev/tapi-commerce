@@ -14,6 +14,10 @@ import AdminProducts from "@/components/admin/AdminProducts";
 import AdminSellerApplications from "@/components/admin/AdminSellerApplications";
 import { AdminWalletBackfill } from "@/components/admin/AdminWalletBackfill";
 import AdminWithdrawals from "@/components/admin/AdminWithdrawals";
+import { AdminBrandingSettings } from "@/components/admin/settings/AdminBrandingSettings";
+import { AdminSEOSettings } from "@/components/admin/settings/AdminSEOSettings";
+import { AdminCategoryManager } from "@/components/admin/settings/AdminCategoryManager";
+import { AdminFooterEditor } from "@/components/admin/settings/AdminFooterEditor";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("stats");
@@ -50,15 +54,17 @@ const AdminDashboard = () => {
         <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-8">
+          <TabsList className="grid w-full grid-cols-10 gap-1">
             <TabsTrigger value="stats">Thống kê</TabsTrigger>
             <TabsTrigger value="users">Người dùng</TabsTrigger>
             <TabsTrigger value="orders">Đơn hàng</TabsTrigger>
             <TabsTrigger value="products">Sản phẩm</TabsTrigger>
-            <TabsTrigger value="sellers">Seller Applications</TabsTrigger>
-            <TabsTrigger value="manual-payments">Thanh toán thủ công</TabsTrigger>
+            <TabsTrigger value="categories">Danh mục</TabsTrigger>
+            <TabsTrigger value="branding">Thương hiệu</TabsTrigger>
+            <TabsTrigger value="seo">SEO</TabsTrigger>
+            <TabsTrigger value="footer">Footer</TabsTrigger>
+            <TabsTrigger value="manual-payments">TT thủ công</TabsTrigger>
             <TabsTrigger value="withdrawals">Rút tiền</TabsTrigger>
-            <TabsTrigger value="wallet-backfill">Wallet Backfill</TabsTrigger>
           </TabsList>
 
           <TabsContent value="stats">
@@ -77,8 +83,20 @@ const AdminDashboard = () => {
             <AdminProducts />
           </TabsContent>
 
-          <TabsContent value="sellers">
-            <AdminSellerApplications />
+          <TabsContent value="categories">
+            <AdminCategoryManager />
+          </TabsContent>
+
+          <TabsContent value="branding">
+            <AdminBrandingSettings />
+          </TabsContent>
+
+          <TabsContent value="seo">
+            <AdminSEOSettings />
+          </TabsContent>
+
+          <TabsContent value="footer">
+            <AdminFooterEditor />
           </TabsContent>
           
           <TabsContent value="manual-payments">
@@ -87,10 +105,6 @@ const AdminDashboard = () => {
 
           <TabsContent value="withdrawals">
             <AdminWithdrawals />
-          </TabsContent>
-
-          <TabsContent value="wallet-backfill">
-            <AdminWalletBackfill />
           </TabsContent>
         </Tabs>
       </div>
