@@ -15,6 +15,17 @@ export const useSignUp = () => {
       };
     }
 
+    // Helper function to get the correct redirect URL
+    const getRedirectUrl = () => {
+      const prodHosts = ['www.tapi.vn', 'tapi.vn', 'tapi-commerce.lovable.app'];
+      // If already on production, use current origin
+      if (prodHosts.includes(window.location.hostname)) {
+        return `${window.location.origin}/`;
+      }
+      // If on localhost or other domain, redirect to production
+      return 'https://www.tapi.vn/';
+    };
+
     try {
       console.log('Starting signup process...');
       
@@ -23,7 +34,7 @@ export const useSignUp = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: getRedirectUrl(),
           data: {
             full_name: fullName,
           }
