@@ -61,8 +61,15 @@ serve(async (req) => {
       throw new Error('Withdrawal request not found')
     }
 
-    if (withdrawal.status !== 'pending') {
-      throw new Error('Withdrawal request already processed')
+    // Validate status based on action
+    if (action === 'approve' || action === 'reject') {
+      if (withdrawal.status !== 'pending') {
+        throw new Error('Withdrawal request already processed')
+      }
+    } else if (action === 'complete') {
+      if (withdrawal.status !== 'approved') {
+        throw new Error('Withdrawal must be approved before completion')
+      }
     }
 
     if (action === 'reject') {
