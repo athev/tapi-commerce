@@ -19,7 +19,6 @@ interface Order {
   status: string;
   created_at: string;
   buyer_email: string | null;
-  buyer_data: any;
   delivery_status: string | null;
   products: {
     id: string;
@@ -71,14 +70,7 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
               </TableCell>
               
               <TableCell>
-                <div className="space-y-1">
-                  <div className="text-sm">{order.buyer_email || 'Chưa có email'}</div>
-                  {order.buyer_data && Object.keys(order.buyer_data).length > 0 && (
-                    <div className="text-xs text-gray-500">
-                      Có thông tin bổ sung
-                    </div>
-                  )}
-                </div>
+                <div className="text-sm">{order.buyer_email || 'Chưa có email'}</div>
               </TableCell>
               
               <TableCell>

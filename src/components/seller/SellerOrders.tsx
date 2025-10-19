@@ -44,7 +44,6 @@ const SellerOrders = () => {
             created_at,
             updated_at,
             buyer_email,
-            buyer_data,
             delivery_status,
             delivery_notes,
             products!inner(

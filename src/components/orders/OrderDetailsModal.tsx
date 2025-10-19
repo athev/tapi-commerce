@@ -86,14 +86,6 @@ const OrderDetailsModal = ({ open, onOpenChange, order }: OrderDetailsModalProps
                     <Mail className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">{order.buyer_email || 'Không có email'}</span>
                   </div>
-                  {order.buyer_data && (
-                    <div className="text-sm space-y-1 mt-2">
-                      <p className="font-medium">Dữ liệu giao hàng:</p>
-                      <pre className="bg-background p-2 rounded text-xs overflow-x-auto">
-                        {JSON.stringify(order.buyer_data, null, 2)}
-                      </pre>
-                    </div>
-                  )}
                 </div>
               </div>
               <Separator />
