@@ -75,7 +75,7 @@ export const sendMessageToDb = async (
 ) => {
   console.log('Sending message:', { conversationId, content, messageType, sender: senderId });
 
-  const { error } = await supabase
+  const { data: messageData, error } = await supabase
     .from('messages')
     .insert({
       conversation_id: conversationId,
@@ -83,7 +83,9 @@ export const sendMessageToDb = async (
       content,
       message_type: messageType,
       image_url: imageUrl
-    });
+    })
+    .select('id')
+    .single();
 
   if (error) {
     console.error('Error sending message:', error);
@@ -91,6 +93,64 @@ export const sendMessageToDb = async (
   }
 
   console.log('Message sent successfully');
+
+  // Create notification for recipient
+  try {
+    // Get conversation details to determine recipient
+    const { data: conversation } = await supabase
+      .from('conversations')
+      .select('buyer_id, seller_id')
+      .eq('id', conversationId)
+      .single();
+
+    if (!conversation) {
+      console.error('Conversation not found');
+      return;
+    }
+
+    // Determine recipient (opposite of sender)
+    const recipientId = senderId === conversation.buyer_id 
+      ? conversation.seller_id 
+      : conversation.buyer_id;
+
+    // Get sender profile for notification title
+    const { data: senderProfile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', senderId)
+      .single();
+
+    // Create content preview
+    const contentPreview = messageType === 'image' 
+      ? '📷 Đã gửi một hình ảnh'
+      : (content.length > 50 ? content.substring(0, 50) + '...' : content);
+
+    // Insert notification for recipient
+    const { error: notificationError } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: recipientId,
+        type: 'new_message',
+        title: `Tin nhắn mới từ ${senderProfile?.full_name || 'Người dùng'}`,
+        message: contentPreview,
+        priority: 'normal',
+        action_url: `/chat/${conversationId}`,
+        metadata: {
+          conversation_id: conversationId,
+          sender_id: senderId,
+          message_id: messageData?.id
+        }
+      });
+
+    if (notificationError) {
+      console.error('Error creating notification:', notificationError);
+    } else {
+      console.log('Notification created for recipient');
+    }
+  } catch (notificationError) {
+    console.error('Error in notification creation:', notificationError);
+    // Don't throw - message was sent successfully, notification is just a bonus
+  }
 };
 
 export const markConversationMessagesAsRead = async (conversationId: string, userId: string) => {

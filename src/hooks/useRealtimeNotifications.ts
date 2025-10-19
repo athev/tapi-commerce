@@ -75,15 +75,42 @@ export const useRealtimeNotifications = () => {
                            newNotification.priority === 'low' ? 'low' : 'normal';
           playSound(soundType);
           
-          // Show toast
-          toast(newNotification.title, {
-            description: newNotification.message,
-            action: newNotification.action_url ? {
-              label: 'Xem',
-              onClick: () => window.location.href = newNotification.action_url!
-            } : undefined,
-            duration: 5000
-          });
+          // Handle new_message notifications intelligently
+          if (newNotification.type === 'new_message') {
+            const currentPath = window.location.pathname;
+            const conversationId = newNotification.metadata?.conversation_id;
+            
+            // Don't show toast if user is already viewing this conversation
+            if (conversationId && currentPath === `/chat/${conversationId}`) {
+              console.log('User is viewing this conversation, skipping toast');
+              queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
+              return;
+            }
+            
+            // Show toast with "Xem ngay" button for other pages
+            toast(newNotification.title, {
+              description: newNotification.message,
+              action: {
+                label: 'Xem ngay',
+                onClick: () => {
+                  if (newNotification.action_url) {
+                    window.location.href = newNotification.action_url;
+                  }
+                }
+              },
+              duration: 5000
+            });
+          } else {
+            // Show regular toast for other notification types
+            toast(newNotification.title, {
+              description: newNotification.message,
+              action: newNotification.action_url ? {
+                label: 'Xem',
+                onClick: () => window.location.href = newNotification.action_url!
+              } : undefined,
+              duration: 5000
+            });
+          }
           
           // Invalidate query to refetch
           queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
