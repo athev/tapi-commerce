@@ -73,7 +73,12 @@ export const sendMessageToDb = async (
   messageType: 'text' | 'image' = 'text',
   imageUrl?: string
 ) => {
-  console.log('Sending message:', { conversationId, content, messageType, sender: senderId });
+  console.log('📧 [MESSAGE] Sending message:', { 
+    conversationId, 
+    senderId, 
+    contentPreview: content.substring(0, 30),
+    messageType 
+  });
 
   const { data: messageData, error } = await supabase
     .from('messages')
@@ -88,68 +93,106 @@ export const sendMessageToDb = async (
     .single();
 
   if (error) {
-    console.error('Error sending message:', error);
+    console.error('❌ [MESSAGE] Failed to send message:', error);
     throw error;
   }
 
-  console.log('Message sent successfully');
+  console.log('✅ [MESSAGE] Message sent successfully:', messageData?.id);
 
   // Create notification for recipient
   try {
+    console.log('🔔 [NOTIFICATION] Starting notification creation...');
+
     // Get conversation details to determine recipient
-    const { data: conversation } = await supabase
+    const { data: conversation, error: convError } = await supabase
       .from('conversations')
       .select('buyer_id, seller_id')
       .eq('id', conversationId)
       .single();
 
-    if (!conversation) {
-      console.error('Conversation not found');
+    if (convError || !conversation) {
+      console.error('❌ [NOTIFICATION] Conversation not found:', { conversationId, error: convError });
       return;
     }
+
+    console.log('✅ [NOTIFICATION] Conversation found:', {
+      conversationId,
+      buyerId: conversation.buyer_id,
+      sellerId: conversation.seller_id
+    });
 
     // Determine recipient (opposite of sender)
     const recipientId = senderId === conversation.buyer_id 
       ? conversation.seller_id 
       : conversation.buyer_id;
 
+    console.log('🎯 [NOTIFICATION] Recipient determined:', {
+      senderId,
+      recipientId,
+      senderIsBuyer: senderId === conversation.buyer_id
+    });
+
     // Get sender profile for notification title
-    const { data: senderProfile } = await supabase
+    const { data: senderProfile, error: profileError } = await supabase
       .from('profiles')
       .select('full_name')
       .eq('id', senderId)
       .single();
+
+    if (profileError) {
+      console.warn('⚠️ [NOTIFICATION] Could not fetch sender profile:', profileError);
+    }
+
+    console.log('👤 [NOTIFICATION] Sender profile:', {
+      senderId,
+      fullName: senderProfile?.full_name
+    });
 
     // Create content preview
     const contentPreview = messageType === 'image' 
       ? '📷 Đã gửi một hình ảnh'
       : (content.length > 50 ? content.substring(0, 50) + '...' : content);
 
+    const notificationPayload = {
+      user_id: recipientId,
+      type: 'new_message',
+      title: `Tin nhắn mới từ ${senderProfile?.full_name || 'Người dùng'}`,
+      message: contentPreview,
+      priority: 'normal',
+      action_url: `/chat/${conversationId}`,
+      metadata: {
+        conversation_id: conversationId,
+        sender_id: senderId,
+        message_id: messageData?.id
+      }
+    };
+
+    console.log('📦 [NOTIFICATION] Payload to insert:', notificationPayload);
+
     // Insert notification for recipient
-    const { error: notificationError } = await supabase
+    const { data: notificationData, error: notificationError } = await supabase
       .from('notifications')
-      .insert({
-        user_id: recipientId,
-        type: 'new_message',
-        title: `Tin nhắn mới từ ${senderProfile?.full_name || 'Người dùng'}`,
-        message: contentPreview,
-        priority: 'normal',
-        action_url: `/chat/${conversationId}`,
-        metadata: {
-          conversation_id: conversationId,
-          sender_id: senderId,
-          message_id: messageData?.id
-        }
-      });
+      .insert(notificationPayload)
+      .select()
+      .single();
 
     if (notificationError) {
-      console.error('Error creating notification:', notificationError);
+      console.error('❌ [NOTIFICATION] Failed to create notification:', notificationError);
+      console.error('❌ [NOTIFICATION] Error details:', {
+        code: notificationError.code,
+        message: notificationError.message,
+        details: notificationError.details,
+        hint: notificationError.hint
+      });
     } else {
-      console.log('Notification created for recipient');
+      console.log('✅ [NOTIFICATION] Notification created successfully:', {
+        notificationId: notificationData?.id,
+        recipientId,
+        type: notificationData?.type
+      });
     }
   } catch (notificationError) {
-    console.error('Error in notification creation:', notificationError);
-    // Don't throw - message was sent successfully, notification is just a bonus
+    console.error('💥 [NOTIFICATION] Exception in notification creation:', notificationError);
   }
 };
 

@@ -78,15 +78,30 @@ export const useRealtimeNotifications = () => {
           // Handle new_message notifications intelligently
           if (newNotification.type === 'new_message') {
             const currentPath = window.location.pathname;
+            const currentUrl = window.location.href;
             const conversationId = newNotification.metadata?.conversation_id;
             
-            // Don't show toast if user is already viewing this conversation
-            if (conversationId && currentPath === `/chat/${conversationId}`) {
-              console.log('User is viewing this conversation, skipping toast');
+            console.log('🔔 [NEW_MESSAGE] Processing:', {
+              conversationId,
+              currentPath,
+              currentUrl
+            });
+            
+            // Check if user is viewing this specific conversation
+            const isViewingThisChat = conversationId && (
+              currentPath === `/chat/${conversationId}` || // Direct route match
+              (currentPath === '/chat' && currentUrl.includes(conversationId)) || // Chat list with this convo selected
+              currentPath.startsWith(`/chat/${conversationId}`) // Any sub-route
+            );
+            
+            if (isViewingThisChat) {
+              console.log('🔕 User is viewing this conversation, skipping toast but playing sound');
+              // Still play sound and update badge, but don't show toast
               queryClient.invalidateQueries({ queryKey: ['notifications', user.id] });
               return;
             }
             
+            console.log('🔔 Showing toast notification for new message');
             // Show toast with "Xem ngay" button for other pages
             toast(newNotification.title, {
               description: newNotification.message,

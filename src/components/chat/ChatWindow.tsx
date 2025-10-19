@@ -30,8 +30,10 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   const [hasCheckedRedirect, setHasCheckedRedirect] = useState(false);
   const [isOrderInfoExpanded, setIsOrderInfoExpanded] = useState(false);
   const [isProductInfoExpanded, setIsProductInfoExpanded] = useState(false);
+  const [newMessageIndicator, setNewMessageIndicator] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const prevMessagesLengthRef = useRef(0);
   
   const { 
     messages, 
@@ -106,6 +108,33 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Show mini indicator for new messages from others while viewing chat
+  useEffect(() => {
+    if (messages.length > prevMessagesLengthRef.current) {
+      const latestMessage = messages[messages.length - 1];
+      
+      // Only show indicator if message is from someone else
+      if (latestMessage && latestMessage.sender_id !== user?.id) {
+        console.log('🔔 [CHAT_WINDOW] New message from other user, showing indicator');
+        setNewMessageIndicator(true);
+        
+        // Play subtle sound
+        try {
+          const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSR0OT6Lg7K9aGAg+mNjyxHEqBSJ3x/DdkEAKFF606+uoVRQKRp/g8r5sIQUxh9Hz04IzBh5uwO/jmUkdDk+i4O2vWhgIPpjY8sRxKgUid8fw3ZBAC');
+          audio.volume = 0.3;
+          audio.play().catch(() => {});
+        } catch (e) {
+          console.log('Could not play notification sound');
+        }
+        
+        // Auto hide after 3 seconds
+        setTimeout(() => setNewMessageIndicator(false), 3000);
+      }
+    }
+    
+    prevMessagesLengthRef.current = messages.length;
+  }, [messages, user?.id]);
 
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return;
@@ -225,7 +254,19 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   console.log('ChatWindow - Related products:', relatedProducts);
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col bg-white rounded-lg border shadow-sm">
+    <div className="h-[calc(100vh-120px)] flex flex-col bg-white rounded-lg border shadow-sm relative">
+      {/* New Message Indicator */}
+      {newMessageIndicator && (
+        <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top-2 duration-300">
+          <div className="bg-blue-500 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            <span>Tin nhắn mới</span>
+          </div>
+        </div>
+      )}
+      
       {/* Header - Compact */}
       <div className="flex-shrink-0 border-b p-3">
         <div className="flex items-center space-x-3">
