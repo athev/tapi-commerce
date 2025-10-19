@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { AlertCircle, Clock, CheckCircle, XCircle } from "lucide-react";
@@ -28,13 +29,57 @@ const WithdrawalHistory = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="gap-1"><Clock className="h-3 w-3" />Chờ duyệt</Badge>;
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="outline" className="gap-1 cursor-help">
+                <Clock className="h-3 w-3" />Chờ duyệt
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Admin đang xem xét yêu cầu của bạn</p>
+            </TooltipContent>
+          </Tooltip>
+        );
       case 'approved':
-        return <Badge className="gap-1 bg-blue-500"><Clock className="h-3 w-3" />Đã duyệt</Badge>;
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge className="gap-1 bg-blue-500 cursor-help">
+                <Clock className="h-3 w-3" />Đã duyệt
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Admin đã duyệt, kế toán đang chuyển tiền</p>
+            </TooltipContent>
+          </Tooltip>
+        );
       case 'completed':
-        return <Badge className="gap-1 bg-green-500"><CheckCircle className="h-3 w-3" />Hoàn tất</Badge>;
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge className="gap-1 bg-green-500 cursor-help">
+                <CheckCircle className="h-3 w-3" />Hoàn tất
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Đã chuyển tiền thành công vào tài khoản của bạn</p>
+            </TooltipContent>
+          </Tooltip>
+        );
       case 'rejected':
-        return <Badge variant="destructive" className="gap-1"><XCircle className="h-3 w-3" />Từ chối</Badge>;
+        return (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge variant="destructive" className="gap-1 cursor-help">
+                <XCircle className="h-3 w-3" />Từ chối
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Yêu cầu bị từ chối, xem lý do bên dưới</p>
+            </TooltipContent>
+          </Tooltip>
+        );
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -54,11 +99,12 @@ const WithdrawalHistory = () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Lịch sử rút tiền</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <TooltipProvider>
+      <Card>
+        <CardHeader>
+          <CardTitle>Lịch sử rút tiền</CardTitle>
+        </CardHeader>
+        <CardContent>
         {!withdrawals || withdrawals.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <AlertCircle className="h-12 w-12 mx-auto mb-2 opacity-50" />
@@ -116,8 +162,9 @@ const WithdrawalHistory = () => {
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </TooltipProvider>
   );
 };
 
