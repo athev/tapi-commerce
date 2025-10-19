@@ -32,7 +32,7 @@ const WithdrawalSection = ({ availablePI, onWithdrawalSuccess }: WithdrawalSecti
               </p>
             </div>
             <Button 
-              disabled={availablePI < 100}
+              disabled={availablePI < 10}
               onClick={() => setShowForm(true)}
               className="bg-green-600 hover:bg-green-700"
             >

@@ -40,8 +40,8 @@ serve(async (req) => {
     console.log('📤 Withdrawal request from user:', user.id)
 
     // Validate amount
-    if (!pi_amount || pi_amount < 100) {
-      throw new Error('Số tiền rút tối thiểu là 100 PI')
+    if (!pi_amount || pi_amount < 10) {
+      throw new Error('Số tiền rút tối thiểu là 10 PI')
     }
 
     // Get user's wallet

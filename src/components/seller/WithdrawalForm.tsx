@@ -49,8 +49,8 @@ const WithdrawalForm = ({ open, onOpenChange, availablePI, onSuccess }: Withdraw
     const amount = parseFloat(piAmount);
 
     // Validation
-    if (!amount || amount < 100) {
-      toast.error("Số tiền rút tối thiểu là 100 PI");
+    if (!amount || amount < 10) {
+      toast.error("Số tiền rút tối thiểu là 10 PI");
       return;
     }
 
@@ -114,11 +114,11 @@ const WithdrawalForm = ({ open, onOpenChange, availablePI, onSuccess }: Withdraw
             <Input
               id="amount"
               type="number"
-              min="100"
+              min="10"
               max={availablePI}
               value={piAmount}
               onChange={(e) => setPiAmount(e.target.value)}
-              placeholder="Tối thiểu 100 PI"
+              placeholder="Tối thiểu 10 PI"
               required
             />
             {piAmount && (
