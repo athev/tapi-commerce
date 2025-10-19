@@ -19,6 +19,7 @@ import Payment from "./pages/Payment";
 import Chat from "./pages/Chat";
 import SellerDashboard from "./pages/SellerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import AccountantDashboard from "./pages/AccountantDashboard";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -44,9 +45,31 @@ const App = () => (
             <Route path="/chat" element={<Chat />} />
             <Route path="/chat/:conversationId" element={<Chat />} />
             
-            {/* Temporarily remove protection for development */}
-            <Route path="/seller/*" element={<SellerDashboard />} />
-            <Route path="/admin/*" element={<AdminDashboard />} />
+            {/* Protected Routes */}
+            <Route 
+              path="/seller/*" 
+              element={
+                <ProtectedRoute allowedRoles={['seller', 'admin']}>
+                  <SellerDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/*" 
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/accountant/*" 
+              element={
+                <ProtectedRoute allowedRoles={['accountant', 'admin']}>
+                  <AccountantDashboard />
+                </ProtectedRoute>
+              } 
+            />
             
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

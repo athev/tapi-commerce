@@ -3,6 +3,8 @@ import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/context";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useUserRoles } from "@/hooks/useUserRoles";
+import { toast } from "@/hooks/use-toast";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -11,19 +13,21 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   const { user, profile, loading } = useAuth();
+  const { data: userRoles, isLoading: rolesLoading } = useUserRoles();
   const location = useLocation();
 
-  console.log('ProtectedRoute check:', { user: !!user, profile, loading, allowedRoles, currentPath: location.pathname });
+  console.log('ProtectedRoute check:', { 
+    user: !!user, 
+    profile, 
+    loading, 
+    rolesLoading,
+    userRoles,
+    allowedRoles, 
+    currentPath: location.pathname 
+  });
 
-  // For development, temporarily bypass authentication
-  // Just show the content directly
-  console.log('Development mode: bypassing authentication checks');
-  return <>{children}</>;
-
-  // Original authentication logic (commented out for development)
-  /*
   // Show loading state while checking authentication
-  if (loading) {
+  if (loading || rolesLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <div className="container py-8">
@@ -57,15 +61,21 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
     );
   }
 
-  // Check if user has required role
-  if (!allowedRoles.includes(profile.role)) {
-    console.log('User role not allowed:', { userRole: profile.role, allowedRoles });
+  // Check if user has required role using user_roles table
+  const hasRequiredRole = userRoles?.some(role => allowedRoles.includes(role)) || false;
+
+  if (!hasRequiredRole) {
+    console.log('User role not allowed:', { userRoles, allowedRoles });
+    toast({
+      title: "Không có quyền truy cập",
+      description: "Bạn không có quyền truy cập trang này",
+      variant: "destructive",
+    });
     return <Navigate to="/" replace />;
   }
 
   console.log('Access granted to protected route');
   return <>{children}</>;
-  */
 };
 
 export default ProtectedRoute;

@@ -30,22 +30,36 @@ serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
-    // Check if user is admin using secure function
-    const { data: hasAdminRole, error: roleError } = await supabase
-      .rpc('has_role', { 
-        _user_id: user.id, 
-        _role: 'admin' 
-      })
+    // Get user roles from user_roles table
+    const { data: userRoles, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
 
-    if (roleError || !hasAdminRole) {
+    if (roleError) {
       console.error('Role check error:', roleError)
-      throw new Error('Unauthorized: Admin only')
+      throw new Error('Failed to check user roles')
     }
+
+    const roles = userRoles?.map(r => r.role) || []
+    const isAdmin = roles.includes('admin')
+    const isAccountant = roles.includes('accountant')
 
     const { withdrawal_id, action, rejection_reason } = await req.json()
 
     if (!['approve', 'reject', 'complete'].includes(action)) {
       throw new Error('Invalid action')
+    }
+
+    // Check permissions based on action
+    if (action === 'approve' || action === 'reject') {
+      if (!isAdmin) {
+        throw new Error('Only admins can approve/reject withdrawals')
+      }
+    } else if (action === 'complete') {
+      if (!isAdmin && !isAccountant) {
+        throw new Error('Only admins and accountants can mark withdrawals as completed')
+      }
     }
 
     console.log(`🔄 Processing withdrawal ${withdrawal_id} - Action: ${action}`)

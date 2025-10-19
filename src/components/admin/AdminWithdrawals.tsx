@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { vi } from "date-fns/locale";
 import { toast } from "sonner";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import {
   Table,
   TableBody,
@@ -51,6 +52,10 @@ const AdminWithdrawals = () => {
   const [actionType, setActionType] = useState<"approve" | "reject" | "complete" | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
   const queryClient = useQueryClient();
+  const { data: userRoles } = useUserRoles();
+  
+  const isAdmin = userRoles?.includes('admin');
+  const isAccountant = userRoles?.includes('accountant');
 
   const { data: withdrawals, isLoading } = useQuery({
     queryKey: ["admin-withdrawals"],
@@ -167,6 +172,9 @@ const AdminWithdrawals = () => {
 
   const getActionButtons = (withdrawal: Withdrawal) => {
     if (withdrawal.status === "pending") {
+      // Only admin can approve/reject
+      if (!isAdmin) return <span className="text-muted-foreground text-sm">Chờ duyệt</span>;
+      
       return (
         <div className="flex gap-2">
           <Button
@@ -188,6 +196,9 @@ const AdminWithdrawals = () => {
     }
 
     if (withdrawal.status === "approved") {
+      // Both admin and accountant can complete
+      if (!isAdmin && !isAccountant) return <span className="text-muted-foreground text-sm">Đã duyệt</span>;
+      
       return (
         <Button
           size="sm"
