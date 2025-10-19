@@ -59,6 +59,13 @@ export type Database = {
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_casso_transactions_order_id"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_seller_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       categories: {
@@ -134,6 +141,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "conversations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_seller_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "conversations_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -176,6 +190,13 @@ export type Database = {
             columns: ["assigned_to_order"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "license_keys_assigned_to_order_fkey"
+            columns: ["assigned_to_order"]
+            isOneToOne: false
+            referencedRelation: "orders_seller_view"
             referencedColumns: ["id"]
           },
           {
@@ -270,6 +291,13 @@ export type Database = {
             referencedRelation: "orders"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "notifications_related_order_id_fkey"
+            columns: ["related_order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_seller_view"
+            referencedColumns: ["id"]
+          },
         ]
       }
       order_disputes: {
@@ -312,6 +340,13 @@ export type Database = {
             columns: ["order_id"]
             isOneToOne: false
             referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_disputes_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_seller_view"
             referencedColumns: ["id"]
           },
         ]
@@ -592,6 +627,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "wallet_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders_seller_view"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "wallet_logs_wallet_id_fkey"
             columns: ["wallet_id"]
             isOneToOne: false
@@ -699,7 +741,59 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      orders_seller_view: {
+        Row: {
+          bank_amount: number | null
+          buyer_email: string | null
+          created_at: string | null
+          delivery_notes: string | null
+          delivery_status: string | null
+          id: string | null
+          manual_payment_requested: boolean | null
+          payment_verified_at: string | null
+          product_id: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          bank_amount?: number | null
+          buyer_email?: string | null
+          created_at?: string | null
+          delivery_notes?: string | null
+          delivery_status?: string | null
+          id?: string | null
+          manual_payment_requested?: boolean | null
+          payment_verified_at?: string | null
+          product_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          bank_amount?: number | null
+          buyer_email?: string | null
+          created_at?: string | null
+          delivery_notes?: string | null
+          delivery_status?: string | null
+          id?: string | null
+          manual_payment_requested?: boolean | null
+          payment_verified_at?: string | null
+          product_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {
