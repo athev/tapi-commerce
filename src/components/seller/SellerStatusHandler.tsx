@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useSellerStatus } from "@/hooks/useSellerStatus";
 import { useAuth } from "@/context/AuthContext";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import SellerApplicationForm from "./SellerApplicationForm";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -11,25 +12,38 @@ interface SellerStatusHandlerProps {
 
 const SellerStatusHandler = ({ children }: SellerStatusHandlerProps) => {
   const { user, refreshProfile, profile } = useAuth();
-  const { sellerStatus, sellerApplication, loading, refreshSellerStatus } = useSellerStatus();
+  const { data: userRoles, isLoading: rolesLoading } = useUserRoles();
+  const { sellerStatus, sellerApplication, loading: statusLoading, refreshSellerStatus } = useSellerStatus();
+
+  const loading = statusLoading || rolesLoading;
+  const hasSellerRole = userRoles?.includes('seller' as any) || userRoles?.includes('admin' as any);
 
   // Refresh profile and seller status when component mounts
   useEffect(() => {
     if (user) {
-      console.log('SellerStatusHandler: Refreshing profile and seller status');
+      console.log('🔄 [SELLER_HANDLER] Refreshing profile and seller status');
+      console.log('🔄 [SELLER_HANDLER] User roles:', userRoles);
       refreshProfile();
       refreshSellerStatus();
     }
   }, [user?.id]); // Only depend on user.id
 
-  console.log('SellerStatusHandler:', { 
-    user: !!user, 
+  console.log('🎨 [SELLER_HANDLER] Render:', { 
+    hasUser: !!user, 
     profile: profile,
     profileRole: profile?.role,
+    userRoles,
+    hasSellerRole,
     sellerStatus, 
     sellerApplication,
     loading 
   });
+
+  // Priority check: user_roles table (primary source)
+  if (hasSellerRole && !loading) {
+    console.log('✅ [SELLER_HANDLER] User has seller/admin role in user_roles table');
+    return <>{children}</>;
+  }
 
   if (loading) {
     return (
@@ -59,7 +73,7 @@ const SellerStatusHandler = ({ children }: SellerStatusHandlerProps) => {
   switch (sellerStatus) {
     case 'approved_seller':
       // User is an approved seller, show the full dashboard
-      console.log('SellerStatusHandler: Showing seller dashboard for approved seller');
+      console.log('✅ [SELLER_HANDLER] Showing seller dashboard for approved seller');
       return <>{children}</>;
 
     case 'pending_approval':

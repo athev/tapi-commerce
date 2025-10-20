@@ -70,22 +70,12 @@ const AdminSellerApplications = () => {
       
       if (appError) throw appError;
 
-      // If approved, update user role to seller
+      // If approved, trigger will automatically:
+      // 1. Insert seller role into user_roles table
+      // 2. Update profiles.role for backward compatibility
+      // 3. Create wallet via create_seller_wallet trigger
       if (newStatus === 'approved') {
-        console.log('Updating user role to seller for user:', application.user_id);
-        
-        // Update profile role
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ role: 'seller' })
-          .eq('id', application.user_id);
-        
-        if (profileError) {
-          console.error('Error updating profile role:', profileError);
-          throw profileError;
-        }
-
-        console.log('Successfully updated profile role to seller');
+        console.log('✅ Seller application approved - triggers will handle role and wallet creation');
 
         // Send notification to the user about approval
         const { error: notificationError } = await supabase

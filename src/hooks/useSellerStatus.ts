@@ -126,24 +126,35 @@ export const useSellerStatus = () => {
   const getSellerStatus = () => {
     if (!user) return 'not_logged_in';
     
-    console.log('getSellerStatus check:', { 
-      userRole: profile?.role, 
+    console.log('🔍 [SELLER_STATUS] Check:', { 
+      userId: user.id,
+      profileRole: profile?.role, 
       applicationStatus: sellerApplication?.status,
       loading
     });
     
-    // Priority 1: Check profile role first - this is the source of truth
+    // Priority 1: Check profile role (backward compatibility during migration)
     if (profile?.role === 'seller' || profile?.role === 'admin') {
-      // If user has seller/admin role, they should see the dashboard regardless of application status
+      console.log('✅ [SELLER_STATUS] User has seller/admin role in profile');
       return 'approved_seller';
     }
     
-    // Priority 2: Check application status only if profile role is not seller/admin
-    if (sellerApplication?.status === 'approved') return 'approved_seller';
-    if (sellerApplication?.status === 'pending') return 'pending_approval';
-    if (sellerApplication?.status === 'rejected') return 'rejected';
+    // Priority 2: Check application status
+    if (sellerApplication?.status === 'approved') {
+      console.log('✅ [SELLER_STATUS] Application is approved');
+      return 'approved_seller';
+    }
+    if (sellerApplication?.status === 'pending') {
+      console.log('⏳ [SELLER_STATUS] Application is pending');
+      return 'pending_approval';
+    }
+    if (sellerApplication?.status === 'rejected') {
+      console.log('❌ [SELLER_STATUS] Application is rejected');
+      return 'rejected';
+    }
     
-    return 'buyer'; // Default role
+    console.log('👤 [SELLER_STATUS] Default to buyer');
+    return 'buyer';
   };
 
   return {
