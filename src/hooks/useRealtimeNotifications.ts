@@ -56,7 +56,7 @@ export const useRealtimeNotifications = () => {
     console.log('🔔 Setting up realtime notifications for user:', user.id);
 
     const channel = supabase
-      .channel('notifications-changes')
+      .channel(`notifications-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -153,7 +153,7 @@ export const useRealtimeNotifications = () => {
       console.log('🔔 Cleaning up notification subscription');
       supabase.removeChannel(channel);
     };
-  }, [user?.id, playSound, queryClient]);
+  }, [user?.id]);
 
   // Mark as read
   const markAsRead = async (notificationId: string) => {
