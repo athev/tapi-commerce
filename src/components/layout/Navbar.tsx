@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, Search, MessageCircle, LogOut, Settings, User } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +21,10 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { data: roles } = useUserRoles();
+  
+  // Check if user has seller or admin role
+  const hasSellerRole = roles?.includes('seller' as any) || roles?.includes('admin' as any);
 
   const handleSignOut = async () => {
     try {
@@ -137,7 +142,7 @@ const Navbar = () => {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link to="/seller">
+                        <Link to={hasSellerRole ? "/seller" : "/seller-apply"}>
                           <Settings className="mr-2 h-4 w-4" />
                           <span>Bán hàng</span>
                         </Link>

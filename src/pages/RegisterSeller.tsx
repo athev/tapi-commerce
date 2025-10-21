@@ -19,7 +19,7 @@ const RegisterSeller = () => {
     document.title = "Đăng ký người bán | DigitalMarket";
     
     if (user) {
-      navigate("/");
+      navigate("/seller-apply");
     }
 
     const checkNetwork = () => {
