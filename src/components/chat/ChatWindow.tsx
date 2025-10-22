@@ -26,6 +26,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   const { productId } = useParams();
   const [newMessage, setNewMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasCheckedRedirect, setHasCheckedRedirect] = useState(false);
   const [isOrderInfoExpanded, setIsOrderInfoExpanded] = useState(false);
@@ -33,6 +34,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   const [newMessageIndicator, setNewMessageIndicator] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const prevMessagesLengthRef = useRef(0);
   
   const { 
@@ -137,10 +139,18 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   }, [messages, user?.id]);
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || isSending) return;
     
-    await sendMessage(conversationId, newMessage);
-    setNewMessage("");
+    setIsSending(true);
+    try {
+      await sendMessage(conversationId, newMessage);
+      setNewMessage("");
+      inputRef.current?.focus();
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -254,7 +264,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   console.log('ChatWindow - Related products:', relatedProducts);
 
   return (
-    <div className="h-[calc(100vh-120px)] flex flex-col bg-white rounded-lg border shadow-sm relative">
+    <div className="h-[600px] lg:h-[calc(100vh-120px)] flex flex-col bg-white rounded-lg border shadow-sm relative">
       {/* New Message Indicator */}
       {newMessageIndicator && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top-2 duration-300">
@@ -468,33 +478,50 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
 
         {/* Message Input - Fixed at Bottom */}
         <div className="flex-shrink-0 border-t p-3 bg-white">
-          <div className="flex space-x-2">
+          <div className="flex items-end space-x-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
+              disabled={isUploading || isSending}
               title="Gửi hình ảnh"
               className="h-10 w-10 p-0 flex-shrink-0"
             >
               <Image className="h-4 w-4" />
             </Button>
             
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Nhập tin nhắn..."
-              className="flex-1 h-10 min-w-0"
-            />
+            <div className="flex-1 relative">
+              <Input
+                ref={inputRef}
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder={isSending ? "Đang gửi..." : "Nhập tin nhắn..."}
+                disabled={isSending}
+                className="h-10 pr-16"
+                maxLength={1000}
+              />
+              {newMessage.length > 0 && (
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                  {newMessage.length}/1000
+                </span>
+              )}
+            </div>
             
             <Button
               onClick={handleSendMessage}
-              disabled={!newMessage.trim() || isUploading}
+              disabled={!newMessage.trim() || isUploading || isSending}
               size="sm"
               className="h-10 w-10 p-0 flex-shrink-0"
             >
-              <Send className="h-4 w-4" />
+              {isSending ? (
+                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : (
+                <Send className="h-4 w-4" />
+              )}
             </Button>
           </div>
           

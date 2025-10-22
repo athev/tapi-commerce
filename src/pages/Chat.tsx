@@ -7,6 +7,8 @@ import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageCircle } from "lucide-react";
 
+import ChatEmptyState from "@/components/chat/ChatEmptyState";
+
 const Chat = () => {
   const { conversationId } = useParams();
   const navigate = useNavigate();
@@ -37,8 +39,8 @@ const Chat = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-160px)]">
+    <div className="container mx-auto px-4 py-4 md:py-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 h-[calc(100vh-100px)] md:h-[calc(100vh-160px)]">
         {/* Conversation List - Hidden on mobile when a conversation is selected */}
         <div className={`lg:col-span-1 ${selectedConversation ? 'hidden lg:block' : 'block'}`}>
           <ConversationList
@@ -53,14 +55,8 @@ const Chat = () => {
             <ChatWindow conversationId={selectedConversation} />
           ) : (
             <Card className="h-full">
-              <CardContent className="flex flex-col items-center justify-center h-full">
-                <MessageCircle className="h-16 w-16 text-gray-400 mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                  Chọn cuộc trò chuyện
-                </h2>
-                <p className="text-gray-600 text-center">
-                  Chọn một cuộc trò chuyện để bắt đầu nhắn tin
-                </p>
+              <CardContent className="flex items-center justify-center h-full">
+                <ChatEmptyState type="no-selection" />
               </CardContent>
             </Card>
           )}

@@ -14,6 +14,8 @@ interface ConversationListProps {
   selectedConversationId?: string;
 }
 
+import ChatEmptyState from "@/components/chat/ChatEmptyState";
+
 const ConversationList = ({ onConversationSelect, selectedConversationId }: ConversationListProps) => {
   const { user } = useAuth();
   const { conversations, loading } = useChat();
@@ -81,8 +83,8 @@ const ConversationList = ({ onConversationSelect, selectedConversationId }: Conv
       </CardHeader>
       <CardContent className="p-0">
         {conversations.length === 0 ? (
-          <div className="p-4 text-center text-gray-500">
-            Chưa có cuộc trò chuyện nào
+          <div className="p-6">
+            <ChatEmptyState type="no-conversations" />
           </div>
         ) : (
           <div className="space-y-0">
