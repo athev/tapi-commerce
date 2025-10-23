@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Heart, Zap } from "lucide-react";
+import { ShoppingCart, Heart, Zap, ShieldCheck, RefreshCw } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface StickyBottomButtonProps {
@@ -40,19 +40,19 @@ const StickyBottomButton = ({
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 safe-area-pb z-50 shadow-lg">
-      <div className="flex items-center space-x-3">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="h-12 w-12 p-0 border-gray-300"
-        >
-          <Heart className="h-5 w-5" />
-        </Button>
-        
-        <div className="flex-1 flex items-center space-x-3">
+    <div className="fixed bottom-0 left-0 right-0 bg-card border-t shadow-2xl z-50 safe-area-pb">
+      <div className="p-3 space-y-2">
+        {/* Main CTA Row */}
+        <div className="flex items-center gap-3">
+          {/* Price Section */}
+          <div className="flex-1">
+            <p className="text-xs text-muted-foreground">Tổng thanh toán</p>
+            <p className="text-xl font-bold text-destructive">{formatPrice(price)}</p>
+          </div>
+          
+          {/* Buy Now Button */}
           <Button 
-            className="flex-1 bg-red-500 hover:bg-red-600 text-white h-12 font-semibold text-base"
+            className="flex-[2] bg-destructive hover:bg-destructive/90 h-12 font-bold text-base shadow-lg"
             onClick={handlePurchase}
             disabled={isProcessing}
           >
@@ -64,18 +64,34 @@ const StickyBottomButton = ({
             ) : (
               <>
                 <Zap className="h-4 w-4 mr-2" />
-                Mua ngay - {formatPrice(price)}
+                MUA NGAY
               </>
             )}
           </Button>
         </div>
-      </div>
-      
-      {/* Urgency Message */}
-      <div className="mt-2 text-center">
-        <p className="text-xs text-red-600 font-medium">
-          🔥 Giảm 30% - Chỉ còn hôm nay!
-        </p>
+        
+        {/* Trust Badges Row */}
+        <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1">
+            <ShieldCheck className="h-3 w-3 text-green-600" /> 
+            Giao tự động
+          </span>
+          <span className="flex items-center gap-1">
+            <RefreshCw className="h-3 w-3 text-blue-600" /> 
+            Hoàn tiền 100%
+          </span>
+          <span className="flex items-center gap-1">
+            <Zap className="h-3 w-3 text-orange-600" /> 
+            Hỗ trợ 24/7
+          </span>
+        </div>
+        
+        {/* Urgency Banner */}
+        <div className="bg-gradient-to-r from-orange-100 to-red-100 rounded px-3 py-1.5 text-center">
+          <p className="text-xs font-semibold text-orange-800">
+            🔥 Ưu đãi đặc biệt - Số lượng có hạn!
+          </p>
+        </div>
       </div>
     </div>
   );

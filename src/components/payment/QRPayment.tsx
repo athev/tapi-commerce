@@ -53,43 +53,58 @@ const QRPayment = ({ orderId, amount, onManualConfirmation, actualDescription }:
     <div className="space-y-6">
       <PaymentTimer timeLeft={timeLeft} formatTime={formatTime} />
 
-      <Card className="border-2 border-green-200">
-        <CardHeader className="text-center">
-          <CardTitle className="text-green-800">
+      <Card className="border-2 border-primary/20 shadow-lg">
+        <CardHeader className="text-center bg-gradient-to-r from-green-50 to-emerald-50">
+          <CardTitle className="text-xl text-green-800 font-bold">
             Quét mã QR để thanh toán
           </CardTitle>
+          <p className="text-sm text-green-700 mt-1">
+            Mở app ngân hàng và quét mã QR bên dưới
+          </p>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <QRCodeDisplay 
-            qrCodeUrl={qrCodeUrl} 
-            orderId={orderId}
-            amount={amount}
-          />
-
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-700">
-              {formatPrice(amount)}
+        <CardContent className="space-y-6 p-6">
+          {/* QR Code Display - Larger and more prominent */}
+          <div className="flex justify-center">
+            <div className="inline-block p-6 bg-white rounded-2xl border-4 border-blue-500 shadow-xl">
+              <QRCodeDisplay 
+                qrCodeUrl={qrCodeUrl} 
+                orderId={orderId}
+                amount={amount}
+              />
             </div>
-            <p className="text-sm text-gray-600">Số tiền cần thanh toán</p>
           </div>
 
+          {/* Amount Display - More prominent */}
+          <div className="text-center bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl p-4 border border-blue-200">
+            <p className="text-sm text-blue-700 mb-1">Số tiền thanh toán</p>
+            <div className="text-4xl font-bold text-destructive">
+              {formatPrice(amount)}
+            </div>
+            <p className="text-xs text-blue-600 mt-2">
+              ✓ Nội dung chuyển khoản đã được điền sẵn
+            </p>
+          </div>
+
+          {/* Bank Information */}
           <BankInformation 
             amount={amount} 
             orderId={orderId}
             actualDescription={actualDescription}
           />
-          <ManualConfirmation 
-            showManualButton={showManualButton} 
-            onManualConfirmation={onManualConfirmation}
-            orderId={orderId}
-          />
         </CardContent>
       </Card>
 
-      <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-        <p className="text-blue-700 text-sm">
-          <span className="font-medium">Lưu ý:</span> Hệ thống sẽ tự động xác nhận thanh toán qua SEPAY trong vòng 1-2 phút sau khi bạn chuyển khoản thành công với đúng nội dung chuyển khoản.
-        </p>
+      {/* Important Notice */}
+      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border-l-4 border-blue-500 p-4 rounded-r-lg shadow">
+        <div className="flex gap-3">
+          <AlertCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold text-blue-900 mb-1">Thanh toán tự động</p>
+            <p className="text-blue-700 text-sm">
+              Hệ thống sẽ tự động xác nhận thanh toán qua SEPAY trong vòng <span className="font-semibold">1-2 phút</span> sau khi bạn chuyển khoản thành công với đúng nội dung.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

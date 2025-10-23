@@ -1,12 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { ShoppingCart, Mail, User, Key, Users, Info, Download, FileText } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ShoppingCart, Mail, User, Key, Users, Info, Download, FileText, Zap, Heart } from "lucide-react";
 import PurchaseConfirmationModal from "./PurchaseConfirmationModal";
+import ProductVariants, { ProductVariant } from "./ProductVariants";
+import ProductTrustBadges from "./ProductTrustBadges";
 import { useNavigate } from "react-router-dom";
 import { upgradeAccountNoPassSchema, upgradeAccountWithPassSchema } from "@/lib/validationSchemas";
+import { supabase } from "@/integrations/supabase/client";
+import { formatPrice } from "@/utils/orderUtils";
 
 interface ProductTypeOrderFormProps {
   productType: string;
@@ -31,6 +36,48 @@ const ProductTypeOrderForm = ({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [currentPrice, setCurrentPrice] = useState(product?.price || 0);
+  const [originalPrice, setOriginalPrice] = useState<number | null>(null);
+  const [discountPercentage, setDiscountPercentage] = useState<number | null>(null);
+
+  // Fetch product variants
+  useEffect(() => {
+    const fetchVariants = async () => {
+      if (!product?.id) return;
+      
+      const { data, error } = await supabase
+        .from('product_variants')
+        .select('*')
+        .eq('product_id', product.id)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+      
+      if (!error && data) {
+        setVariants(data);
+        // Auto-select first variant if available
+        if (data.length > 0) {
+          setSelectedVariantId(data[0].id);
+          setCurrentPrice(data[0].price);
+          setOriginalPrice(data[0].original_price || null);
+          setDiscountPercentage(data[0].discount_percentage || null);
+        }
+      }
+    };
+    
+    fetchVariants();
+  }, [product?.id]);
+
+  const handleVariantSelect = (variantId: string) => {
+    setSelectedVariantId(variantId);
+    const variant = variants.find(v => v.id === variantId);
+    if (variant) {
+      setCurrentPrice(variant.price);
+      setOriginalPrice(variant.original_price || null);
+      setDiscountPercentage(variant.discount_percentage || null);
+    }
+  };
 
   const validateInputs = () => {
     const newErrors: Record<string, string> = {};
@@ -156,15 +203,70 @@ const ProductTypeOrderForm = ({
   return (
     <>
       <div className="space-y-4">
-        {/* Product Type Info Card - Only show label without description */}
-        <Card className="bg-gray-50 border-gray-200">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <TypeIcon className="h-5 w-5 text-gray-600 flex-shrink-0" />
-              <h3 className="font-medium text-gray-900">{productTypeInfo.label}</h3>
+        {/* Price Display with Discount */}
+        <Card className="border-2">
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {/* Product Type Badge */}
+              <div className="flex items-center gap-2">
+                <TypeIcon className="h-5 w-5 text-primary" />
+                <Badge variant="secondary" className="text-sm">
+                  {productTypeInfo.label}
+                </Badge>
+              </div>
+
+              {/* Price Section */}
+              <div className="space-y-2">
+                <div className="flex items-baseline gap-3">
+                  <span className="text-4xl font-bold text-destructive">
+                    {formatPrice(currentPrice)}
+                  </span>
+                  {originalPrice && originalPrice > currentPrice && (
+                    <>
+                      <span className="text-xl text-muted-foreground line-through">
+                        {formatPrice(originalPrice)}
+                      </span>
+                      {discountPercentage && (
+                        <Badge variant="destructive" className="text-base px-2 py-1">
+                          -{discountPercentage}%
+                        </Badge>
+                      )}
+                    </>
+                  )}
+                </div>
+                
+                {product?.in_stock && product.in_stock > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Còn lại: <span className="font-semibold text-foreground">{product.in_stock}</span> sản phẩm
+                  </p>
+                )}
+              </div>
+
+              {/* Voucher/Promo Badges */}
+              <div className="flex flex-wrap gap-2">
+                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  Freeship 30K
+                </Badge>
+                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                  Giao hàng tự động
+                </Badge>
+                <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                  Hoàn tiền 100%
+                </Badge>
+              </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Product Variants Selector */}
+        {variants.length > 0 && (
+          <ProductVariants 
+            variants={variants}
+            selectedVariantId={selectedVariantId}
+            onVariantSelect={handleVariantSelect}
+            basePrice={product?.price || 0}
+          />
+        )}
 
         {/* Show success message for non-file-download products after purchase */}
         {hasPurchased && productType !== 'file_download' && (
@@ -249,23 +351,46 @@ const ProductTypeOrderForm = ({
           </div>
         )}
 
-        {/* Purchase button - always show except for purchased file_download products */}
-        <Button 
-          className="w-full bg-marketplace-primary hover:bg-marketplace-primary/90"
-          onClick={handlePurchaseClick}
-          disabled={isProcessing}
-        >
-          {isProcessing ? (
-            <>
-              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-              Đang xử lý...
-            </>
-          ) : (
-            <>
-              <ShoppingCart className="h-5 w-5 mr-2" /> Mua ngay
-            </>
-          )}
-        </Button>
+        {/* Dual CTA Buttons */}
+        <div className="space-y-3">
+          <Button 
+            className="w-full h-14 text-lg font-semibold bg-destructive hover:bg-destructive/90 shadow-lg"
+            size="lg"
+            onClick={handlePurchaseClick}
+            disabled={isProcessing}
+          >
+            {isProcessing ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                Đang xử lý...
+              </>
+            ) : (
+              <>
+                <Zap className="h-5 w-5 mr-2" /> MUA NGAY - {formatPrice(currentPrice)}
+              </>
+            )}
+          </Button>
+          
+          <Button 
+            variant="outline" 
+            className="w-full h-12 text-base font-medium border-2"
+            size="lg"
+            onClick={handlePurchaseClick}
+            disabled={isProcessing}
+          >
+            <ShoppingCart className="h-5 w-5 mr-2" /> Thêm vào giỏ hàng
+          </Button>
+        </div>
+
+        {/* Trust Badges */}
+        <ProductTrustBadges />
+
+        {/* Urgency Message */}
+        <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-3 text-center">
+          <p className="text-sm font-semibold text-orange-800">
+            🔥 Ưu đãi đặc biệt - Số lượng có hạn!
+          </p>
+        </div>
       </div>
 
       {/* Confirmation Modal */}

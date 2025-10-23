@@ -392,8 +392,8 @@ const Payment = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       
-      <main className="flex-1 container py-12">
-        <div className="max-w-3xl mx-auto">
+      <main className="flex-1 container py-8">
+        <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex items-center mb-8">
             <Button 
@@ -407,102 +407,137 @@ const Payment = () => {
             <h1 className="text-3xl font-bold">Thanh toán đơn hàng</h1>
           </div>
           
-          {/* Enhanced Payment Notice */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="h-5 w-5 text-blue-600" />
-              <span className="font-medium text-blue-800">Thanh toán tự động</span>
-            </div>
-            <p className="text-blue-700 text-sm">
-              Hệ thống sẽ tự động xác nhận thanh toán và giao hàng ngay khi nhận được chuyển khoản. 
-              {order?.products?.product_type === 'file_download' && 
-                ' File sẽ được gửi qua email tự động.'}
-              {order?.products?.product_type === 'license_key_delivery' && 
-                ' License key sẽ được gửi qua email tự động.'}
-            </p>
-          </div>
-          
-          {/* Order Summary */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Chi tiết đơn hàng</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 pb-4 border-b">
-                  <div className="h-16 w-16 bg-gray-100 rounded overflow-hidden">
-                    <img 
-                      src={order.products?.image || '/placeholder.svg'} 
-                      alt={order.products?.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-medium">{order.products?.title}</h3>
-                    <p className="text-sm text-gray-500">
-                      Người bán: {order.products?.seller_name}
-                    </p>
-                  </div>
+          {/* 2-Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column - Payment Information */}
+            <div className="lg:col-span-2 space-y-6">
+              {/* Enhanced Payment Notice */}
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Clock className="h-5 w-5 text-blue-600" />
+                  <span className="font-semibold text-blue-900">Thanh toán tự động & nhanh chóng</span>
                 </div>
-                
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span>Email người mua:</span>
-                    <span className="font-medium">{user?.email}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Mã đơn hàng:</span>
-                    <code className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{orderId}</code>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Loại sản phẩm:</span>
-                    <span className="font-medium">
-                      {order.products?.product_type === 'file_download' ? 'File tải về' : 
-                       order.products?.product_type === 'license_key_delivery' ? 'Mã kích hoạt' :
-                       order.products?.product_type === 'shared_account' ? 'Tài khoản chia sẻ' :
-                       order.products?.product_type === 'upgrade_account_no_pass' ? 'Nâng cấp tài khoản' :
-                       order.products?.product_type === 'upgrade_account_with_pass' ? 'Nâng cấp tài khoản có mật khẩu' :
-                       'Dịch vụ khác'}
-                    </span>
-                  </div>
-
-                  {/* Display actual transaction description if available */}
-                  {order.casso_transactions?.[0]?.description && (
-                    <div className="flex justify-between items-center">
-                      <span>Nội dung CK thực tế:</span>
-                      <code className="font-mono text-sm bg-green-50 px-2 py-1 rounded border border-green-200">
-                        {order.casso_transactions[0].description}
-                      </code>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex justify-between items-center text-lg font-bold py-2 border-t">
-                  <span>Tổng thanh toán:</span>
-                  <span className="text-marketplace-primary">{formatPrice(order.products?.price || 0)}</span>
-                </div>
+                <p className="text-blue-700 text-sm">
+                  Hệ thống sẽ tự động xác nhận thanh toán và giao hàng ngay khi nhận được chuyển khoản. 
+                  {order?.products?.product_type === 'file_download' && 
+                    ' File sẽ được gửi qua email tự động trong 1-2 phút.'}
+                  {order?.products?.product_type === 'license_key_delivery' && 
+                    ' License key sẽ được gửi qua email tự động trong 1-2 phút.'}
+                </p>
               </div>
-            </CardContent>
-          </Card>
-          
-          {/* QR Payment Component with Manual Confirmation */}
-          <QRPayment
-            orderId={orderId || ''}
-            amount={order.products?.price || 0}
-            onManualConfirmation={handleManualPaymentConfirmation}
-            actualDescription={order.casso_transactions?.[0]?.description}
-          />
-          
-          {/* Manual Confirmation Button */}
-          {(showManualButton || order?.manual_payment_requested) && (
-            <div className="mt-6">
-              <ManualConfirmation
-                showManualButton={showManualButton && !order?.manual_payment_requested}
-                onManualConfirmation={() => setShowManualButton(false)}
+
+              {/* Order Details Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Thông tin đơn hàng</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Email người mua:</span>
+                      <span className="font-medium">{user?.email}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Mã đơn hàng:</span>
+                      <code className="font-mono text-xs bg-muted px-2 py-1 rounded">{orderId?.substring(0, 13).toUpperCase()}</code>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-muted-foreground">Loại sản phẩm:</span>
+                      <span className="font-medium">
+                        {order.products?.product_type === 'file_download' ? 'File tải về' : 
+                         order.products?.product_type === 'license_key_delivery' ? 'Mã kích hoạt' :
+                         order.products?.product_type === 'shared_account' ? 'Tài khoản chia sẻ' :
+                         order.products?.product_type === 'upgrade_account_no_pass' ? 'Nâng cấp tài khoản' :
+                         order.products?.product_type === 'upgrade_account_with_pass' ? 'Nâng cấp tài khoản có mật khẩu' :
+                         'Dịch vụ khác'}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* QR Payment Component */}
+              <QRPayment
                 orderId={orderId || ''}
+                amount={order.products?.price || 0}
+                onManualConfirmation={handleManualPaymentConfirmation}
+                actualDescription={order.casso_transactions?.[0]?.description}
               />
+              
+              {/* Manual Confirmation Button */}
+              {(showManualButton || order?.manual_payment_requested) && (
+                <ManualConfirmation
+                  showManualButton={showManualButton && !order?.manual_payment_requested}
+                  onManualConfirmation={() => setShowManualButton(false)}
+                  orderId={orderId || ''}
+                />
+              )}
             </div>
-          )}
+
+            {/* Right Column - Order Summary (Sticky) */}
+            <div className="lg:col-span-1">
+              <div className="sticky top-4">
+                <Card className="border-2">
+                  <CardHeader className="pb-4">
+                    <CardTitle className="text-lg">Tóm tắt đơn hàng</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Product Info */}
+                    <div className="flex gap-3 pb-4 border-b">
+                      <div className="h-20 w-20 bg-muted rounded overflow-hidden flex-shrink-0">
+                        <img 
+                          src={order.products?.image || '/placeholder.svg'} 
+                          alt={order.products?.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-medium text-sm line-clamp-2 mb-1">{order.products?.title}</h4>
+                        <p className="text-xs text-muted-foreground">
+                          Người bán: {order.products?.seller_name}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Price Breakdown */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Tạm tính:</span>
+                        <span className="font-medium">{formatPrice(order.products?.price || 0)}</span>
+                      </div>
+                      
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>Giảm giá:</span>
+                        <span className="font-medium">-{formatPrice(0)}</span>
+                      </div>
+                      
+                      <div className="h-px bg-border"></div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-base">Tổng thanh toán:</span>
+                        <span className="font-bold text-2xl text-destructive">
+                          {formatPrice(order.products?.price || 0)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Trust Info */}
+                    <div className="bg-blue-50 rounded-lg p-3 space-y-1">
+                      <p className="text-xs text-blue-800 flex items-center gap-1">
+                        ✓ Thanh toán an toàn & bảo mật
+                      </p>
+                      <p className="text-xs text-blue-800 flex items-center gap-1">
+                        ✓ Giao hàng tự động trong 1-2 phút
+                      </p>
+                      <p className="text-xs text-blue-800 flex items-center gap-1">
+                        ✓ Hỗ trợ 24/7
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
       
