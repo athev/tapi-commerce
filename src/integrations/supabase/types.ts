@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      cart_items: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_id: string
+          quantity: number | null
+          updated_at: string | null
+          user_id: string
+          variant_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_id: string
+          quantity?: number | null
+          updated_at?: string | null
+          user_id: string
+          variant_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          quantity?: number | null
+          updated_at?: string | null
+          user_id?: string
+          variant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cart_items_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       casso_transactions: {
         Row: {
           account_number: string | null
@@ -347,6 +392,7 @@ export type Database = {
           created_at: string
           delivery_notes: string | null
           delivery_status: string | null
+          discount_amount: number | null
           id: string
           manual_payment_requested: boolean | null
           payment_verified_at: string | null
@@ -354,6 +400,8 @@ export type Database = {
           status: string
           updated_at: string
           user_id: string
+          variant_id: string | null
+          voucher_id: string | null
         }
         Insert: {
           bank_amount?: number | null
@@ -364,6 +412,7 @@ export type Database = {
           created_at?: string
           delivery_notes?: string | null
           delivery_status?: string | null
+          discount_amount?: number | null
           id?: string
           manual_payment_requested?: boolean | null
           payment_verified_at?: string | null
@@ -371,6 +420,8 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id: string
+          variant_id?: string | null
+          voucher_id?: string | null
         }
         Update: {
           bank_amount?: number | null
@@ -381,6 +432,7 @@ export type Database = {
           created_at?: string
           delivery_notes?: string | null
           delivery_status?: string | null
+          discount_amount?: number | null
           id?: string
           manual_payment_requested?: boolean | null
           payment_verified_at?: string | null
@@ -388,10 +440,76 @@ export type Database = {
           status?: string
           updated_at?: string
           user_id?: string
+          variant_id?: string | null
+          voucher_id?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_variant_id_fkey"
+            columns: ["variant_id"]
+            isOneToOne: false
+            referencedRelation: "product_variants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_variants: {
+        Row: {
+          badge: string | null
+          created_at: string | null
+          discount_percentage: number | null
+          id: string
+          is_active: boolean | null
+          original_price: number | null
+          price: number
+          product_id: string
+          sort_order: number | null
+          updated_at: string | null
+          variant_name: string
+        }
+        Insert: {
+          badge?: string | null
+          created_at?: string | null
+          discount_percentage?: number | null
+          id?: string
+          is_active?: boolean | null
+          original_price?: number | null
+          price: number
+          product_id: string
+          sort_order?: number | null
+          updated_at?: string | null
+          variant_name: string
+        }
+        Update: {
+          badge?: string | null
+          created_at?: string | null
+          discount_percentage?: number | null
+          id?: string
+          is_active?: boolean | null
+          original_price?: number | null
+          price?: number
+          product_id?: string
+          sort_order?: number | null
+          updated_at?: string | null
+          variant_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
@@ -591,6 +709,60 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      vouchers: {
+        Row: {
+          applicable_to: string | null
+          code: string
+          created_at: string | null
+          created_by: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean | null
+          max_discount_amount: number | null
+          min_purchase_amount: number | null
+          updated_at: string | null
+          usage_limit: number | null
+          used_count: number | null
+          valid_from: string | null
+          valid_until: string | null
+        }
+        Insert: {
+          applicable_to?: string | null
+          code: string
+          created_at?: string | null
+          created_by?: string | null
+          discount_type: string
+          discount_value: number
+          id?: string
+          is_active?: boolean | null
+          max_discount_amount?: number | null
+          min_purchase_amount?: number | null
+          updated_at?: string | null
+          usage_limit?: number | null
+          used_count?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
+        }
+        Update: {
+          applicable_to?: string | null
+          code?: string
+          created_at?: string | null
+          created_by?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean | null
+          max_discount_amount?: number | null
+          min_purchase_amount?: number | null
+          updated_at?: string | null
+          usage_limit?: number | null
+          used_count?: number | null
+          valid_from?: string | null
+          valid_until?: string | null
         }
         Relationships: []
       }
