@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { ShoppingCart, Mail, User, Key, Users, Info, Download, FileText, Zap, Heart } from "lucide-react";
 import PurchaseConfirmationModal from "./PurchaseConfirmationModal";
 import ProductVariants, { ProductVariant } from "./ProductVariants";
-import ProductTrustBadges from "./ProductTrustBadges";
 import { useNavigate } from "react-router-dom";
 import { upgradeAccountNoPassSchema, upgradeAccountWithPassSchema } from "@/lib/validationSchemas";
 import { supabase } from "@/integrations/supabase/client";
@@ -381,9 +380,6 @@ const ProductTypeOrderForm = ({
             <ShoppingCart className="h-5 w-5 mr-2" /> Thêm vào giỏ hàng
           </Button>
         </div>
-
-        {/* Trust Badges */}
-        <ProductTrustBadges />
 
         {/* Urgency Message */}
         <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-3 text-center">
