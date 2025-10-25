@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ProductVariant } from "@/lib/productValidationSchemas";
 
 export interface ProductFormData {
   title: string;
@@ -12,9 +13,11 @@ export interface ProductFormData {
   category: string;
   inStock: string;
   image: File | null;
+  galleryImages?: File[];
   file: File | null;
   product_type: string;
   delivery_data: Record<string, any>;
+  variants?: ProductVariant[];
 }
 
 export const useProductUpload = () => {
@@ -63,12 +66,23 @@ export const useProductUpload = () => {
     try {
       let imageUrl = '';
       let fileUrl = '';
+      const galleryUrls: string[] = [];
 
-      // Upload image
+      // Upload main image
       if (formData.image) {
         const imageFileName = `${user.id}/${Date.now()}-${formData.image.name}`;
         imageUrl = await uploadFile(formData.image, 'product-images', imageFileName);
         console.log('Image uploaded successfully:', imageUrl);
+      }
+
+      // Upload gallery images
+      if (formData.galleryImages && formData.galleryImages.length > 0) {
+        for (const galleryImage of formData.galleryImages) {
+          const galleryFileName = `${user.id}/${Date.now()}-${galleryImage.name}`;
+          const galleryUrl = await uploadFile(galleryImage, 'product-images', galleryFileName);
+          galleryUrls.push(galleryUrl);
+          console.log('Gallery image uploaded:', galleryUrl);
+        }
       }
 
       // Upload product file if provided and product type supports it
@@ -99,7 +113,8 @@ export const useProductUpload = () => {
         in_stock: formData.inStock ? parseInt(formData.inStock) : null,
         purchases: 0,
         product_type: formData.product_type,
-        delivery_data: formData.delivery_data
+        delivery_data: formData.delivery_data,
+        status: 'active',
       };
 
       console.log('Inserting product data:', productData);
@@ -116,6 +131,46 @@ export const useProductUpload = () => {
       }
 
       console.log('Product created successfully:', data);
+
+      // Insert gallery images
+      if (galleryUrls.length > 0 && data) {
+        const galleryData = galleryUrls.map((url, index) => ({
+          product_id: data.id,
+          image_url: url,
+          sort_order: index,
+          is_main: false,
+        }));
+
+        const { error: galleryError } = await supabase
+          .from('product_images')
+          .insert(galleryData);
+
+        if (galleryError) {
+          console.error('Gallery images insert error:', galleryError);
+        }
+      }
+
+      // Insert product variants
+      if (formData.variants && formData.variants.length > 0 && data) {
+        const variantsData = formData.variants.map(variant => ({
+          product_id: data.id,
+          variant_name: variant.variant_name,
+          price: variant.price,
+          original_price: variant.original_price,
+          discount_percentage: variant.discount_percentage,
+          badge: variant.badge,
+          sort_order: variant.sort_order,
+          is_active: variant.is_active,
+        }));
+
+        const { error: variantsError } = await supabase
+          .from('product_variants')
+          .insert(variantsData);
+
+        if (variantsError) {
+          console.error('Variants insert error:', variantsError);
+        }
+      }
       
       toast.success('🎉 Sản phẩm đã được tạo thành công!', {
         description: 'Sản phẩm của bạn đã được thêm vào gian hàng',

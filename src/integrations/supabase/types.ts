@@ -467,6 +467,70 @@ export type Database = {
           },
         ]
       }
+      product_images: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string
+          is_main: boolean | null
+          product_id: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url: string
+          is_main?: boolean | null
+          product_id?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          is_main?: boolean | null
+          product_id?: string | null
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_images_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_tags: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_id: string | null
+          tag: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          tag: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_id?: string | null
+          tag?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_tags_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_variants: {
         Row: {
           badge: string | null
@@ -527,11 +591,16 @@ export type Database = {
           id: string
           image: string | null
           in_stock: number | null
+          keywords: string[] | null
+          meta_description: string | null
+          meta_title: string | null
           price: number
           product_type: string | null
           purchases: number | null
           seller_id: string
           seller_name: string
+          slug: string | null
+          status: string | null
           title: string
         }
         Insert: {
@@ -543,11 +612,16 @@ export type Database = {
           id?: string
           image?: string | null
           in_stock?: number | null
+          keywords?: string[] | null
+          meta_description?: string | null
+          meta_title?: string | null
           price: number
           product_type?: string | null
           purchases?: number | null
           seller_id: string
           seller_name: string
+          slug?: string | null
+          status?: string | null
           title: string
         }
         Update: {
@@ -559,11 +633,16 @@ export type Database = {
           id?: string
           image?: string | null
           in_stock?: number | null
+          keywords?: string[] | null
+          meta_description?: string | null
+          meta_title?: string | null
           price?: number
           product_type?: string | null
           purchases?: number | null
           seller_id?: string
           seller_name?: string
+          slug?: string | null
+          status?: string | null
           title?: string
         }
         Relationships: []
@@ -925,6 +1004,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_slug: { Args: { title: string }; Returns: string }
       get_order_for_seller: {
         Args: { order_id: string; seller_id: string }
         Returns: Json
