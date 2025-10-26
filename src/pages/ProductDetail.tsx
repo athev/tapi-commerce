@@ -129,12 +129,16 @@ const ProductDetail = () => {
     try {
       setIsProcessing(true);
       
+      // Calculate actual price based on variant
+      const actualPrice = currentPrice || product.price;
+      
       const orderData = {
         user_id: user.id,
         product_id: product.id,
         buyer_data: buyerData || {},
         buyer_email: buyerData?.email || user.email,
         variant_id: selectedVariantId,
+        bank_amount: actualPrice,
         status: 'pending'
       };
 

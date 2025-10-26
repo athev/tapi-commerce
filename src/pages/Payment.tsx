@@ -55,6 +55,11 @@ const Payment = () => {
             file_url,
             seller_id
           ),
+          product_variants (
+            id,
+            variant_name,
+            price
+          ),
           casso_transactions!left (
             description,
             transaction_id,
@@ -77,6 +82,9 @@ const Payment = () => {
     retry: 3,
     retryDelay: 1000,
   });
+
+  // Calculate actual price (variant price takes priority)
+  const actualPrice = order?.product_variants?.price || order?.products?.price || 0;
 
   useEffect(() => {
     document.title = "Thanh toán đơn hàng | DigitalMarket";
@@ -312,7 +320,10 @@ const Payment = () => {
                 <div className="text-sm text-gray-600 space-y-1">
                   <p>Mã đơn: {orderId?.substring(0, 8).toUpperCase()}</p>
                   <p>Sản phẩm: {order?.products?.title}</p>
-                  <p>Giá: {formatPrice(order?.products?.price || 0)}</p>
+                  {order?.product_variants && (
+                    <p>Gói: {order.product_variants.variant_name}</p>
+                  )}
+                  <p>Giá: {formatPrice(actualPrice)}</p>
                 </div>
               </div>
 
@@ -459,7 +470,7 @@ const Payment = () => {
               {/* QR Payment Component */}
               <QRPayment
                 orderId={orderId || ''}
-                amount={order.products?.price || 0}
+                amount={actualPrice}
                 onManualConfirmation={handleManualPaymentConfirmation}
                 actualDescription={order.casso_transactions?.[0]?.description}
               />
@@ -501,9 +512,16 @@ const Payment = () => {
 
                     {/* Price Breakdown */}
                     <div className="space-y-3">
+                      {order?.product_variants && (
+                        <div className="flex justify-between text-sm pb-2 border-b">
+                          <span className="text-muted-foreground">Gói đã chọn:</span>
+                          <span className="font-medium">{order.product_variants.variant_name}</span>
+                        </div>
+                      )}
+                      
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Tạm tính:</span>
-                        <span className="font-medium">{formatPrice(order.products?.price || 0)}</span>
+                        <span className="font-medium">{formatPrice(actualPrice)}</span>
                       </div>
                       
                       <div className="flex justify-between text-sm text-green-600">
@@ -516,7 +534,7 @@ const Payment = () => {
                       <div className="flex justify-between items-center">
                         <span className="font-bold text-base">Tổng thanh toán:</span>
                         <span className="font-bold text-2xl text-destructive">
-                          {formatPrice(order.products?.price || 0)}
+                          {formatPrice(actualPrice)}
                         </span>
                       </div>
                     </div>
