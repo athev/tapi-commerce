@@ -15,6 +15,7 @@ interface ProductPurchaseFormProps {
   product: any;
   currentPrice: number;
   selectedVariantId: string | null;
+  selectedVariantName?: string;
   onConfirm: (buyerData: any) => void;
   isProcessing: boolean;
 }
@@ -26,6 +27,7 @@ const ProductPurchaseForm = ({
   product, 
   currentPrice,
   selectedVariantId,
+  selectedVariantName,
   onConfirm,
   isProcessing
 }: ProductPurchaseFormProps) => {
@@ -194,6 +196,8 @@ const ProductPurchaseForm = ({
         onConfirm={handleConfirmPurchase}
         isProcessing={isProcessing}
         product={product}
+        currentPrice={currentPrice}
+        selectedVariantName={selectedVariantName}
         buyerData={buyerData}
       />
     </>

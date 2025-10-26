@@ -36,6 +36,7 @@ const ProductDetail = () => {
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
   const [currentPrice, setCurrentPrice] = useState(0);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [selectedVariantName, setSelectedVariantName] = useState<string>('');
 
   useEffect(() => {
     // Simulate fetching product data from an API
@@ -176,9 +177,12 @@ const ProductDetail = () => {
     }
   };
 
-  const handlePriceChange = (price: number, variantId: string | null) => {
+  const handlePriceChange = (price: number, variantId: string | null, variantName?: string) => {
     setCurrentPrice(price);
     setSelectedVariantId(variantId);
+    if (variantName) {
+      setSelectedVariantName(variantName);
+    }
   };
 
   const formatPrice = (price: number) => {
@@ -357,6 +361,7 @@ const ProductDetail = () => {
         product={product}
         currentPrice={currentPrice || product.price}
         selectedVariantId={selectedVariantId}
+        selectedVariantName={selectedVariantName}
         onConfirm={handleConfirmPurchase}
         isProcessing={isProcessing}
       />

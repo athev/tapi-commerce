@@ -14,6 +14,8 @@ interface PurchaseConfirmationModalProps {
     price: number;
     product_type?: string;
   };
+  currentPrice?: number;
+  selectedVariantName?: string;
   buyerData?: {
     email?: string;
     username?: string;
@@ -45,11 +47,13 @@ const PurchaseConfirmationModal = ({
   onConfirm,
   isProcessing,
   product,
+  currentPrice,
+  selectedVariantName,
   buyerData
 }: PurchaseConfirmationModalProps) => {
   const quantity = 1;
   const discount = 0; // Can be extended later
-  const totalAmount = product.price;
+  const totalAmount = currentPrice || product.price;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -66,11 +70,18 @@ const PurchaseConfirmationModal = ({
           <div className="bg-gray-50 p-4 rounded-lg space-y-3">
             <div>
               <h4 className="font-medium text-gray-900 mb-1">{product.title}</h4>
-              {product.product_type && (
-                <Badge variant="outline" className="text-xs">
-                  {getProductTypeLabel(product.product_type)}
-                </Badge>
-              )}
+              <div className="flex gap-2 flex-wrap">
+                {product.product_type && (
+                  <Badge variant="outline" className="text-xs">
+                    {getProductTypeLabel(product.product_type)}
+                  </Badge>
+                )}
+                {selectedVariantName && (
+                  <Badge variant="secondary" className="text-xs">
+                    {selectedVariantName}
+                  </Badge>
+                )}
+              </div>
             </div>
             
             <div className="flex justify-between items-center text-sm">
@@ -80,7 +91,7 @@ const PurchaseConfirmationModal = ({
             
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-600">Giá:</span>
-              <span className="font-medium">{formatPrice(product.price)}</span>
+              <span className="font-medium">{formatPrice(totalAmount)}</span>
             </div>
             
             {discount > 0 && (

@@ -18,7 +18,7 @@ interface ProductVariant {
 
 interface ProductPriceCardProps {
   product: any;
-  onPriceChange: (price: number, variantId: string | null) => void;
+  onPriceChange: (price: number, variantId: string | null, variantName?: string) => void;
 }
 
 const ProductPriceCard = ({ product, onPriceChange }: ProductPriceCardProps) => {
@@ -48,7 +48,7 @@ const ProductPriceCard = ({ product, onPriceChange }: ProductPriceCardProps) => 
         setCurrentPrice(firstVariant.price);
         setOriginalPrice(firstVariant.original_price || null);
         setDiscountPercentage(firstVariant.discount_percentage || null);
-        onPriceChange(firstVariant.price, firstVariant.id);
+        onPriceChange(firstVariant.price, firstVariant.id, firstVariant.variant_name);
       } else {
         // No variants, use base price
         setCurrentPrice(product.price);
@@ -66,7 +66,7 @@ const ProductPriceCard = ({ product, onPriceChange }: ProductPriceCardProps) => 
       setCurrentPrice(variant.price);
       setOriginalPrice(variant.original_price || null);
       setDiscountPercentage(variant.discount_percentage || null);
-      onPriceChange(variant.price, variantId);
+      onPriceChange(variant.price, variantId, variant.variant_name);
     }
   };
 
