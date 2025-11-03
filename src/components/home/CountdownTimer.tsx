@@ -35,18 +35,18 @@ const CountdownTimer = ({ endTime }: CountdownTimerProps) => {
   const formatNumber = (num: number) => String(num).padStart(2, "0");
 
   return (
-    <div className="flex items-center gap-1 bg-destructive-foreground/20 px-3 py-1 rounded">
-      <span className="text-xs text-destructive-foreground font-medium">Kết thúc trong</span>
-      <div className="flex items-center gap-1">
-        <span className="bg-destructive-foreground text-destructive font-bold text-sm px-1.5 py-0.5 rounded">
+    <div className="flex items-center gap-2 bg-white/20 rounded-lg px-3 py-1.5">
+      <span className="text-xs text-white font-medium">Kết thúc trong</span>
+      <div className="flex items-center gap-0.5">
+        <span className="bg-white text-destructive font-bold text-sm px-2 py-1 rounded min-w-[2rem] text-center">
           {formatNumber(timeLeft.hours)}
         </span>
-        <span className="text-destructive-foreground">:</span>
-        <span className="bg-destructive-foreground text-destructive font-bold text-sm px-1.5 py-0.5 rounded">
+        <span className="text-white font-bold">:</span>
+        <span className="bg-white text-destructive font-bold text-sm px-2 py-1 rounded min-w-[2rem] text-center">
           {formatNumber(timeLeft.minutes)}
         </span>
-        <span className="text-destructive-foreground">:</span>
-        <span className="bg-destructive-foreground text-destructive font-bold text-sm px-1.5 py-0.5 rounded">
+        <span className="text-white font-bold">:</span>
+        <span className="bg-white text-destructive font-bold text-sm px-2 py-1 rounded min-w-[2rem] text-center">
           {formatNumber(timeLeft.seconds)}
         </span>
       </div>

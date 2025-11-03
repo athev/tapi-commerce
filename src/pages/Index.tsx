@@ -34,11 +34,15 @@ const Index = () => {
       <main className="flex-1">
         <HeroCarousel />
         
+        <div className="mb-6" />
+        
         <CategoryScroller />
+        
+        <div className="mb-8" />
         
         <FlashSaleSection />
         
-        <section className="container mx-auto px-4 py-8">
+        <section className="container mx-auto px-4 py-8 mt-8">
           <div className="flex gap-6">
             {/* Desktop Filter Sidebar */}
             <aside className="hidden lg:block w-64 flex-shrink-0">

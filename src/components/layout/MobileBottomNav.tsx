@@ -43,7 +43,7 @@ const MobileBottomNav = () => {
         >
           <ShoppingCart className="h-5 w-5 mb-1" />
           <span className="text-xs">Giỏ hàng</span>
-          <span className="absolute top-2 right-1/2 translate-x-3 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full h-4 w-4 flex items-center justify-center">
+          <span className="absolute top-1.5 left-1/2 translate-x-2 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full h-4 min-w-[1rem] px-1 flex items-center justify-center">
             0
           </span>
         </Link>

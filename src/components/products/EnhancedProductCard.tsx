@@ -43,35 +43,34 @@ const EnhancedProductCard = ({
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300" />
             
-            {/* Badges */}
-            <div className="absolute top-2 left-2 flex flex-col gap-1">
-              {isNew && (
-                <Badge className="bg-primary text-primary-foreground text-xs px-2 py-1">
-                  Mới
+            {/* Badges - All on left side */}
+            <div className="absolute top-2 left-2 flex flex-wrap gap-1 max-w-[80%] z-10">
+              {discount && (
+                <Badge className="bg-destructive text-destructive-foreground font-bold text-sm px-2 py-1">
+                  -{discount}%
                 </Badge>
               )}
               {isHot && (
-                <Badge className="bg-destructive text-destructive-foreground text-xs px-2 py-1">
-                  Hot
+                <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs px-2 py-1">
+                  🔥 Hot
+                </Badge>
+              )}
+              {isNew && (
+                <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-xs px-2 py-1">
+                  ✨ Mới
                 </Badge>
               )}
               {seller.verified && (
-                <Badge className="bg-success text-success-foreground text-xs px-2 py-1">
+                <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold text-xs px-2 py-1">
                   Mall
                 </Badge>
               )}
             </div>
-            
-            {discount && (
-              <div className="absolute top-2 right-2 bg-destructive text-destructive-foreground font-bold text-sm px-2 py-1 rounded">
-                -{discount}%
-              </div>
-            )}
           </div>
         </Link>
 
-        {/* Quick actions on hover */}
-        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col gap-2">
+        {/* Quick actions on hover - Desktop only */}
+        <div className="hidden md:flex absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-col gap-2 z-10">
           <Button size="icon" variant="secondary" className="h-8 w-8 bg-background/90 hover:bg-background rounded-full shadow-md">
             <Heart className="h-4 w-4" />
           </Button>

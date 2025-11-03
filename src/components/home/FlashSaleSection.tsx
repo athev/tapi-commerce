@@ -75,7 +75,7 @@ const FlashSaleSection = () => {
                 <Link
                   key={product.id}
                   to={`/product/${product.id}`}
-                  className="flex-shrink-0 w-44 bg-card rounded-lg overflow-hidden hover:shadow-lg transition-all group"
+                  className="flex-shrink-0 w-40 md:w-48 bg-card rounded-lg overflow-hidden hover:shadow-lg transition-all group"
                 >
                   <div className="relative aspect-square bg-muted">
                     <img
@@ -103,13 +103,13 @@ const FlashSaleSection = () => {
                         </div>
                       )}
                       <div className="flex items-center gap-2 mt-2">
-                        <div className="flex-1 bg-muted rounded-full h-1.5 overflow-hidden">
+                        <div className="flex-1 bg-white/30 rounded-full h-2 overflow-hidden">
                           <div 
-                            className="bg-destructive h-full rounded-full"
+                            className="bg-yellow-400 h-full rounded-full transition-all"
                             style={{ width: '45%' }}
                           />
                         </div>
-                        <span className="text-[10px] text-muted-foreground">Đã bán 45</span>
+                        <span className="text-[10px] text-white font-medium bg-black/20 px-1.5 py-0.5 rounded">Đã bán 45</span>
                       </div>
                     </div>
                   </div>
