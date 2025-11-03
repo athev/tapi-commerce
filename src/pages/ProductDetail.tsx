@@ -254,7 +254,7 @@ const ProductDetail = () => {
             </div>
 
             {/* Free Returns Section */}
-            <FreeReturnsSection className="py-[3px] my-[5px]" />
+            
 
             {/* After Purchase UI for file_download */}
             {hasPurchased && product.product_type === 'file_download' ? <Card className="bg-success-bg border-success-text/20">
