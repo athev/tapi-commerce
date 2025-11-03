@@ -1,9 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { mockCategories } from "@/lib/supabase";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, BookOpen, Smartphone, Palette, Code, Music, Video } from "lucide-react";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
+
+// Icon mapping for categories
+const categoryIcons: Record<string, any> = {
+  "Ebook": BookOpen,
+  "Khóa học": Video,
+  "Software": Code,
+  "Template": Palette,
+  "Plugin": Code,
+  "Music": Music,
+  "App": Smartphone,
+};
 
 const CategoryScroller = () => {
   const navigate = useNavigate();
@@ -47,33 +58,30 @@ const CategoryScroller = () => {
         </div>
 
         <ScrollArea className="w-full">
-          <div className="flex gap-4 pb-4">
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => handleCategoryClick(category.name)}
-                className="flex-shrink-0 w-28 group"
-              >
-                <div className="bg-card border border-border rounded-lg p-4 transition-all hover:shadow-md hover:border-primary hover:-translate-y-1">
-                  <div className="w-16 h-16 mx-auto mb-2 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary group-hover:scale-110 transition-all">
-                    <img
-                      src={category.icon}
-                      alt={category.name}
-                      className="w-10 h-10 object-contain group-hover:brightness-0 group-hover:invert transition-all"
-                      onError={(e) => {
-                        e.currentTarget.src = '/placeholder.svg';
-                      }}
-                    />
+          <div className="flex gap-2 md:gap-4 pb-4">
+            {categories.map((category) => {
+              const IconComponent = categoryIcons[category.name] || BookOpen;
+              
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => handleCategoryClick(category.name)}
+                  className="flex-shrink-0 w-20 md:w-28 group"
+                >
+                  <div className="bg-card border border-border rounded-lg p-2 md:p-4 transition-all hover:shadow-md hover:border-primary hover:-translate-y-1">
+                    <div className="w-12 h-12 md:w-16 md:h-16 mx-auto mb-1 md:mb-2 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary group-hover:scale-110 transition-all">
+                      <IconComponent className="h-6 w-6 md:h-10 md:w-10 text-primary group-hover:text-primary-foreground transition-colors" />
+                    </div>
+                    <p className="text-[10px] md:text-xs font-medium text-center text-foreground line-clamp-2 mb-0.5 md:mb-1 group-hover:text-primary transition-colors leading-tight">
+                      {category.name}
+                    </p>
+                    <p className="text-[9px] md:text-[10px] text-muted-foreground text-center">
+                      {category.count}
+                    </p>
                   </div>
-                  <p className="text-xs font-medium text-center text-foreground line-clamp-2 mb-1 group-hover:text-primary transition-colors">
-                    {category.name}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground text-center">
-                    {category.count} sản phẩm
-                  </p>
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </div>
           <ScrollBar orientation="horizontal" />
         </ScrollArea>

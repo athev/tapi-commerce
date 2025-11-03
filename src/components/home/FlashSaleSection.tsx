@@ -63,7 +63,7 @@ const FlashSaleSection = () => {
         </div>
 
         <ScrollArea className="w-full">
-          <div className="flex gap-3 pb-4">
+          <div className="flex gap-2 md:gap-3 pb-4">
             {flashSaleProducts.map((product) => {
               const hasVariants = product.product_variants && product.product_variants.length > 0;
               const firstVariant = hasVariants ? product.product_variants[0] : null;
@@ -75,7 +75,7 @@ const FlashSaleSection = () => {
                 <Link
                   key={product.id}
                   to={`/product/${product.id}`}
-                  className="flex-shrink-0 w-40 md:w-48 bg-card rounded-lg overflow-hidden hover:shadow-lg transition-all group"
+                  className="flex-shrink-0 w-36 md:w-48 bg-card rounded-lg overflow-hidden hover:shadow-lg transition-all group"
                 >
                   <div className="relative aspect-square bg-muted">
                     <img
@@ -83,33 +83,33 @@ const FlashSaleSection = () => {
                       alt={product.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                     />
-                    <div className="absolute top-2 right-2 bg-destructive text-destructive-foreground text-xs font-bold px-2 py-1 rounded">
+                    <div className="absolute top-1 md:top-2 right-1 md:right-2 bg-destructive text-destructive-foreground text-[10px] md:text-xs font-bold px-1 md:px-2 py-0.5 md:py-1 rounded">
                       -{discount}%
                     </div>
                   </div>
-                  <div className="p-3">
-                    <h3 className="text-sm font-medium text-foreground line-clamp-2 mb-2 h-10">
+                  <div className="p-2 md:p-3">
+                    <h3 className="text-xs md:text-sm font-medium text-foreground line-clamp-2 mb-1 md:mb-2 min-h-[2rem] md:min-h-[2.5rem] leading-tight">
                       {product.title}
                     </h3>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-destructive font-bold text-lg">
+                    <div className="space-y-0.5 md:space-y-1">
+                      <div className="flex items-center gap-1">
+                        <span className="text-destructive font-bold text-sm md:text-lg">
                           {formatPrice(displayPrice)}
                         </span>
                       </div>
                       {originalPrice && (
-                        <div className="text-xs text-muted-foreground line-through">
+                        <div className="text-[10px] md:text-xs text-muted-foreground line-through">
                           {formatPrice(originalPrice)}
                         </div>
                       )}
-                      <div className="flex items-center gap-2 mt-2">
-                        <div className="flex-1 bg-white/30 rounded-full h-2 overflow-hidden">
+                      <div className="flex items-center gap-1.5 md:gap-2 mt-1 md:mt-2">
+                        <div className="flex-1 bg-white/30 rounded-full h-1.5 md:h-2 overflow-hidden">
                           <div 
                             className="bg-yellow-400 h-full rounded-full transition-all"
                             style={{ width: '45%' }}
                           />
                         </div>
-                        <span className="text-[10px] text-white font-medium bg-black/20 px-1.5 py-0.5 rounded">Đã bán 45</span>
+                        <span className="text-[9px] md:text-[10px] text-white font-medium bg-black/40 px-1 md:px-1.5 py-0.5 rounded whitespace-nowrap">45</span>
                       </div>
                     </div>
                   </div>

@@ -77,30 +77,31 @@ const HeroCarousel = () => {
               />
               <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
               <div className="absolute inset-0 flex flex-col justify-center container mx-auto px-4">
-                <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-2 md:mb-4 drop-shadow-2xl">
+                <h2 className="text-2xl md:text-4xl lg:text-6xl font-bold text-white mb-1 md:mb-2 lg:mb-4 drop-shadow-2xl">
                   {slide.title}
                 </h2>
-                <p className="text-lg md:text-2xl text-white/90 max-w-2xl mb-6 drop-shadow-lg">
+                <p className="text-sm md:text-lg lg:text-2xl text-white/90 max-w-2xl mb-3 md:mb-4 lg:mb-6 drop-shadow-lg line-clamp-2">
                   {slide.subtitle}
                 </p>
                 
-                {/* CTA Buttons */}
-                <div className="flex items-center gap-4 flex-wrap">
+                {/* CTA Buttons - Stack on mobile */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 md:gap-4">
                   <Button 
-                    size="lg"
-                    className="bg-white text-primary hover:bg-white/90 font-semibold px-8 shadow-xl"
+                    size="sm"
+                    className="bg-white text-primary hover:bg-white/90 font-semibold px-4 md:px-8 shadow-xl h-9 md:h-11 text-xs md:text-sm"
                     asChild
                   >
                     <a href={slide.link}>
                       Khám phá ngay
-                      <ChevronRight className="ml-2 h-5 w-5" />
+                      <ChevronRight className="ml-1 md:ml-2 h-3 w-3 md:h-5 md:w-5" />
                     </a>
                   </Button>
                   
+                  {/* Hide second button on small mobile */}
                   <Button 
-                    size="lg"
+                    size="sm"
                     variant="outline"
-                    className="border-2 border-white text-white hover:bg-white/10 font-semibold px-8 backdrop-blur-sm"
+                    className="hidden sm:flex border-2 border-white text-white hover:bg-white/10 font-semibold px-4 md:px-8 backdrop-blur-sm h-9 md:h-11 text-xs md:text-sm"
                     asChild
                   >
                     <Link to="/">

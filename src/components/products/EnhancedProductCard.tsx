@@ -43,25 +43,20 @@ const EnhancedProductCard = ({
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300" />
             
-            {/* Badges - All on left side */}
-            <div className="absolute top-2 left-2 flex flex-wrap gap-1 max-w-[80%] z-10">
+            {/* Badges - Simplified for mobile */}
+            <div className="absolute top-1 md:top-2 left-1 md:left-2 flex flex-wrap gap-0.5 md:gap-1 max-w-[80%] z-10">
               {discount && (
-                <Badge className="bg-destructive text-destructive-foreground font-bold text-sm px-2 py-1">
+                <Badge className="bg-destructive text-destructive-foreground font-bold text-[10px] md:text-sm px-1 md:px-2 py-0.5 md:py-1">
                   -{discount}%
                 </Badge>
               )}
               {isHot && (
-                <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs px-2 py-1">
-                  🔥 Hot
-                </Badge>
-              )}
-              {isNew && (
-                <Badge className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-xs px-2 py-1">
-                  ✨ Mới
+                <Badge className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-[9px] md:text-xs px-1 md:px-2 py-0.5 md:py-1">
+                  🔥
                 </Badge>
               )}
               {seller.verified && (
-                <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold text-xs px-2 py-1">
+                <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold text-[9px] md:text-xs px-1 md:px-2 py-0.5 md:py-1">
                   Mall
                 </Badge>
               )}
@@ -80,73 +75,65 @@ const EnhancedProductCard = ({
         </div>
       </div>
 
-      <CardContent className="p-3">
-        <div className="space-y-2">
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">
+      <CardContent className="p-2 md:p-3">
+        <div className="space-y-1 md:space-y-2">
+          <Badge variant="outline" className="text-[9px] md:text-[10px] px-1 md:px-1.5 py-0 md:py-0.5">
             {category}
           </Badge>
           
           <Link to={`/product/${id}`}>
-            <h3 className="font-medium text-sm text-foreground line-clamp-2 hover:text-primary transition-colors leading-tight min-h-[2.5rem]">
+            <h3 className="font-medium text-xs md:text-sm text-foreground line-clamp-2 hover:text-primary transition-colors leading-tight min-h-[2rem] md:min-h-[2.5rem]">
               {title}
             </h3>
           </Link>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 md:gap-1 flex-wrap">
             <div className="flex">
               {Array(5).fill(0).map((_, i) => (
                 <Star 
                   key={i}
-                  className={`h-3 w-3 ${i < rating ? "fill-yellow-400 text-yellow-400" : "text-muted"}`}
+                  className={`h-2.5 w-2.5 md:h-3 md:w-3 ${i < rating ? "fill-yellow-400 text-yellow-400" : "text-muted"}`}
                 />
               ))}
             </div>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-[9px] md:text-xs text-muted-foreground">
               {rating.toFixed(1)}
             </span>
-            <span className="text-xs text-muted-foreground">|</span>
-            <span className="text-xs text-muted-foreground">
-              Đã bán {soldCount >= 1000 ? `${(soldCount / 1000).toFixed(1)}k` : soldCount}
+            <span className="text-[9px] md:text-xs text-muted-foreground hidden md:inline">|</span>
+            <span className="text-[9px] md:text-xs text-muted-foreground">
+              {soldCount >= 1000 ? `${(soldCount / 1000).toFixed(1)}k` : soldCount}
             </span>
           </div>
 
-          <div className="flex items-center gap-1 flex-wrap">
+          <div className="hidden md:flex items-center gap-1 flex-wrap">
             <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary border-primary/20">
               Free ship
-            </Badge>
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0.5">
-              Trả góp 0%
             </Badge>
           </div>
         </div>
       </CardContent>
 
-      <CardFooter className="p-3 pt-0 flex flex-col gap-2">
+      <CardFooter className="p-2 md:p-3 pt-0 flex flex-col gap-1 md:gap-2">
         <div className="w-full">
-          <div className="flex items-baseline gap-2">
-            <span className="font-bold text-lg text-destructive">
+          <div className="flex items-baseline gap-1 md:gap-2">
+            <span className="font-bold text-sm md:text-lg text-destructive">
               {formatPrice(discountedPrice)}
             </span>
             {discount && (
-              <span className="text-xs text-muted-foreground line-through">
+              <span className="text-[10px] md:text-xs text-muted-foreground line-through">
                 {formatPrice(price.min)}
               </span>
             )}
           </div>
-          {price.max > price.min && (
-            <span className="text-xs text-muted-foreground">
-              {formatPrice(price.max)}
-            </span>
-          )}
         </div>
         
         <Button 
           size="sm" 
-          className="w-full h-8 bg-primary hover:bg-primary/90 text-primary-foreground"
+          className="w-full h-7 md:h-8 text-xs md:text-sm bg-primary hover:bg-primary/90 text-primary-foreground"
           asChild
         >
           <Link to={`/product/${id}`}>
-            <ShoppingCart className="h-3 w-3 mr-1" />
+            <ShoppingCart className="h-2.5 w-2.5 md:h-3 md:w-3 mr-1" />
             Mua ngay
           </Link>
         </Button>

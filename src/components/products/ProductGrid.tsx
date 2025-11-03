@@ -112,15 +112,15 @@ const ProductGrid = ({
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <p className="text-sm text-gray-600">
+      <div className="flex justify-between items-center mb-4 md:mb-6">
+        <p className="text-xs md:text-sm text-muted-foreground">
           Hiển thị {filteredProducts.length} sản phẩm
           {searchTerm && ` cho "${searchTerm}"`}
           {category !== "all" && ` trong danh mục "${category}"`}
         </p>
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3 lg:gap-4">
         {filteredProducts.map((product) => (
           <EnhancedProductCard 
             key={product.id} 
