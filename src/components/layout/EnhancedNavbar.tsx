@@ -36,9 +36,9 @@ const EnhancedNavbar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-background shadow-sm">
+    <header className="sticky top-0 z-50 w-full bg-background shadow-sm overflow-x-clip">
       {/* Top Bar */}
-      <div className="bg-primary text-primary-foreground">
+      <div className="bg-primary text-primary-foreground hidden sm:block">
         <div className="container mx-auto px-4">
           <div className="flex h-9 items-center justify-between text-xs">
             <div className="flex items-center gap-4">
@@ -56,7 +56,7 @@ const EnhancedNavbar = () => {
       {/* Main Navbar */}
       <div className="bg-background border-b">
         <div className="container mx-auto px-4">
-          <div className="flex h-20 items-center gap-8">
+          <div className="flex h-20 items-center gap-3 sm:gap-8 min-w-0">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 flex-shrink-0">
               <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
@@ -68,7 +68,7 @@ const EnhancedNavbar = () => {
             </Link>
 
             {/* Search Bar - Takes most space */}
-            <div className="flex-1 max-w-3xl">
+            <div className="flex-1 max-w-3xl min-w-0">
               <SearchBar />
             </div>
 

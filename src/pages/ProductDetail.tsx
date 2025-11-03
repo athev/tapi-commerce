@@ -223,23 +223,23 @@ const ProductDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <EnhancedNavbar />
       
-      <div className="container mx-auto px-4 py-6 max-w-7xl">
+      <div className="container mx-auto px-4 py-6 max-w-7xl overflow-x-hidden">
         {/* Breadcrumb */}
-        <div className="mb-6">
+        <div className="mb-6 overflow-hidden">
           <Breadcrumb category={product.category} productTitle={product.title} />
         </div>
         
         {/* 2-Column Layout for Desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-12">
           {/* Left: Images */}
-          <div className="space-y-4">
+          <div className="space-y-4 min-w-0">
             <ProductImageGallery images={[product.image || '/placeholder.svg']} />
             
             {/* Trust Badges Row */}
-            <div className="flex items-center justify-between p-4 bg-success-bg rounded-lg border border-success-text/20 gap-2 flex-wrap">
+            <div className="flex items-center justify-start p-4 bg-success-bg rounded-lg border border-success-text/20 gap-2 flex-wrap w-full">
               <TrustBadge icon="✓" text="Chính hãng" variant="success" />
               <TrustBadge icon="🚚" text="Giao hàng tự động" variant="primary" />
               <TrustBadge icon="💳" text="Thanh toán an toàn" variant="primary" />
@@ -248,7 +248,7 @@ const ProductDetail = () => {
           </div>
 
           {/* Right: Product Info */}
-          <div className="space-y-6">
+          <div className="space-y-6 min-w-0">
             {/* Category Badge */}
             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
               {product.category}
@@ -313,7 +313,7 @@ const ProductDetail = () => {
               <>
                 {/* Price Card - Enhanced */}
                 <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-                  <CardContent className="p-6">
+                  <CardContent className="p-6 w-full overflow-hidden">
                     <ProductPriceCard 
                       product={product} 
                       onPriceChange={handlePriceChange}
@@ -323,7 +323,7 @@ const ProductDetail = () => {
 
                 {/* Seller Info - More Prominent */}
                 <Card>
-                  <CardContent className="p-6">
+                  <CardContent className="p-6 w-full overflow-hidden">
                     <SellerInfo
                       sellerId={product.seller_id}
                       sellerName={product.seller_name}
@@ -349,13 +349,14 @@ const ProductDetail = () => {
         </div>
 
         {/* Product Details Tabs - Full Width */}
-        <div className="mt-12">
-          <Tabs defaultValue="description" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="description">Mô tả</TabsTrigger>
-              <TabsTrigger value="details">Chi tiết</TabsTrigger>
-              <TabsTrigger value="reviews">Đánh giá</TabsTrigger>
-            </TabsList>
+        <div className="mt-12 overflow-x-hidden">
+          <div className="overflow-x-auto no-scrollbar">
+            <Tabs defaultValue="description" className="w-full min-w-0">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="description" className="truncate">Mô tả</TabsTrigger>
+                <TabsTrigger value="details" className="truncate">Chi tiết</TabsTrigger>
+                <TabsTrigger value="reviews" className="truncate">Đánh giá</TabsTrigger>
+              </TabsList>
             
             <TabsContent value="description" className="mt-6">
               <Card>
@@ -380,11 +381,12 @@ const ProductDetail = () => {
             <TabsContent value="reviews" className="mt-6">
               <ProductReviews productId={product.id} />
             </TabsContent>
-          </Tabs>
+            </Tabs>
+          </div>
         </div>
 
         {/* Related Products */}
-        <div className="mt-12">
+        <div className="mt-12 overflow-hidden">
           <h2 className="section-title">Sản phẩm tương tự</h2>
           <RelatedProducts currentProductId={product.id} category={product.category} />
         </div>

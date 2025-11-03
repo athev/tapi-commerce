@@ -24,7 +24,7 @@ export const Breadcrumb = ({ category, productTitle }: BreadcrumbProps) => {
         {category}
       </Link>
       <ChevronRight className="h-4 w-4" />
-      <span className="text-foreground font-medium line-clamp-1">
+      <span className="text-foreground font-medium truncate max-w-[70vw] sm:max-w-none">
         {productTitle}
       </span>
     </nav>
