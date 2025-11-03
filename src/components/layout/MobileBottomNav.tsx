@@ -7,6 +7,11 @@ const MobileBottomNav = () => {
   const location = useLocation();
   const { user } = useAuth();
 
+  // Hide on product detail page
+  if (location.pathname.startsWith('/product/')) {
+    return null;
+  }
+
   const navItems = [
     { icon: Home, label: 'Trang chủ', path: '/' },
     { icon: Grid3x3, label: 'Danh mục', path: '/?view=categories' },

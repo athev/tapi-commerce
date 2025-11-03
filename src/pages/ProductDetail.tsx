@@ -275,7 +275,7 @@ const ProductDetail = () => {
           </div>
 
           {/* Right: Product Info */}
-          <div className="space-y-4 sm:space-y-6 min-w-0">
+          <div className="space-y-3 sm:space-y-6 min-w-0">
             {/* Category Badge */}
             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
               {product.category}
@@ -356,7 +356,7 @@ const ProductDetail = () => {
 
                 {/* Seller Info - More Prominent */}
                 <Card>
-                  <CardContent className="p-6 w-full overflow-hidden">
+                  <CardContent className="p-4 sm:p-6 w-full overflow-hidden">
                     <SellerInfo
                       sellerId={product.seller_id}
                       sellerName={product.seller_name}
@@ -425,7 +425,7 @@ const ProductDetail = () => {
 
         {/* Related Products */}
         <div className="mt-8 sm:mt-12 overflow-hidden">
-          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Sản phẩm tương tự</h2>
+          <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 md:mb-6">Sản phẩm tương tự</h2>
           <RelatedProducts currentProductId={product.id} category={product.category} />
         </div>
       </div>
