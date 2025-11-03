@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, ShoppingCart, MessageCircle, LogOut, Settings, User } from "lucide-react";
+import { Menu, ShoppingCart, MessageCircle, LogOut, Settings, User, Bell, Package, Home } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import {
@@ -55,14 +55,14 @@ const EnhancedNavbar = () => {
 
       {/* Main Navbar */}
       <div className="bg-background border-b">
-        <div className="container mx-auto px-4">
-          <div className="flex h-20 items-center gap-3 sm:gap-8 min-w-0">
+        <div className="container mx-auto px-2 sm:px-4">
+          <div className="flex h-14 sm:h-16 md:h-20 items-center gap-2 sm:gap-3 md:gap-8 min-w-0">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-              <div className="h-10 w-10 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-lg">SP</span>
+              <div className="h-8 w-8 md:h-10 md:w-10 rounded-lg bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground font-bold text-sm md:text-lg">SP</span>
               </div>
-              <span className="font-bold text-xl text-foreground hidden lg:inline-block">
+              <span className="font-bold text-lg md:text-xl text-foreground hidden md:inline-block">
                 Sàn Phẩm Số
               </span>
             </Link>
@@ -73,28 +73,28 @@ const EnhancedNavbar = () => {
             </div>
 
             {/* Right Side Icons - Improved touch targets */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4 flex-shrink-0">
               {user ? (
                 <>
                   {/* Cart */}
-                  <Button variant="ghost" size="icon" className="relative h-12 w-12">
-                    <ShoppingCart className="h-6 w-6" />
-                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold shadow-md">
+                  <Button variant="ghost" size="icon" className="relative h-9 w-9 sm:h-10 sm:w-10 md:h-12 md:w-12">
+                    <ShoppingCart className="h-5 w-5 md:h-6 md:w-6" />
+                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center font-bold">
                       0
                     </span>
                   </Button>
 
-                  {/* Notifications */}
-                  <div className="relative">
+                  {/* Notifications - Hidden on mobile < sm */}
+                  <div className="relative hidden sm:block">
                     <NotificationDropdown />
-                    <span className="absolute top-0 right-0 h-3 w-3 bg-destructive rounded-full animate-pulse" />
+                    <span className="absolute top-0 right-0 h-2 w-2 bg-destructive rounded-full" />
                   </div>
 
-                  {/* Chat */}
-                  <Button variant="ghost" size="icon" className="relative h-12 w-12" asChild>
+                  {/* Chat - Hidden on mobile < sm */}
+                  <Button variant="ghost" size="icon" className="relative h-9 w-9 sm:h-10 sm:w-10 md:h-12 md:w-12 hidden sm:flex" asChild>
                     <Link to="/chat">
-                      <MessageCircle className="h-6 w-6" />
-                      <span className="absolute -top-1 -right-1 bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">
+                      <MessageCircle className="h-5 w-5 md:h-6 md:w-6" />
+                      <span className="absolute -top-1 -right-1 bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-semibold">
                         2
                       </span>
                     </Link>
@@ -103,9 +103,9 @@ const EnhancedNavbar = () => {
                   {/* User Menu */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="relative h-12 w-12 rounded-full">
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback className="bg-primary text-primary-foreground">
+                      <Button variant="ghost" className="relative h-9 w-9 sm:h-10 sm:w-10 md:h-12 md:w-12 rounded-full p-0">
+                        <Avatar className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10">
+                          <AvatarFallback className="bg-primary text-primary-foreground text-sm">
                             {user.email?.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
@@ -142,11 +142,11 @@ const EnhancedNavbar = () => {
                   </DropdownMenu>
                 </>
               ) : (
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" asChild>
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <Button variant="ghost" size="sm" className="h-8 px-2 sm:px-4 text-xs sm:text-sm" asChild>
                     <Link to="/login">Đăng nhập</Link>
                   </Button>
-                  <Button size="sm" asChild>
+                  <Button size="sm" className="h-8 px-2 sm:px-4 text-xs sm:text-sm" asChild>
                     <Link to="/register">Đăng ký</Link>
                   </Button>
                 </div>
@@ -155,23 +155,39 @@ const EnhancedNavbar = () => {
               {/* Mobile Menu */}
               <Sheet open={isOpen} onOpenChange={setIsOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden">
+                  <Button variant="ghost" size="icon" className="md:hidden h-9 w-9">
                     <Menu className="h-5 w-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left">
+                <SheetContent side="left" className="w-[280px]">
                   <nav className="flex flex-col gap-4 mt-8">
-                    <Link to="/" onClick={() => setIsOpen(false)} className="text-sm font-medium">
+                    <Link to="/" onClick={() => setIsOpen(false)} className="text-sm font-medium flex items-center gap-2">
+                      <Home className="h-4 w-4" />
                       Trang chủ
                     </Link>
-                    <Link to="/my-purchases" onClick={() => setIsOpen(false)} className="text-sm font-medium">
+                    
+                    {user && (
+                      <>
+                        <Link to="/chat" onClick={() => setIsOpen(false)} className="text-sm font-medium flex items-center gap-2">
+                          <MessageCircle className="h-4 w-4" />
+                          <span>Tin nhắn</span>
+                          <span className="ml-auto bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] text-[10px] rounded-full h-5 w-5 flex items-center justify-center font-semibold">
+                            2
+                          </span>
+                        </Link>
+                        
+                        <Link to="/notifications" onClick={() => setIsOpen(false)} className="text-sm font-medium flex items-center gap-2">
+                          <Bell className="h-4 w-4" />
+                          <span>Thông báo</span>
+                          <span className="ml-auto h-2 w-2 bg-destructive rounded-full" />
+                        </Link>
+                      </>
+                    )}
+                    
+                    <Link to="/my-purchases" onClick={() => setIsOpen(false)} className="text-sm font-medium flex items-center gap-2">
+                      <Package className="h-4 w-4" />
                       Đơn hàng
                     </Link>
-                    {user && (
-                      <Link to="/chat" onClick={() => setIsOpen(false)} className="text-sm font-medium">
-                        Tin nhắn
-                      </Link>
-                    )}
                   </nav>
                 </SheetContent>
               </Sheet>
