@@ -123,7 +123,15 @@
     background: linear-gradient(135deg, hsl(var(--destructive)) 0%, hsl(var(--destructive)) 100%);
   }
   
-  /* Typography Hierarchy */
+  /* Typography System */
+  .page-title {
+    @apply text-3xl md:text-4xl font-bold text-foreground mb-2;
+  }
+  
+  .page-subtitle {
+    @apply text-base md:text-lg text-muted-foreground mb-8;
+  }
+
   .section-title {
     @apply text-2xl md:text-3xl font-bold text-foreground mb-4;
   }
@@ -131,26 +139,71 @@
   .section-subtitle {
     @apply text-sm md:text-base text-muted-foreground mb-6;
   }
-  
+
   .card-title {
-    @apply text-base font-semibold text-foreground line-clamp-2;
+    @apply text-lg md:text-xl font-semibold text-foreground;
+  }
+  
+  .card-description {
+    @apply text-sm text-muted-foreground;
+  }
+
+  .body-text {
+    @apply text-base text-foreground leading-relaxed;
+  }
+  
+  .body-text-sm {
+    @apply text-sm text-muted-foreground leading-relaxed;
+  }
+
+  /* Price Styles */
+  .price-large {
+    @apply text-2xl md:text-3xl font-bold text-primary;
   }
   
   .price-main {
-    @apply text-xl md:text-2xl font-bold text-destructive;
+    @apply text-xl md:text-2xl font-bold text-primary;
+  }
+  
+  .price-small {
+    @apply text-lg font-bold text-primary;
   }
   
   .price-original {
     @apply text-sm text-muted-foreground line-through;
   }
-  
+
   /* Spacing System */
+  .container-padding {
+    @apply px-4 md:px-6 lg:px-8;
+  }
+
   .section-spacing {
-    @apply mb-8 md:mb-12;
+    @apply mb-8 md:mb-12 lg:mb-16;
   }
   
-  .card-spacing {
-    @apply p-3 md:p-4;
+  .section-padding-y {
+    @apply py-8 md:py-12 lg:py-16;
+  }
+  
+  .section-padding {
+    @apply px-4 md:px-6 py-8 md:py-12;
+  }
+
+  .card-padding {
+    @apply p-4 md:p-6;
+  }
+  
+  .card-padding-lg {
+    @apply p-6 md:p-8;
+  }
+
+  .content-spacing {
+    @apply space-y-4 md:space-y-6;
+  }
+  
+  .content-spacing-sm {
+    @apply space-y-2 md:space-y-3;
   }
 }
 
@@ -205,5 +258,20 @@
   
   .animate-slide-in-up {
     animation: slide-in-up 0.5s ease-out;
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.5s ease-out;
   }
 }

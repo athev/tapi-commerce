@@ -142,7 +142,12 @@ const OrderDetailsModal = ({ open, onOpenChange, order }: OrderDetailsModalProps
               <Calendar className="h-4 w-4" />
               <span>Lịch sử đơn hàng</span>
             </div>
-            <OrderTimeline order={order} />
+            <OrderTimeline 
+              status={order.status}
+              deliveryStatus={order.delivery_status}
+              createdAt={order.created_at}
+              paidAt={order.payment_verified_at}
+            />
           </div>
 
           <Separator />

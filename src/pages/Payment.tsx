@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Navbar from "@/components/layout/Navbar";
+import EnhancedNavbar from "@/components/layout/EnhancedNavbar";
+import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -199,7 +200,7 @@ const Payment = () => {
   if (paymentStatus === 'completed' || order?.status === 'paid') {
     return (
       <div className="flex flex-col min-h-screen">
-        <Navbar />
+        <EnhancedNavbar />
         
         <main className="flex-1 container py-12">
           <div className="max-w-3xl mx-auto">
@@ -276,6 +277,7 @@ const Payment = () => {
           </div>
         </main>
         
+        <MobileBottomNav />
         <Footer />
       </div>
     );
@@ -284,7 +286,7 @@ const Payment = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Navbar />
+        <EnhancedNavbar />
         <main className="flex-1 container py-12">
           <div className="max-w-3xl mx-auto">
             <div className="animate-pulse space-y-4">
@@ -293,6 +295,7 @@ const Payment = () => {
             </div>
           </div>
         </main>
+        <MobileBottomNav />
         <Footer />
       </div>
     );
@@ -302,7 +305,7 @@ const Payment = () => {
   if (order?.manual_payment_requested) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Navbar />
+        <EnhancedNavbar />
         
         <main className="flex-1 container py-12">
           <div className="max-w-3xl mx-auto">
@@ -347,6 +350,7 @@ const Payment = () => {
           </div>
         </main>
         
+        <MobileBottomNav />
         <Footer />
       </div>
     );
@@ -358,7 +362,7 @@ const Payment = () => {
     
     return (
       <div className="flex flex-col min-h-screen">
-        <Navbar />
+        <EnhancedNavbar />
         
         <main className="flex-1 container py-12">
           <div className="max-w-3xl mx-auto">
@@ -393,6 +397,7 @@ const Payment = () => {
           </div>
         </main>
         
+        <MobileBottomNav />
         <Footer />
       </div>
     );
@@ -401,7 +406,7 @@ const Payment = () => {
   // Main payment screen
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
+      <EnhancedNavbar />
       
       <main className="flex-1 container py-8">
         <div className="max-w-7xl mx-auto">

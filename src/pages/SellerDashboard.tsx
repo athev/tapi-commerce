@@ -1,7 +1,8 @@
 
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import Navbar from "@/components/layout/Navbar";
+import EnhancedNavbar from "@/components/layout/EnhancedNavbar";
+import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import Footer from "@/components/layout/Footer";
 import SellerStatusHandler from "@/components/seller/SellerStatusHandler";
 import SellerDashboardHeader from "@/components/seller/SellerDashboardHeader";
@@ -28,7 +29,7 @@ const SellerDashboard = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
+      <EnhancedNavbar />
       
       <main className="flex-1 container py-8">
         <SellerDashboardHeader />
@@ -38,6 +39,7 @@ const SellerDashboard = () => {
         </SellerStatusHandler>
       </main>
       
+      <MobileBottomNav />
       <Footer />
     </div>
   );

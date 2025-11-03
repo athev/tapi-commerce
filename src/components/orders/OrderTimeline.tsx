@@ -1,118 +1,83 @@
-import { Check, Clock, Package, CreditCard, AlertCircle } from "lucide-react";
-import { formatDate } from "@/utils/orderUtils";
+import { Check, Clock, Package, Truck } from "lucide-react";
 
 interface OrderTimelineProps {
-  order: any;
-}
-
-interface TimelineEvent {
-  icon: any;
-  label: string;
-  time: string | null;
   status: string;
-  notes?: string;
+  deliveryStatus?: string;
+  createdAt: string;
+  paidAt?: string | null;
 }
 
-const OrderTimeline = ({ order }: OrderTimelineProps) => {
-  const events: TimelineEvent[] = [];
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat('vi-VN', { 
+    year: 'numeric', 
+    month: '2-digit', 
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date);
+};
 
-  // Order created
-  events.push({
-    icon: Clock,
-    label: "Đơn hàng được tạo",
-    time: order.created_at,
-    status: "completed"
-  });
-
-  // Payment verified
-  if (order.payment_verified_at) {
-    events.push({
-      icon: CreditCard,
-      label: "Thanh toán được xác nhận",
-      time: order.payment_verified_at,
-      status: "completed"
-    });
-  } else if (order.status === 'pending') {
-    events.push({
-      icon: Clock,
-      label: "Chờ thanh toán",
-      time: null,
-      status: "pending"
-    });
-  }
-
-  // Delivery status
-  if (order.delivery_status === 'processing') {
-    events.push({
-      icon: Package,
-      label: "Đang xử lý giao hàng",
-      time: order.updated_at,
-      status: "active",
-      notes: order.delivery_notes
-    });
-  } else if (order.delivery_status === 'delivered') {
-    events.push({
-      icon: Check,
-      label: "Đã giao hàng",
-      time: order.updated_at,
-      status: "completed",
-      notes: order.delivery_notes
-    });
-  } else if (order.delivery_status === 'failed') {
-    events.push({
-      icon: AlertCircle,
-      label: "Giao hàng thất bại",
-      time: order.updated_at,
-      status: "failed",
-      notes: order.delivery_notes
-    });
-  }
+const OrderTimeline = ({ 
+  status, 
+  deliveryStatus, 
+  createdAt, 
+  paidAt 
+}: OrderTimelineProps) => {
+  const steps = [
+    { 
+      icon: Clock, 
+      label: "Đặt hàng", 
+      time: createdAt,
+      completed: true 
+    },
+    { 
+      icon: Check, 
+      label: "Thanh toán", 
+      time: paidAt,
+      completed: status === 'paid' 
+    },
+    { 
+      icon: Package, 
+      label: "Đang xử lý", 
+      completed: deliveryStatus === 'processing' || deliveryStatus === 'delivered' || deliveryStatus === 'completed'
+    },
+    { 
+      icon: Truck, 
+      label: "Đã giao", 
+      completed: deliveryStatus === 'delivered' || deliveryStatus === 'completed'
+    }
+  ];
 
   return (
-    <div className="space-y-4">
-      {events.map((event, index) => {
-        const Icon = event.icon;
-        const isLast = index === events.length - 1;
-        
+    <div className="flex items-center gap-2">
+      {steps.map((step, index) => {
+        const Icon = step.icon;
         return (
-          <div key={index} className="flex gap-3">
-            <div className="flex flex-col items-center">
+          <div key={index} className="flex items-center gap-2 flex-1">
+            <div className="flex items-center gap-2 flex-1">
               <div className={`
-                rounded-full p-2 
-                ${event.status === 'completed' ? 'bg-green-500/20 text-green-600' : ''}
-                ${event.status === 'active' ? 'bg-blue-500/20 text-blue-600' : ''}
-                ${event.status === 'pending' ? 'bg-gray-300/20 text-gray-400' : ''}
-                ${event.status === 'failed' ? 'bg-red-500/20 text-red-600' : ''}
+                h-8 w-8 rounded-full flex items-center justify-center shrink-0
+                ${step.completed 
+                  ? 'bg-success text-white' 
+                  : 'bg-muted text-muted-foreground'}
               `}>
                 <Icon className="h-4 w-4" />
               </div>
-              {!isLast && (
-                <div className={`
-                  w-0.5 h-8 
-                  ${event.status === 'completed' ? 'bg-green-500/30' : 'bg-gray-300'}
-                `} />
-              )}
-            </div>
-            
-            <div className="flex-1 pb-4">
-              <p className={`
-                font-medium text-sm
-                ${event.status === 'pending' ? 'text-muted-foreground' : ''}
-              `}>
-                {event.label}
-              </p>
-              {event.time && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {formatDate(event.time)}
-                </p>
-              )}
-              {event.notes && (
-                <div className="mt-2 p-2 bg-muted/50 rounded text-xs">
-                  <p className="font-medium mb-1">Ghi chú từ người bán:</p>
-                  <p className="whitespace-pre-wrap">{event.notes}</p>
+              <div className="hidden md:block">
+                <div className={`text-xs font-medium ${step.completed ? 'text-success' : 'text-muted-foreground'}`}>
+                  {step.label}
                 </div>
-              )}
+                {step.time && (
+                  <div className="text-[10px] text-muted-foreground">
+                    {formatDate(step.time)}
+                  </div>
+                )}
+              </div>
             </div>
+            {index < steps.length - 1 && (
+              <div className={`h-0.5 w-full ${step.completed ? 'bg-success' : 'bg-muted'}`} />
+            )}
           </div>
         );
       })}

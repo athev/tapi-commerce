@@ -6,8 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import Navbar from '@/components/layout/Navbar';
+import EnhancedNavbar from '@/components/layout/EnhancedNavbar';
+import MobileBottomNav from '@/components/layout/MobileBottomNav';
 import Footer from '@/components/layout/Footer';
+import { Breadcrumb } from '@/components/products/Breadcrumb';
+import { TrustBadge } from '@/components/ui/TrustBadge';
 import ProductImageGallery from '@/components/products/ProductImageGallery';
 import ProductDetailsAccordion from '@/components/products/ProductDetailsAccordion';
 import ProductReviews from '@/components/products/ProductReviews';
@@ -200,7 +203,7 @@ const ProductDetail = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
+        <EnhancedNavbar />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">Đang tải...</div>
         </div>
@@ -211,7 +214,7 @@ const ProductDetail = () => {
   if (!product) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
+        <EnhancedNavbar />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">Không tìm thấy sản phẩm</div>
         </div>
@@ -221,41 +224,67 @@ const ProductDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar />
+      <EnhancedNavbar />
       
-      <div className="container mx-auto px-4 py-6 max-w-4xl">
-        {/* Single Column Layout */}
-        <div className="space-y-6">
-          {/* Product Image */}
-          <ProductImageGallery images={[product.image || '/placeholder.svg']} />
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        {/* Breadcrumb */}
+        <div className="mb-6">
+          <Breadcrumb category={product.category} productTitle={product.title} />
+        </div>
+        
+        {/* 2-Column Layout for Desktop */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          {/* Left: Images */}
+          <div className="space-y-4">
+            <ProductImageGallery images={[product.image || '/placeholder.svg']} />
+            
+            {/* Trust Badges Row */}
+            <div className="flex items-center justify-between p-4 bg-success-bg rounded-lg border border-success-text/20 gap-2 flex-wrap">
+              <TrustBadge icon="✓" text="Chính hãng" variant="success" />
+              <TrustBadge icon="🚚" text="Giao hàng tự động" variant="primary" />
+              <TrustBadge icon="💳" text="Thanh toán an toàn" variant="primary" />
+              <TrustBadge icon="🔒" text="Bảo hành" variant="default" />
+            </div>
+          </div>
 
-          {/* Product Header */}
-          <div className="space-y-3">
+          {/* Right: Product Info */}
+          <div className="space-y-6">
+            {/* Category Badge */}
             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
               {product.category}
             </Badge>
             
-            <h1 className="text-3xl lg:text-4xl font-bold text-foreground leading-tight">
+            {/* Title - Larger & Bold */}
+            <h1 className="page-title">
               {product.title}
             </h1>
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                <span>4.8 (124)</span>
+            {/* Rating & Sold - More Prominent */}
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className="flex">
+                  {Array(5).fill(0).map((_, i) => (
+                    <Star 
+                      key={i}
+                      className={`h-4 w-4 ${i < 4 ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                    />
+                  ))}
+                </div>
+                <span className="text-lg font-semibold">4.8</span>
+                <span className="text-muted-foreground">(124 đánh giá)</span>
               </div>
-              <Separator orientation="vertical" className="h-4" />
-              <div className="flex items-center">
-                <ShoppingBag className="h-4 w-4 mr-1" />
-                <span>{product.purchases || 0} lượt mua</span>
+              <Separator orientation="vertical" className="h-6" />
+              <div className="flex items-center gap-2">
+                <ShoppingBag className="h-5 w-5 text-primary" />
+                <span className="text-lg font-semibold">{product.purchases || 0}</span>
+                <span className="text-muted-foreground">đã bán</span>
               </div>
             </div>
-          </div>
 
-          {/* After Purchase UI for file_download */}
-          {hasPurchased && product.product_type === 'file_download' ? (
-            <Card className="bg-green-50 border-green-200">
-              <CardContent className="p-6">
+            {/* After Purchase UI for file_download */}
+            {hasPurchased && product.product_type === 'file_download' ? (
+              <Card className="bg-success-bg border-success-text/20">
+                <CardContent className="p-6">
                 <div className="flex items-center space-x-3 mb-4">
                   <Download className="h-6 w-6 text-green-600" />
                   <h3 className="font-bold text-green-900 text-lg">Sản phẩm đã mua</h3>
@@ -278,41 +307,48 @@ const ProductDetail = () => {
                 >
                   <Download className="h-5 w-5 mr-2" /> Tải xuống file
                 </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              {/* Price Card with Variants */}
-              <Card>
-                <CardContent className="p-6">
-                  <ProductPriceCard 
-                    product={product} 
-                    onPriceChange={handlePriceChange}
-                  />
                 </CardContent>
               </Card>
+            ) : (
+              <>
+                {/* Price Card - Enhanced */}
+                <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                  <CardContent className="p-6">
+                    <ProductPriceCard 
+                      product={product} 
+                      onPriceChange={handlePriceChange}
+                    />
+                  </CardContent>
+                </Card>
 
-              {/* CTA Buttons */}
-              <ProductCTAButtons
-                currentPrice={currentPrice || product.price}
-                onBuyNow={handleBuyNow}
-                isProcessing={isProcessing}
-                hasPurchased={hasPurchased}
-                productType={product.product_type || 'file_download'}
-              />
-            </>
-          )}
+                {/* Seller Info - More Prominent */}
+                <Card>
+                  <CardContent className="p-6">
+                    <SellerInfo
+                      sellerId={product.seller_id}
+                      sellerName={product.seller_name}
+                      productId={product.id}
+                      productTitle={product.title}
+                    />
+                  </CardContent>
+                </Card>
 
-          {/* Seller Info */}
-          <SellerInfo
-            sellerId={product.seller_id}
-            sellerName={product.seller_name}
-            productId={product.id}
-            productTitle={product.title}
-          />
+                {/* CTA Buttons - Larger & More Prominent */}
+                <div className="sticky top-24 space-y-3">
+                  <ProductCTAButtons
+                    currentPrice={currentPrice || product.price}
+                    onBuyNow={handleBuyNow}
+                    isProcessing={isProcessing}
+                    hasPurchased={hasPurchased}
+                    productType={product.product_type || 'file_download'}
+                  />
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Product Details Tabs */}
+        {/* Product Details Tabs - Full Width */}
         <div className="mt-12">
           <Tabs defaultValue="description" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
@@ -349,6 +385,7 @@ const ProductDetail = () => {
 
         {/* Related Products */}
         <div className="mt-12">
+          <h2 className="section-title">Sản phẩm tương tự</h2>
           <RelatedProducts currentProductId={product.id} category={product.category} />
         </div>
       </div>
@@ -377,6 +414,7 @@ const ProductDetail = () => {
         />
       )}
 
+      <MobileBottomNav />
       <Footer />
     </div>
   );

@@ -1,6 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import ProductCard, { ProductCardProps } from "./ProductCard";
+import EnhancedProductCard from "./EnhancedProductCard";
+import { ProductCardProps } from "./ProductCard";
 
 interface RelatedProductsProps {
   currentProductId: string;
@@ -68,20 +69,13 @@ const RelatedProducts = ({ currentProductId, category }: RelatedProductsProps) =
     .slice(0, 4);
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">Sản phẩm liên quan</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {filteredProducts.map((product) => (
-            <div key={product.id} className="transform scale-90">
-              <ProductCard {...product} />
-            </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {filteredProducts.map((product) => (
+          <EnhancedProductCard key={product.id} {...product} />
+        ))}
+      </div>
+    </div>
   );
 };
 

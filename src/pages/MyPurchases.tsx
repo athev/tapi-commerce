@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Order, Product, mockProducts } from "@/lib/supabase";
 import { useAuth } from "@/context";
-import Navbar from "@/components/layout/Navbar";
+import EnhancedNavbar from "@/components/layout/EnhancedNavbar";
+import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import Footer from "@/components/layout/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,14 +17,9 @@ import OrderSupportChatButton from "@/components/chat/OrderSupportChatButton";
 import OrderConfirmButton from "@/components/buyer/OrderConfirmButton";
 import OrderDisputeButton from "@/components/buyer/OrderDisputeButton";
 import OrderDetailsModal from "@/components/orders/OrderDetailsModal";
-
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat('vi-VN', { 
-    style: 'currency', 
-    currency: 'VND',
-    maximumFractionDigits: 0 
-  }).format(price);
-};
+import OrderTimeline from "@/components/orders/OrderTimeline";
+import { formatPrice, formatSoldCount } from "@/utils/priceUtils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -35,6 +31,7 @@ const formatDate = (dateString: string) => {
     minute: '2-digit'
   }).format(date);
 };
+
 
 const MyPurchases = () => {
   const { user, profile } = useAuth();
@@ -162,12 +159,13 @@ const MyPurchases = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Navbar />
+        <EnhancedNavbar />
         <main className="flex-1 container py-12">
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-marketplace-primary"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
           </div>
         </main>
+        <MobileBottomNav />
         <Footer />
       </div>
     );
@@ -175,11 +173,11 @@ const MyPurchases = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
+      <EnhancedNavbar />
       
       <main className="flex-1 container py-12">
         <div className="max-w-5xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8">Tài khoản của tôi</h1>
+          <h1 className="page-title">Tài khoản của tôi</h1>
           
           <Tabs defaultValue="purchases">
             <TabsList className="mb-8">
@@ -188,76 +186,97 @@ const MyPurchases = () => {
             </TabsList>
             
             <TabsContent value="purchases">
+              {/* Filter/Sort Toolbar */}
+              <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <Select>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Trạng thái" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tất cả</SelectItem>
+                      <SelectItem value="pending">Chờ thanh toán</SelectItem>
+                      <SelectItem value="paid">Đã thanh toán</SelectItem>
+                      <SelectItem value="delivered">Đã giao</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Sắp xếp" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">Mới nhất</SelectItem>
+                      <SelectItem value="oldest">Cũ nhất</SelectItem>
+                      <SelectItem value="price-high">Giá cao</SelectItem>
+                      <SelectItem value="price-low">Giá thấp</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="text-sm text-muted-foreground">
+                  Tổng {purchases?.length || 0} đơn hàng
+                </div>
+              </div>
+
               {purchases && purchases.length > 0 ? (
                 <div className="space-y-6">
                   {purchases.map((purchase) => (
-                    <Card key={purchase.id}>
+                    <Card key={purchase.id} className="hover:shadow-lg transition-shadow">
                       <CardContent className="p-6">
                         <div className="flex flex-col md:flex-row gap-6">
-                          {/* Product Image */}
-                          <div className="w-full md:w-32 h-32 bg-gray-100 rounded overflow-hidden shrink-0">
+                          {/* Product Image - Enhanced */}
+                          <div className="relative w-full md:w-40 h-40 bg-muted rounded-lg overflow-hidden shrink-0">
                             <img 
                               src={purchase.product.image || '/placeholder.svg'} 
                               alt={purchase.product.title}
                               className="w-full h-full object-cover"
                             />
+                            {/* Status overlay */}
+                            <div className="absolute top-2 right-2">
+                              <Badge className={
+                                purchase.status === 'paid' ? 'bg-success hover:bg-success' : 
+                                purchase.status === 'pending' ? 'bg-warning hover:bg-warning' : 'bg-destructive hover:bg-destructive'
+                              }>
+                                {purchase.status === 'paid' ? 'Đã thanh toán' : 
+                                 purchase.status === 'pending' ? 'Chờ thanh toán' : 'Đã hủy'}
+                              </Badge>
+                            </div>
                           </div>
                           
-                          {/* Product Info */}
-                          <div className="flex-1">
-                            <div className="flex justify-between items-start mb-4">
-                              <div>
-                                <h3 className="text-xl font-semibold mb-2">
+                          {/* Product Info - Better organized */}
+                          <div className="flex-1 content-spacing">
+                            {/* Header Row */}
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <Link 
+                                  to={`/product/${purchase.product_id}`}
+                                  className="card-title hover:text-primary transition-colors line-clamp-2"
+                                >
                                   {purchase.product.title}
-                                </h3>
-                                <p className="text-gray-600 mb-2">
+                                </Link>
+                                <p className="body-text-sm mt-1">
                                   Người bán: {purchase.product.seller_name}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                  Ngày mua: {formatDate(purchase.created_at)}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                  Đơn hàng: #{purchase.id.slice(0, 8)}
                                 </p>
                               </div>
                               
                               <div className="text-right">
-                                <div className="text-lg font-bold text-marketplace-primary mb-2">
+                                <div className="price-main">
                                   {formatPrice(purchase.product.price)}
                                 </div>
-                                <Badge className={
-                                  purchase.status === 'paid' ? 'bg-green-500' : 
-                                  purchase.status === 'pending' ? 'bg-yellow-500' : 'bg-red-500'
-                                }>
-                                  {purchase.status === 'paid' ? 'Đã thanh toán' : 
-                                   purchase.status === 'pending' ? 'Chờ thanh toán' : 'Đã hủy'}
-                                </Badge>
-                                {purchase.delivery_status && (
-                                  <div className="mt-1">
-                                    <Badge variant="outline" className={
-                                      purchase.delivery_status === 'delivered' || purchase.delivery_status === 'completed' ? 'border-green-500 text-green-700' :
-                                      purchase.delivery_status === 'processing' ? 'border-blue-500 text-blue-700' :
-                                      purchase.delivery_status === 'disputed' ? 'border-red-500 text-red-700' :
-                                      'border-gray-500 text-gray-700'
-                                    }>
-                                      {purchase.delivery_status === 'delivered' ? 'Đã giao' :
-                                       purchase.delivery_status === 'completed' ? 'Hoàn thành' :
-                                       purchase.delivery_status === 'processing' ? 'Đang xử lý' :
-                                       purchase.delivery_status === 'disputed' ? 'Tranh chấp' :
-                                       'Chờ xử lý'}
-                                    </Badge>
-                                  </div>
-                                )}
                               </div>
                             </div>
+
+                            {/* Order Timeline */}
+                            <OrderTimeline 
+                              status={purchase.status}
+                              deliveryStatus={purchase.delivery_status}
+                              createdAt={purchase.created_at}
+                              paidAt={purchase.payment_verified_at}
+                            />
                             
-                            {/* Description */}
-                            <p className="text-gray-600 mb-4 line-clamp-2">
-                              {purchase.product.description}
-                            </p>
-                            
-                            {/* Actions */}
-                            <div className="flex flex-wrap gap-3">
+                            {/* Actions Row */}
+                            <div className="flex flex-wrap gap-3 pt-3 border-t">
                               <Button 
                                 variant="outline"
                                 size="sm"
@@ -393,6 +412,7 @@ const MyPurchases = () => {
         </div>
       </main>
       
+      <MobileBottomNav />
       <Footer />
 
       {selectedOrder && (
