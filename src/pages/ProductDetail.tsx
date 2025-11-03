@@ -22,6 +22,8 @@ import ProductPurchaseForm from '@/components/products/ProductPurchaseForm';
 import StickyBottomButton from '@/components/products/StickyBottomButton';
 import { PromotionalBanner } from '@/components/products/PromotionalBanner';
 import { FreeReturnsSection } from '@/components/products/FreeReturnsSection';
+import { SpecialPromotions } from '@/components/products/SpecialPromotions';
+import { ShopPolicies } from '@/components/products/ShopPolicies';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { mockProducts } from '@/lib/supabase';
@@ -47,6 +49,14 @@ const ProductDetail = () => {
   const [currentPrice, setCurrentPrice] = useState(0);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectedVariantName, setSelectedVariantName] = useState<string>('');
+
+  // Special promotions data
+  const specialPromotions = [
+    "- Giá rẻ nhất trên thị trường, nâng cấp chính chủ trên tài khoản Heygen AI bạn đang sử dụng.",
+    "- Giảm trực tiếp 10%, tối đa 200.000 VNĐ khi thanh toán từ 1 triệu đồng",
+    "- Bảo hành 1:1: Trong toàn bộ thời gian của gói",
+    "- Tặng youtube premium 4 tháng tạo sẵn với hóa đơn trên 1.000.000 đ."
+  ];
   useEffect(() => {
     // Simulate fetching product data from an API
     // Replace this with your actual data fetching logic
@@ -287,12 +297,14 @@ const ProductDetail = () => {
                   </CardContent>
                 </Card>
 
+                {/* Special Promotions */}
+                <SpecialPromotions promotions={specialPromotions} />
+
+                {/* Shop Policies */}
+                <ShopPolicies />
+
                 {/* Seller Info - More Prominent */}
-                <Card>
-                  <CardContent className="p-4 sm:p-6 w-full overflow-hidden">
-                    <SellerInfo sellerId={product.seller_id} sellerName={product.seller_name} productId={product.id} productTitle={product.title} />
-                  </CardContent>
-                </Card>
+                <SellerInfo sellerId={product.seller_id} sellerName={product.seller_name} productId={product.id} productTitle={product.title} />
 
                 {/* CTA Buttons - Larger & More Prominent */}
                 <div className="sticky top-24 space-y-3">
