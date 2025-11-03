@@ -22,8 +22,6 @@ import ProductPurchaseForm from '@/components/products/ProductPurchaseForm';
 import StickyBottomButton from '@/components/products/StickyBottomButton';
 import { PromotionalBanner } from '@/components/products/PromotionalBanner';
 import { FreeReturnsSection } from '@/components/products/FreeReturnsSection';
-import { SpecialPromotions } from '@/components/products/SpecialPromotions';
-import { ShopPolicies } from '@/components/products/ShopPolicies';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { mockProducts } from '@/lib/supabase';
@@ -49,7 +47,6 @@ const ProductDetail = () => {
   const [currentPrice, setCurrentPrice] = useState(0);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectedVariantName, setSelectedVariantName] = useState<string>('');
-
   useEffect(() => {
     // Simulate fetching product data from an API
     // Replace this with your actual data fetching logic
@@ -290,14 +287,12 @@ const ProductDetail = () => {
                   </CardContent>
                 </Card>
 
-                {/* Special Promotions */}
-                <SpecialPromotions sellerId={product.seller_id} />
-
-                {/* Shop Policies */}
-                <ShopPolicies sellerId={product.seller_id} shopName={product.seller_name || "Shop"} />
-
                 {/* Seller Info - More Prominent */}
-                <SellerInfo sellerId={product.seller_id} sellerName={product.seller_name} productId={product.id} productTitle={product.title} />
+                <Card>
+                  <CardContent className="p-4 sm:p-6 w-full overflow-hidden">
+                    <SellerInfo sellerId={product.seller_id} sellerName={product.seller_name} productId={product.id} productTitle={product.title} />
+                  </CardContent>
+                </Card>
 
                 {/* CTA Buttons - Larger & More Prominent */}
                 <div className="sticky top-24 space-y-3">
