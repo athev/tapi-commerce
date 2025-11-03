@@ -92,3 +92,14 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+/* E-commerce specific styles */
+@layer components {
+  .product-card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+  
+  .flash-sale-bg {
+    background: linear-gradient(135deg, hsl(var(--destructive)) 0%, hsl(var(--destructive)) 100%);
+  }
+}

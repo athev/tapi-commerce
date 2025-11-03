@@ -1,7 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import ProductCard from "./ProductCard";
+import EnhancedProductCard from "./EnhancedProductCard";
 import { mockProducts, Product } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -62,16 +62,16 @@ const ProductGrid = ({
 
   if (finalIsLoading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
         {[...Array(8)].map((_, i) => (
-          <div key={i} className="bg-white rounded-lg border shadow-sm overflow-hidden">
-            <Skeleton className="h-48 w-full" />
-            <div className="p-4 space-y-3">
-              <Skeleton className="h-4 w-3/4" />
+          <div key={i} className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+            <Skeleton className="aspect-square w-full" />
+            <div className="p-3 space-y-2">
+              <Skeleton className="h-3 w-3/4" />
               <Skeleton className="h-3 w-1/2" />
               <div className="flex justify-between items-center">
                 <Skeleton className="h-4 w-1/3" />
-                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-8 w-20" />
               </div>
             </div>
           </div>
@@ -120,9 +120,9 @@ const ProductGrid = ({
         </p>
       </div>
       
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
         {filteredProducts.map((product) => (
-          <ProductCard 
+          <EnhancedProductCard 
             key={product.id} 
             id={product.id}
             title={product.title}
