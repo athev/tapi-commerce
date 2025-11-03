@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, ShoppingCart, MessageCircle, LogOut, Settings, User, Bell, Package, Home } from "lucide-react";
+import { Menu, ShoppingCart, MessageCircle, LogOut, Settings, User, Bell, Package, Home, Search } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useUserRoles } from "@/hooks/useUserRoles";
 import {
@@ -56,49 +56,42 @@ const EnhancedNavbar = () => {
       {/* Main Navbar */}
       <div className="bg-background border-b">
         <div className="container mx-auto px-2 sm:px-4">
-          <div className="flex h-14 sm:h-16 md:h-20 items-center gap-2 sm:gap-3 md:gap-8 min-w-0">
-            {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-              <div className="h-8 w-8 md:h-10 md:w-10 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm md:text-lg">SP</span>
+          <div className="flex h-14 sm:h-16 md:h-20 items-center justify-between min-w-0">
+            {/* Left Side - Logo + Search Icon */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <Link to="/" className="flex items-center gap-2">
+                <div className="h-8 w-8 md:h-10 md:w-10 rounded-lg bg-primary flex items-center justify-center">
+                  <span className="text-primary-foreground font-bold text-sm md:text-lg">SP</span>
+                </div>
+                <span className="font-bold text-lg md:text-xl text-foreground hidden md:inline-block">
+                  Sàn Phẩm Số
+                </span>
+              </Link>
+              
+              {/* Search Icon - Mobile visible, Desktop shows full search */}
+              <div className="md:hidden">
+                <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Search className="h-5 w-5" />
+                </Button>
               </div>
-              <span className="font-bold text-lg md:text-xl text-foreground hidden md:inline-block">
-                Sàn Phẩm Số
-              </span>
-            </Link>
-
-            {/* Search Bar - Takes most space */}
-            <div className="flex-1 max-w-3xl min-w-0">
-              <SearchBar />
+              
+              {/* Full Search Bar - Desktop only */}
+              <div className="hidden md:block md:w-[400px] lg:w-[500px] xl:w-[600px]">
+                <SearchBar />
+              </div>
             </div>
 
-            {/* Right Side Icons - Improved touch targets */}
-            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4 flex-shrink-0">
+            {/* Right Side Icons */}
+            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
               {user ? (
                 <>
-                  {/* Cart */}
-                  <Button variant="ghost" size="icon" className="relative h-9 w-9 sm:h-10 sm:w-10 md:h-12 md:w-12">
-                    <ShoppingCart className="h-5 w-5 md:h-6 md:w-6" />
-                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-[10px] rounded-full h-4 w-4 sm:h-5 sm:w-5 flex items-center justify-center font-bold">
-                      0
-                    </span>
-                  </Button>
-
-                  {/* Notifications - Hidden on mobile < sm */}
-                  <div className="relative hidden sm:block">
-                    <NotificationDropdown />
-                    <span className="absolute top-0 right-0 h-2 w-2 bg-destructive rounded-full" />
+                  {/* Notifications - Always visible */}
+                  <div className="relative">
+                    <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 md:h-12 md:w-12">
+                      <Bell className="h-5 w-5 md:h-6 md:w-6" />
+                      <span className="absolute top-0 right-0 h-2 w-2 bg-destructive rounded-full" />
+                    </Button>
                   </div>
-
-                  {/* Chat - Hidden on mobile < sm */}
-                  <Button variant="ghost" size="icon" className="relative h-9 w-9 sm:h-10 sm:w-10 md:h-12 md:w-12 hidden sm:flex" asChild>
-                    <Link to="/chat">
-                      <MessageCircle className="h-5 w-5 md:h-6 md:w-6" />
-                      <span className="absolute -top-1 -right-1 bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-semibold">
-                        2
-                      </span>
-                    </Link>
-                  </Button>
 
                   {/* User Menu */}
                   <DropdownMenu>
