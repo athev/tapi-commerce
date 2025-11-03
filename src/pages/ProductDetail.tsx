@@ -282,8 +282,8 @@ const ProductDetail = () => {
               </Card> : <>
                 {/* Price Card - Enhanced */}
                 <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-                  <CardContent className="p-6 w-full overflow-hidden">
-                    <ProductPriceCard product={product} onPriceChange={handlePriceChange} />
+                  <CardContent className="p-6 w-full overflow-hidden py-[8px] px-[8px]">
+                    <ProductPriceCard product={product} onPriceChange={handlePriceChange} className="mx-0 my-0 py-0 px-0" />
                   </CardContent>
                 </Card>
 
