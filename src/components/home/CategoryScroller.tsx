@@ -55,17 +55,17 @@ const CategoryScroller = () => {
                 className="flex-shrink-0 w-28 group"
               >
                 <div className="bg-card border border-border rounded-lg p-4 transition-all hover:shadow-md hover:border-primary hover:-translate-y-1">
-                  <div className="w-16 h-16 mx-auto mb-2 bg-primary/10 rounded-lg flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                  <div className="w-16 h-16 mx-auto mb-2 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary group-hover:scale-110 transition-all">
                     <img
                       src={category.icon}
                       alt={category.name}
-                      className="w-10 h-10 object-contain"
+                      className="w-10 h-10 object-contain group-hover:brightness-0 group-hover:invert transition-all"
                       onError={(e) => {
                         e.currentTarget.src = '/placeholder.svg';
                       }}
                     />
                   </div>
-                  <p className="text-xs font-medium text-center text-foreground line-clamp-2 mb-1">
+                  <p className="text-xs font-medium text-center text-foreground line-clamp-2 mb-1 group-hover:text-primary transition-colors">
                     {category.name}
                   </p>
                   <p className="text-[10px] text-muted-foreground text-center">

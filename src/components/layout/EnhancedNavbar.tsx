@@ -72,32 +72,38 @@ const EnhancedNavbar = () => {
               <SearchBar />
             </div>
 
-            {/* Right Side Icons */}
-            <div className="flex items-center gap-2">
+            {/* Right Side Icons - Improved touch targets */}
+            <div className="flex items-center gap-4">
               {user ? (
                 <>
                   {/* Cart */}
-                  <Button variant="ghost" size="icon" className="relative">
-                    <ShoppingCart className="h-5 w-5" />
-                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <Button variant="ghost" size="icon" className="relative h-12 w-12">
+                    <ShoppingCart className="h-6 w-6" />
+                    <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-6 w-6 flex items-center justify-center font-bold shadow-md">
                       0
                     </span>
                   </Button>
 
                   {/* Notifications */}
-                  <NotificationDropdown />
+                  <div className="relative">
+                    <NotificationDropdown />
+                    <span className="absolute top-0 right-0 h-3 w-3 bg-destructive rounded-full animate-pulse" />
+                  </div>
 
                   {/* Chat */}
-                  <Button variant="ghost" size="icon" asChild>
+                  <Button variant="ghost" size="icon" className="relative h-12 w-12" asChild>
                     <Link to="/chat">
-                      <MessageCircle className="h-5 w-5" />
+                      <MessageCircle className="h-6 w-6" />
+                      <span className="absolute -top-1 -right-1 bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] text-xs rounded-full h-5 w-5 flex items-center justify-center font-semibold">
+                        2
+                      </span>
                     </Link>
                   </Button>
 
                   {/* User Menu */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                      <Button variant="ghost" className="relative h-12 w-12 rounded-full">
                         <Avatar className="h-10 w-10">
                           <AvatarFallback className="bg-primary text-primary-foreground">
                             {user.email?.charAt(0).toUpperCase()}

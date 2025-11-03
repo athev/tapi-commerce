@@ -13,6 +13,11 @@
   --popover: 0 0% 100%;
   --popover-foreground: 222.2 84% 4.9%;
   
+  /* Brand Colors - Shopee-inspired */
+  --brand-primary: 217 91% 60%;
+  --brand-secondary: 16 100% 66%;
+  --brand-accent: 142 76% 36%;
+  
   /* Primary - Trust & Brand */
   --primary: 217 91% 60%;
   --primary-foreground: 210 40% 98%;
@@ -36,6 +41,21 @@
   /* Success - Confirmations */
   --success: 142 76% 36%;
   --success-foreground: 210 40% 98%;
+  
+  /* Neutral Colors */
+  --neutral-50: 0 0% 98%;
+  --neutral-100: 0 0% 96%;
+  --neutral-200: 0 0% 90%;
+  --neutral-600: 0 0% 40%;
+  --neutral-800: 0 0% 20%;
+  
+  /* Semantic Colors */
+  --success-bg: 142 76% 96%;
+  --success-text: 142 76% 36%;
+  --warning-bg: 38 92% 96%;
+  --warning-text: 38 92% 50%;
+  --error-bg: 0 84% 96%;
+  --error-text: 0 84% 60%;
   
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
@@ -101,5 +121,89 @@
   
   .flash-sale-bg {
     background: linear-gradient(135deg, hsl(var(--destructive)) 0%, hsl(var(--destructive)) 100%);
+  }
+  
+  /* Typography Hierarchy */
+  .section-title {
+    @apply text-2xl md:text-3xl font-bold text-foreground mb-4;
+  }
+  
+  .section-subtitle {
+    @apply text-sm md:text-base text-muted-foreground mb-6;
+  }
+  
+  .card-title {
+    @apply text-base font-semibold text-foreground line-clamp-2;
+  }
+  
+  .price-main {
+    @apply text-xl md:text-2xl font-bold text-destructive;
+  }
+  
+  .price-original {
+    @apply text-sm text-muted-foreground line-through;
+  }
+  
+  /* Spacing System */
+  .section-spacing {
+    @apply mb-8 md:mb-12;
+  }
+  
+  .card-spacing {
+    @apply p-3 md:p-4;
+  }
+}
+
+/* Animations */
+@layer utilities {
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+  
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.5;
+      transform: scale(1.05);
+    }
+  }
+  
+  @keyframes slide-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .animate-shimmer {
+    animation: shimmer 2s infinite;
+    background: linear-gradient(
+      to right,
+      #f6f7f8 0%,
+      #edeef1 20%,
+      #f6f7f8 40%,
+      #f6f7f8 100%
+    );
+    background-size: 1000px 100%;
+  }
+  
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  
+  .animate-slide-in-up {
+    animation: slide-in-up 0.5s ease-out;
   }
 }

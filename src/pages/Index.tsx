@@ -10,6 +10,7 @@ import ProductGrid from "@/components/products/ProductGrid";
 import SellerCTA from "@/components/home/SellerCTA";
 import ProductToolbar, { SortOption, ViewMode } from "@/components/products/ProductToolbar";
 import FilterPanel from "@/components/products/FilterPanel";
+import { QuickHelpSection } from "@/components/home/QuickHelpSection";
 
 const Index = () => {
   const [activeCategory, setActiveCategory] = useState("all");
@@ -33,54 +34,73 @@ const Index = () => {
       
       <main className="flex-1">
         <HeroCarousel />
-        
-        <div className="mb-6" />
-        
-        <CategoryScroller />
-        
-        <div className="mb-8" />
-        
-        <FlashSaleSection />
-        
-        <section className="container mx-auto px-4 py-8 mt-8">
-          <div className="flex gap-6">
-            {/* Desktop Filter Sidebar */}
-            <aside className="hidden lg:block w-64 flex-shrink-0">
-              <div className="sticky top-24 bg-card border border-border rounded-lg p-4">
-                <h3 className="font-bold text-lg mb-4">Bộ lọc</h3>
-                <FilterPanel onFilterChange={setFilters} />
-              </div>
-            </aside>
+        <div className="section-spacing" />
 
-            {/* Main Content */}
-            <div className="flex-1 min-w-0">
-              <div className="mb-6">
-                <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-                  {effectiveCategory === "all" ? "Sản phẩm nổi bật" : effectiveCategory}
+        <CategoryScroller />
+        <div className="section-spacing" />
+
+        {/* Flash Sale Section with improved header */}
+        <section className="section-spacing">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="section-title flex items-center gap-2">
+                  <span className="text-3xl">⚡</span>
+                  Flash Sale Hôm Nay
                 </h2>
-                <p className="text-muted-foreground">
-                  Khám phá các sản phẩm số chất lượng cao từ những người bán uy tín
+                <p className="section-subtitle">
+                  Săn deal hot - Số lượng có hạn!
                 </p>
               </div>
+            </div>
+            <FlashSaleSection />
+          </div>
+        </section>
+        
+        {/* Product Grid with improved header */}
+        <section className="section-spacing bg-[hsl(var(--neutral-50))] py-8">
+          <div className="container mx-auto px-4">
+            <div className="flex gap-6">
+              {/* Desktop Filter Sidebar */}
+              <aside className="hidden lg:block w-64 flex-shrink-0">
+                <div className="sticky top-24 bg-card border border-border rounded-lg p-4">
+                  <h3 className="font-bold text-lg mb-4">Bộ lọc</h3>
+                  <FilterPanel onFilterChange={setFilters} />
+                </div>
+              </aside>
 
-              <ProductToolbar
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
-                onFilterChange={setFilters}
-                totalProducts={0}
-              />
+              {/* Main Content */}
+              <div className="flex-1 min-w-0">
+                <div className="mb-6">
+                  <h2 className="section-title">
+                    Sản Phẩm Nổi Bật
+                  </h2>
+                  <p className="section-subtitle">
+                    Khám phá sản phẩm số chất lượng từ người bán uy tín
+                  </p>
+                </div>
 
-              <div className="mt-6">
-                <ProductGrid 
-                  searchTerm={effectiveSearchTerm}
-                  category={effectiveCategory}
+                <ProductToolbar
+                  sortBy={sortBy}
+                  onSortChange={setSortBy}
+                  viewMode={viewMode}
+                  onViewModeChange={setViewMode}
+                  onFilterChange={setFilters}
+                  totalProducts={0}
                 />
+
+                <div className="mt-6">
+                  <ProductGrid 
+                    searchTerm={effectiveSearchTerm}
+                    category={effectiveCategory}
+                  />
+                </div>
               </div>
             </div>
           </div>
         </section>
+        
+        <QuickHelpSection />
         
         <SellerCTA />
       </main>

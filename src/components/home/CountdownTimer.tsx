@@ -35,21 +35,48 @@ const CountdownTimer = ({ endTime }: CountdownTimerProps) => {
   const formatNumber = (num: number) => String(num).padStart(2, "0");
 
   return (
-    <div className="flex items-center gap-2 bg-white/20 rounded-lg px-3 py-1.5">
-      <span className="text-xs text-white font-medium">Kết thúc trong</span>
-      <div className="flex items-center gap-0.5">
-        <span className="bg-white text-destructive font-bold text-sm px-2 py-1 rounded min-w-[2rem] text-center">
-          {formatNumber(timeLeft.hours)}
+    <div className="relative">
+      <div className="flex items-center gap-3 bg-white rounded-lg px-4 py-2 shadow-lg">
+        <span className="text-xs font-medium text-destructive uppercase tracking-wide">
+          Kết thúc trong
         </span>
-        <span className="text-white font-bold">:</span>
-        <span className="bg-white text-destructive font-bold text-sm px-2 py-1 rounded min-w-[2rem] text-center">
-          {formatNumber(timeLeft.minutes)}
-        </span>
-        <span className="text-white font-bold">:</span>
-        <span className="bg-white text-destructive font-bold text-sm px-2 py-1 rounded min-w-[2rem] text-center">
-          {formatNumber(timeLeft.seconds)}
-        </span>
+        <div className="flex gap-1 items-center">
+          {/* Hours */}
+          <div className="flex flex-col items-center">
+            <div className="bg-gradient-to-br from-destructive to-destructive/80 text-white font-bold px-3 py-2 rounded text-lg min-w-[3rem] text-center animate-pulse-glow">
+              {formatNumber(timeLeft.hours)}
+            </div>
+            <div className="text-[10px] text-muted-foreground text-center mt-1">
+              Giờ
+            </div>
+          </div>
+          <span className="text-2xl font-bold text-destructive self-start mt-1">:</span>
+          
+          {/* Minutes */}
+          <div className="flex flex-col items-center">
+            <div className="bg-gradient-to-br from-destructive to-destructive/80 text-white font-bold px-3 py-2 rounded text-lg min-w-[3rem] text-center animate-pulse-glow">
+              {formatNumber(timeLeft.minutes)}
+            </div>
+            <div className="text-[10px] text-muted-foreground text-center mt-1">
+              Phút
+            </div>
+          </div>
+          <span className="text-2xl font-bold text-destructive self-start mt-1">:</span>
+          
+          {/* Seconds */}
+          <div className="flex flex-col items-center">
+            <div className="bg-gradient-to-br from-destructive to-destructive/80 text-white font-bold px-3 py-2 rounded text-lg min-w-[3rem] text-center animate-pulse-glow">
+              {formatNumber(timeLeft.seconds)}
+            </div>
+            <div className="text-[10px] text-muted-foreground text-center mt-1">
+              Giây
+            </div>
+          </div>
+        </div>
       </div>
+      
+      {/* Pulsing glow effect */}
+      <div className="absolute inset-0 bg-destructive/20 rounded-lg blur-xl animate-pulse -z-10" />
     </div>
   );
 };

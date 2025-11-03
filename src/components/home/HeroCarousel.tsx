@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const HERO_SLIDES = [
   {
@@ -76,12 +77,37 @@ const HeroCarousel = () => {
               />
               <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-transparent" />
               <div className="absolute inset-0 flex flex-col justify-center container mx-auto px-4">
-                <h2 className="text-3xl md:text-5xl font-bold text-white mb-2 md:mb-4">
+                <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-2 md:mb-4 drop-shadow-2xl">
                   {slide.title}
                 </h2>
-                <p className="text-lg md:text-2xl text-white/90 max-w-2xl">
+                <p className="text-lg md:text-2xl text-white/90 max-w-2xl mb-6 drop-shadow-lg">
                   {slide.subtitle}
                 </p>
+                
+                {/* CTA Buttons */}
+                <div className="flex items-center gap-4 flex-wrap">
+                  <Button 
+                    size="lg"
+                    className="bg-white text-primary hover:bg-white/90 font-semibold px-8 shadow-xl"
+                    asChild
+                  >
+                    <a href={slide.link}>
+                      Khám phá ngay
+                      <ChevronRight className="ml-2 h-5 w-5" />
+                    </a>
+                  </Button>
+                  
+                  <Button 
+                    size="lg"
+                    variant="outline"
+                    className="border-2 border-white text-white hover:bg-white/10 font-semibold px-8 backdrop-blur-sm"
+                    asChild
+                  >
+                    <Link to="/">
+                      Xem danh mục
+                    </Link>
+                  </Button>
+                </div>
               </div>
             </div>
           </a>
