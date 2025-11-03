@@ -30,10 +30,10 @@ const SellerInfo = ({
 }: SellerInfoProps) => {
   
   const formatJoinDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('vi-VN', { 
-      year: 'numeric', 
-      month: 'long' 
-    });
+    const date = new Date(dateString);
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    return `${month}/${year}`;
   };
 
   // Create product object for ChatButton
@@ -48,13 +48,13 @@ const SellerInfo = ({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Store className="h-5 w-5" />
+      <CardHeader className="p-4 pb-3">
+        <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
+          <Store className="h-4 w-4 sm:h-5 sm:w-5" />
           <span>Thông tin người bán</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3 sm:space-y-4 p-4 sm:p-6">
+      <CardContent className="pt-0 space-y-2.5">
         {/* Seller Basic Info - Compact */}
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 sm:w-12 sm:h-12 bg-marketplace-primary rounded-full flex items-center justify-center text-white font-semibold text-sm sm:text-lg">
@@ -64,8 +64,9 @@ const SellerInfo = ({
             <div className="flex items-center space-x-2 mb-1">
               <h3 className="font-semibold text-sm sm:text-base truncate">{sellerName}</h3>
               {verified && (
-                <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs px-1.5 py-0">
+                <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-xs px-2 py-0.5 flex items-center gap-1">
                   <Shield className="h-3 w-3" />
+                  <span>Chính chủ</span>
                 </Badge>
               )}
             </div>
@@ -81,29 +82,29 @@ const SellerInfo = ({
         </div>
 
         {/* Seller Stats - Compact on mobile */}
-        <div className="flex items-center justify-between text-xs text-gray-600 pt-2 border-t">
+        <div className="flex items-center justify-between text-xs text-gray-600">
           <span>Tham gia {formatJoinDate(joinDate)}</span>
           <span>•</span>
           <span>Phản hồi {responseTime}</span>
         </div>
 
         {/* Action Buttons - Compact */}
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-2">
           {productId && (
             <ChatButton
               product={product}
               variant="outline"
-              className="flex-1 h-9 text-sm"
+              className="flex-1 h-9 text-xs sm:text-sm"
             />
           )}
-          <Button variant="outline" className="flex-1 h-9 text-sm">
+          <Button variant="outline" className="flex-1 h-9 text-xs sm:text-sm">
             <Store className="h-4 w-4 mr-1" />
-            Cửa hàng
+            <span className="truncate">Cửa hàng</span>
           </Button>
         </div>
 
         {/* Seller Policies - Hidden on mobile */}
-        <div className="text-xs text-gray-500 pt-3 border-t space-y-1 hidden sm:block">
+        <div className="text-xs text-gray-500 space-y-1 hidden sm:block">
           <p>• Hỗ trợ 24/7 qua chat</p>
           <p>• Đảm bảo hoàn tiền nếu sản phẩm lỗi</p>
           <p>• Giao hàng ngay sau khi thanh toán</p>
