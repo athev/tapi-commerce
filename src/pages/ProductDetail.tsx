@@ -20,6 +20,8 @@ import ProductPriceCard from '@/components/products/ProductPriceCard';
 import ProductCTAButtons from '@/components/products/ProductCTAButtons';
 import ProductPurchaseForm from '@/components/products/ProductPurchaseForm';
 import StickyBottomButton from '@/components/products/StickyBottomButton';
+import { PromotionalBanner } from '@/components/products/PromotionalBanner';
+import { FreeReturnsSection } from '@/components/products/FreeReturnsSection';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { mockProducts } from '@/lib/supabase';
@@ -226,60 +228,91 @@ const ProductDetail = () => {
     <div className="min-h-screen bg-background overflow-x-hidden">
       <EnhancedNavbar />
       
-      <div className="container mx-auto px-4 py-6 max-w-7xl overflow-x-hidden">
-        {/* Breadcrumb */}
-        <div className="mb-6 overflow-hidden">
+      <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-7xl overflow-x-hidden">
+        {/* Breadcrumb - Hide on mobile */}
+        <div className="mb-6 overflow-hidden hidden sm:block">
           <Breadcrumb category={product.category} productTitle={product.title} />
         </div>
         
         {/* 2-Column Layout for Desktop */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 md:gap-8 mb-8 sm:mb-12">
           {/* Left: Images */}
-          <div className="space-y-4 min-w-0">
-            <ProductImageGallery images={[product.image || '/placeholder.svg']} />
+          <div className="space-y-3 sm:space-y-4 min-w-0">
+            <div className="w-full">
+              <ProductImageGallery images={[product.image || '/placeholder.svg']} />
+            </div>
             
-            {/* Trust Badges Row */}
-            <div className="flex items-center justify-start p-4 bg-success-bg rounded-lg border border-success-text/20 gap-2 flex-wrap w-full">
-              <TrustBadge icon="✓" text="Chính hãng" variant="success" />
-              <TrustBadge icon="🚚" text="Giao hàng tự động" variant="primary" />
-              <TrustBadge icon="💳" text="Thanh toán an toàn" variant="primary" />
-              <TrustBadge icon="🔒" text="Bảo hành" variant="default" />
+            {/* Enhanced Trust Badges - Chiaki Style */}
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 p-3 sm:p-4 bg-gradient-to-br from-green-50 to-blue-50 rounded-xl border-2 border-green-200">
+              <div className="flex items-center gap-2 p-2 sm:p-3 bg-white rounded-lg shadow-sm">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                  <span className="text-lg sm:text-2xl">✓</span>
+                </div>
+                <span className="font-semibold text-xs sm:text-sm">Chính hãng</span>
+              </div>
+              
+              <div className="flex items-center gap-2 p-2 sm:p-3 bg-white rounded-lg shadow-sm">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+                  <span className="text-lg sm:text-2xl">🚚</span>
+                </div>
+                <span className="font-semibold text-xs sm:text-sm">Giao tự động</span>
+              </div>
+              
+              <div className="flex items-center gap-2 p-2 sm:p-3 bg-white rounded-lg shadow-sm">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-purple-100 flex items-center justify-center shrink-0">
+                  <span className="text-lg sm:text-2xl">💳</span>
+                </div>
+                <span className="font-semibold text-xs sm:text-sm">Thanh toán</span>
+              </div>
+              
+              <div className="flex items-center gap-2 p-2 sm:p-3 bg-white rounded-lg shadow-sm">
+                <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                  <span className="text-lg sm:text-2xl">🔒</span>
+                </div>
+                <span className="font-semibold text-xs sm:text-sm">Bảo hành</span>
+              </div>
             </div>
           </div>
 
           {/* Right: Product Info */}
-          <div className="space-y-6 min-w-0">
+          <div className="space-y-4 sm:space-y-6 min-w-0">
             {/* Category Badge */}
             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
               {product.category}
             </Badge>
             
             {/* Title - Larger & Bold */}
-            <h1 className="page-title">
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight">
               {product.title}
             </h1>
 
-            {/* Rating & Sold - More Prominent */}
-            <div className="flex items-center gap-6">
+            {/* Enhanced Rating & Sold - Chiaki Style */}
+            <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-yellow-50 rounded-xl border border-yellow-200">
               <div className="flex items-center gap-2">
                 <div className="flex">
                   {Array(5).fill(0).map((_, i) => (
                     <Star 
                       key={i}
-                      className={`h-4 w-4 ${i < 4 ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
+                      className="h-4 w-4 sm:h-5 sm:w-5 fill-yellow-400 text-yellow-400"
                     />
                   ))}
                 </div>
-                <span className="text-lg font-semibold">4.8</span>
-                <span className="text-muted-foreground">(124 đánh giá)</span>
+                <span className="text-xl sm:text-2xl font-bold text-yellow-700">5.0</span>
               </div>
-              <Separator orientation="vertical" className="h-6" />
-              <div className="flex items-center gap-2">
-                <ShoppingBag className="h-5 w-5 text-primary" />
-                <span className="text-lg font-semibold">{product.purchases || 0}</span>
-                <span className="text-muted-foreground">đã bán</span>
+              <Separator orientation="vertical" className="h-6 sm:h-8 bg-yellow-300" />
+              <div>
+                <p className="text-xs sm:text-sm text-muted-foreground">Đánh giá</p>
+                <p className="text-base sm:text-lg font-bold">(124)</p>
+              </div>
+              <Separator orientation="vertical" className="h-6 sm:h-8 bg-yellow-300" />
+              <div>
+                <p className="text-xs sm:text-sm text-muted-foreground">Đã bán</p>
+                <p className="text-base sm:text-lg font-bold">{product.purchases || 0}+</p>
               </div>
             </div>
+
+            {/* Free Returns Section */}
+            <FreeReturnsSection />
 
             {/* After Purchase UI for file_download */}
             {hasPurchased && product.product_type === 'file_download' ? (
@@ -348,8 +381,13 @@ const ProductDetail = () => {
           </div>
         </div>
 
+        {/* Promotional Banner */}
+        <div className="mb-6 sm:mb-8">
+          <PromotionalBanner />
+        </div>
+
         {/* Product Details Tabs - Full Width */}
-        <div className="mt-12 overflow-x-hidden">
+        <div className="mt-8 sm:mt-12 overflow-x-hidden">
           <div className="overflow-x-auto no-scrollbar">
             <Tabs defaultValue="description" className="w-full min-w-0">
               <TabsList className="grid w-full grid-cols-3">
@@ -360,14 +398,14 @@ const ProductDetail = () => {
             
             <TabsContent value="description" className="mt-6">
               <Card>
-                <CardContent className="p-6">
+                <CardContent className="p-4 sm:p-6">
                   <div className="prose max-w-none">
                     {product.description ? (
-                      <p className="text-gray-700 leading-relaxed whitespace-pre-line">
+                      <p className="text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-line">
                         {product.description}
                       </p>
                     ) : (
-                      <p className="text-gray-500 italic">Chưa có mô tả cho sản phẩm này.</p>
+                      <p className="text-sm sm:text-base text-gray-500 italic">Chưa có mô tả cho sản phẩm này.</p>
                     )}
                   </div>
                 </CardContent>
@@ -386,11 +424,14 @@ const ProductDetail = () => {
         </div>
 
         {/* Related Products */}
-        <div className="mt-12 overflow-hidden">
-          <h2 className="section-title">Sản phẩm tương tự</h2>
+        <div className="mt-8 sm:mt-12 overflow-hidden">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Sản phẩm tương tự</h2>
           <RelatedProducts currentProductId={product.id} category={product.category} />
         </div>
       </div>
+      
+      {/* Bottom padding for mobile sticky bar */}
+      {isMobile && <div className="h-20" />}
 
       {/* Purchase Form (Progressive Disclosure) */}
       <ProductPurchaseForm

@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/utils/orderUtils";
-import { Download, Users, User, Key, FileText } from "lucide-react";
+import { Download, Users, User, Key, FileText, Heart, ShoppingBag } from "lucide-react";
 
 interface ProductVariant {
   id: string;
@@ -94,32 +95,59 @@ const ProductPriceCard = ({ product, onPriceChange }: ProductPriceCardProps) => 
         </Badge>
       </div>
 
-      {/* Single Price Display */}
-      <div className="space-y-2">
-        <div className="flex items-baseline gap-3">
-          <span className="text-4xl font-bold text-destructive">
+      {/* Price Row with Favorite */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-baseline gap-3 flex-wrap">
+          <span className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-destructive">
             {formatPrice(currentPrice)}
           </span>
           {originalPrice && originalPrice > currentPrice && (
             <>
-              <span className="text-xl text-muted-foreground line-through">
+              <span className="text-lg sm:text-xl text-muted-foreground line-through">
                 {formatPrice(originalPrice)}
               </span>
               {discountPercentage && (
-                <Badge variant="destructive" className="text-base px-2 py-1">
+                <Badge variant="destructive" className="text-sm sm:text-base px-2 py-1">
                   -{discountPercentage}%
                 </Badge>
               )}
             </>
           )}
         </div>
-        
-        {product?.in_stock && product.in_stock > 0 && (
-          <p className="text-sm text-muted-foreground">
-            Còn lại: <span className="font-semibold text-foreground">{product.in_stock}</span> sản phẩm
-          </p>
-        )}
+        <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0">
+          <Heart className="h-6 w-6" />
+        </Button>
       </div>
+
+      {/* Sold Count */}
+      <div className="flex items-center gap-2">
+        <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">
+          Đã bán <strong className="text-foreground">{product?.purchases || 0}+</strong>
+        </span>
+      </div>
+
+      {/* Promotional Tags */}
+      <div className="flex flex-wrap gap-2">
+        <Badge className="bg-orange-100 text-orange-700 border border-orange-200 hover:bg-orange-100">
+          Mã giảm giá
+        </Badge>
+        <Badge className="bg-red-100 text-red-700 border border-red-200 hover:bg-red-100">
+          Giảm 50.000đ
+        </Badge>
+        <Badge className="bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-100">
+          Freeship
+        </Badge>
+        <Badge className="bg-green-100 text-green-700 border border-green-200 hover:bg-green-100">
+          Giảm 20%
+        </Badge>
+      </div>
+
+      {product?.in_stock && product.in_stock > 0 && (
+        <p className="text-sm text-muted-foreground">
+          Còn lại: <span className="font-semibold text-foreground">{product.in_stock}</span> sản phẩm
+        </p>
+      )}
 
       {/* Variants Selector - Only if variants exist */}
       {variants.length > 0 && (

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Zap, ShoppingCart, Shield, Headphones } from "lucide-react";
 import { formatPrice } from "@/utils/orderUtils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ProductCTAButtonsProps {
   currentPrice: number;
@@ -17,8 +18,10 @@ const ProductCTAButtons = ({
   hasPurchased,
   productType
 }: ProductCTAButtonsProps) => {
-  // Don't show CTA for file_download after purchase
-  if (hasPurchased && productType === 'file_download') {
+  const isMobile = useIsMobile();
+
+  // Hide on mobile (sticky bottom bar handles it) or after purchase for file_download
+  if (isMobile || (hasPurchased && productType === 'file_download')) {
     return null;
   }
 
