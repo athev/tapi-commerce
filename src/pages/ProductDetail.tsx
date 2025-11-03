@@ -50,13 +50,6 @@ const ProductDetail = () => {
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectedVariantName, setSelectedVariantName] = useState<string>('');
 
-  // Special promotions data
-  const specialPromotions = [
-    "- Giá rẻ nhất trên thị trường, nâng cấp chính chủ trên tài khoản Heygen AI bạn đang sử dụng.",
-    "- Giảm trực tiếp 10%, tối đa 200.000 VNĐ khi thanh toán từ 1 triệu đồng",
-    "- Bảo hành 1:1: Trong toàn bộ thời gian của gói",
-    "- Tặng youtube premium 4 tháng tạo sẵn với hóa đơn trên 1.000.000 đ."
-  ];
   useEffect(() => {
     // Simulate fetching product data from an API
     // Replace this with your actual data fetching logic
@@ -298,10 +291,10 @@ const ProductDetail = () => {
                 </Card>
 
                 {/* Special Promotions */}
-                <SpecialPromotions promotions={specialPromotions} />
+                <SpecialPromotions sellerId={product.seller_id} />
 
                 {/* Shop Policies */}
-                <ShopPolicies />
+                <ShopPolicies sellerId={product.seller_id} shopName={product.seller_name || "Shop"} />
 
                 {/* Seller Info - More Prominent */}
                 <SellerInfo sellerId={product.seller_id} sellerName={product.seller_name} productId={product.id} productTitle={product.title} />

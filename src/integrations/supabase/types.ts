@@ -707,6 +707,72 @@ export type Database = {
         }
         Relationships: []
       }
+      seller_policies: {
+        Row: {
+          created_at: string | null
+          description: string
+          icon: string
+          id: string
+          is_active: boolean | null
+          seller_id: string
+          sort_order: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description: string
+          icon: string
+          id?: string
+          is_active?: boolean | null
+          seller_id: string
+          sort_order?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean | null
+          seller_id?: string
+          sort_order?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      seller_promotions: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          seller_id: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          seller_id: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          seller_id?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           category: string

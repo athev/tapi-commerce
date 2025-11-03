@@ -1,51 +1,65 @@
-import { Truck, Gift, Shield, Phone } from "lucide-react";
+import { useEffect, useState } from "react";
+import * as Icons from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { supabase } from "@/integrations/supabase/client";
 
-interface PolicyItem {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
+interface ShopPoliciesProps {
+  sellerId: string;
+  shopName: string;
 }
 
-export const ShopPolicies = () => {
-  const policies: PolicyItem[] = [
-    {
-      icon: <Truck className="h-6 w-6" />,
-      title: "Miễn phí",
-      description: "Trải nghiệm một số sản phẩm"
-    },
-    {
-      icon: <Gift className="h-6 w-6" />,
-      title: "Quà tặng",
-      description: "Với hóa đơn trên 1 triệu"
-    },
-    {
-      icon: <Shield className="h-6 w-6" />,
-      title: "Bảo hành",
-      description: "Toàn bộ thời gian của gói đăng ký"
-    },
-    {
-      icon: <Phone className="h-6 w-6" />,
-      title: "Hotline: 0387.022.876",
-      description: "Hỗ trợ 24/7"
-    }
-  ];
+interface Policy {
+  id: string;
+  icon: string;
+  title: string;
+  description: string;
+  sort_order: number;
+}
+
+export const ShopPolicies = ({ sellerId, shopName }: ShopPoliciesProps) => {
+  const [policies, setPolicies] = useState<Policy[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPolicies = async () => {
+      const { data, error } = await supabase
+        .from('seller_policies')
+        .select('*')
+        .eq('seller_id', sellerId)
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true });
+
+      if (!error && data) {
+        setPolicies(data);
+      }
+      setLoading(false);
+    };
+
+    fetchPolicies();
+  }, [sellerId]);
+
+  if (loading || policies.length === 0) return null;
+
+  const getIcon = (iconName: string) => {
+    const Icon = (Icons as any)[iconName];
+    return Icon ? <Icon className="h-6 w-6" /> : <Icons.Shield className="h-6 w-6" />;
+  };
 
   return (
     <Card>
       <CardHeader className="bg-black text-white p-4 rounded-t-lg">
         <div className="flex items-center gap-2">
           <div className="bg-white rounded-full p-1">
-            <Shield className="h-4 w-4 text-black" />
+            <Icons.Shield className="h-4 w-4 text-black" />
           </div>
-          <h3 className="font-bold text-base">Chính sách Shop Tài Khoản</h3>
+          <h3 className="font-bold text-base">Chính sách shop {shopName}</h3>
         </div>
       </CardHeader>
       <CardContent className="p-4 space-y-3">
-        {policies.map((policy, index) => (
-          <div key={index} className="flex items-start gap-3">
+        {policies.map((policy) => (
+          <div key={policy.id} className="flex items-start gap-3">
             <div className="text-gray-600 shrink-0">
-              {policy.icon}
+              {getIcon(policy.icon)}
             </div>
             <div>
               <h4 className="font-semibold text-sm">{policy.title}</h4>

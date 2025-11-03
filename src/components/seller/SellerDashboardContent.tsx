@@ -6,6 +6,8 @@ import SellerProducts from "@/components/seller/SellerProducts";
 import SellerOrders from "@/components/seller/SellerOrders";
 import SellerWallet from "@/components/seller/SellerWallet";
 import SellerAddProduct from "@/components/seller/SellerAddProduct";
+import SellerPromotionsManager from "@/components/seller/SellerPromotionsManager";
+import SellerPoliciesManager from "@/components/seller/SellerPoliciesManager";
 import SellerTabsNavigation from "./SellerTabsNavigation";
 
 interface SellerDashboardContentProps {
@@ -56,6 +58,18 @@ const SellerDashboardContent = ({ currentTab }: SellerDashboardContentProps) => 
           <SellerTabsNavigation />
           <TabsContent value="add-product" className="space-y-6">
             <SellerAddProduct />
+          </TabsContent>
+        </Tabs>
+      } />
+      
+      <Route path="/shop-settings" element={
+        <Tabs value="shop-settings" className="space-y-6">
+          <SellerTabsNavigation />
+          <TabsContent value="shop-settings" className="space-y-6">
+            <div className="space-y-6">
+              <SellerPromotionsManager />
+              <SellerPoliciesManager />
+            </div>
           </TabsContent>
         </Tabs>
       } />

@@ -22,6 +22,7 @@ const SellerDashboard = () => {
     if (path.includes('/orders')) return 'orders';
     if (path.includes('/wallet')) return 'wallet';
     if (path.includes('/add-product')) return 'add-product';
+    if (path.includes('/shop-settings')) return 'shop-settings';
     return 'overview';
   };
 
