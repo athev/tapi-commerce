@@ -229,7 +229,7 @@ const ProductDetail = () => {
             </Badge>
             
             {/* Title - Larger & Bold */}
-            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight">
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight py-0">
               {product.title}
             </h1>
 
@@ -254,7 +254,7 @@ const ProductDetail = () => {
             </div>
 
             {/* Free Returns Section */}
-            <FreeReturnsSection className="my-0 py-0" />
+            <FreeReturnsSection className="py-[3px] my-[5px]" />
 
             {/* After Purchase UI for file_download */}
             {hasPurchased && product.product_type === 'file_download' ? <Card className="bg-success-bg border-success-text/20">
