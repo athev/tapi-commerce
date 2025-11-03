@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Menu, ShoppingCart, MessageCircle, LogOut, Settings, User, Bell, Package, Home, Search } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useUserRoles } from "@/hooks/useUserRoles";
@@ -20,6 +21,7 @@ import SearchBar from "./SearchBar";
 
 const EnhancedNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { data: roles } = useUserRoles();
@@ -57,8 +59,49 @@ const EnhancedNavbar = () => {
       <div className="bg-background border-b">
         <div className="container mx-auto px-2 sm:px-4">
           <div className="flex h-14 sm:h-16 md:h-20 items-center justify-between min-w-0">
-            {/* Left Side - Logo + Search Icon */}
+            {/* Left Side - Menu + Logo */}
             <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              {/* Mobile Menu */}
+              <Sheet open={isOpen} onOpenChange={setIsOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9">
+                    <Menu className="h-5 w-5" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[280px]">
+                  <nav className="flex flex-col gap-4 mt-8">
+                    <Link to="/" onClick={() => setIsOpen(false)} className="text-sm font-medium flex items-center gap-2">
+                      <Home className="h-4 w-4" />
+                      Trang chủ
+                    </Link>
+                    
+                    {user && (
+                      <>
+                        <Link to="/chat" onClick={() => setIsOpen(false)} className="text-sm font-medium flex items-center gap-2">
+                          <MessageCircle className="h-4 w-4" />
+                          <span>Tin nhắn</span>
+                          <span className="ml-auto bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] text-[10px] rounded-full h-5 w-5 flex items-center justify-center font-semibold">
+                            2
+                          </span>
+                        </Link>
+                        
+                        <Link to="/notifications" onClick={() => setIsOpen(false)} className="text-sm font-medium flex items-center gap-2">
+                          <Bell className="h-4 w-4" />
+                          <span>Thông báo</span>
+                          <span className="ml-auto h-2 w-2 bg-destructive rounded-full" />
+                        </Link>
+                      </>
+                    )}
+                    
+                    <Link to="/my-purchases" onClick={() => setIsOpen(false)} className="text-sm font-medium flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      Đơn hàng
+                    </Link>
+                  </nav>
+                </SheetContent>
+              </Sheet>
+              
+              {/* Logo */}
               <Link to="/" className="flex items-center gap-2">
                 <div className="h-8 w-8 md:h-10 md:w-10 rounded-lg bg-primary flex items-center justify-center">
                   <span className="text-primary-foreground font-bold text-sm md:text-lg">SP</span>
@@ -67,31 +110,24 @@ const EnhancedNavbar = () => {
                   Sàn Phẩm Số
                 </span>
               </Link>
-              
-              {/* Search Icon - Mobile visible, Desktop shows full search */}
-              <div className="md:hidden">
-                <Button variant="ghost" size="icon" className="h-9 w-9">
-                  <Search className="h-5 w-5" />
-                </Button>
-              </div>
-              
-              {/* Full Search Bar - Desktop only */}
-              <div className="hidden md:block md:w-[400px] lg:w-[500px] xl:w-[600px]">
-                <SearchBar />
-              </div>
             </div>
 
-            {/* Right Side Icons */}
+            {/* Right Side - Notifications + Search + Profile */}
             <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
               {user ? (
                 <>
-                  {/* Notifications - Always visible */}
-                  <div className="relative">
-                    <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-10 sm:w-10 md:h-12 md:w-12">
-                      <Bell className="h-5 w-5 md:h-6 md:w-6" />
-                      <span className="absolute top-0 right-0 h-2 w-2 bg-destructive rounded-full" />
-                    </Button>
-                  </div>
+                  {/* Notifications */}
+                  <NotificationDropdown />
+
+                  {/* Search */}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-9 w-9 sm:h-10 sm:w-10 md:h-12 md:w-12"
+                    onClick={() => setSearchOpen(true)}
+                  >
+                    <Search className="h-5 w-5 md:h-6 md:w-6" />
+                  </Button>
 
                   {/* User Menu */}
                   <DropdownMenu>
@@ -135,59 +171,43 @@ const EnhancedNavbar = () => {
                   </DropdownMenu>
                 </>
               ) : (
-                <div className="flex items-center gap-1 sm:gap-2">
-                  <Button variant="ghost" size="sm" className="h-8 px-2 sm:px-4 text-xs sm:text-sm" asChild>
-                    <Link to="/login">Đăng nhập</Link>
+                <>
+                  {/* Search for logged out users */}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-9 w-9 sm:h-10 sm:w-10 md:h-12 md:w-12"
+                    onClick={() => setSearchOpen(true)}
+                  >
+                    <Search className="h-5 w-5 md:h-6 md:w-6" />
                   </Button>
-                  <Button size="sm" className="h-8 px-2 sm:px-4 text-xs sm:text-sm" asChild>
-                    <Link to="/register">Đăng ký</Link>
-                  </Button>
-                </div>
+                  
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <Button variant="ghost" size="sm" className="h-8 px-2 sm:px-4 text-xs sm:text-sm" asChild>
+                      <Link to="/login">Đăng nhập</Link>
+                    </Button>
+                    <Button size="sm" className="h-8 px-2 sm:px-4 text-xs sm:text-sm" asChild>
+                      <Link to="/register">Đăng ký</Link>
+                    </Button>
+                  </div>
+                </>
               )}
-
-              {/* Mobile Menu */}
-              <Sheet open={isOpen} onOpenChange={setIsOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden h-9 w-9">
-                    <Menu className="h-5 w-5" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[280px]">
-                  <nav className="flex flex-col gap-4 mt-8">
-                    <Link to="/" onClick={() => setIsOpen(false)} className="text-sm font-medium flex items-center gap-2">
-                      <Home className="h-4 w-4" />
-                      Trang chủ
-                    </Link>
-                    
-                    {user && (
-                      <>
-                        <Link to="/chat" onClick={() => setIsOpen(false)} className="text-sm font-medium flex items-center gap-2">
-                          <MessageCircle className="h-4 w-4" />
-                          <span>Tin nhắn</span>
-                          <span className="ml-auto bg-[hsl(var(--success-bg))] text-[hsl(var(--success-text))] text-[10px] rounded-full h-5 w-5 flex items-center justify-center font-semibold">
-                            2
-                          </span>
-                        </Link>
-                        
-                        <Link to="/notifications" onClick={() => setIsOpen(false)} className="text-sm font-medium flex items-center gap-2">
-                          <Bell className="h-4 w-4" />
-                          <span>Thông báo</span>
-                          <span className="ml-auto h-2 w-2 bg-destructive rounded-full" />
-                        </Link>
-                      </>
-                    )}
-                    
-                    <Link to="/my-purchases" onClick={() => setIsOpen(false)} className="text-sm font-medium flex items-center gap-2">
-                      <Package className="h-4 w-4" />
-                      Đơn hàng
-                    </Link>
-                  </nav>
-                </SheetContent>
-              </Sheet>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Search Dialog */}
+      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Tìm kiếm sản phẩm</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <SearchBar />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Sub Navigation */}
       <div className="bg-background border-b hidden lg:block">
