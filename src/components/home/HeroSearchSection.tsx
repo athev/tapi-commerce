@@ -3,20 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 interface HeroSearchSectionProps {
   backgroundImage?: string;
   title?: string;
   subtitle?: string;
 }
-
 const HeroSearchSection = ({
   backgroundImage = "/lovable-uploads/bc39c71c-0a95-45a8-8b9c-550af21ab54a.png",
   title = "Tìm Sản Phẩm Số Hoàn Hảo",
@@ -26,10 +18,8 @@ const HeroSearchSection = ({
   const [category, setCategory] = useState("all");
   const [priceRange, setPriceRange] = useState("all");
   const navigate = useNavigate();
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    
     const params = new URLSearchParams();
     if (searchQuery.trim()) {
       params.set('q', searchQuery.trim());
@@ -40,17 +30,13 @@ const HeroSearchSection = ({
     if (priceRange !== 'all') {
       params.set('price', priceRange);
     }
-    
     navigate(`/search?${params.toString()}`);
   };
-
-  return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+  return <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/5">
       {/* Background with overlay */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center opacity-10"
-        style={{ backgroundImage: `url(${backgroundImage})` }}
-      />
+      <div className="absolute inset-0 bg-cover bg-center opacity-10" style={{
+      backgroundImage: `url(${backgroundImage})`
+    }} />
       <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
       
       {/* Content */}
@@ -69,13 +55,7 @@ const HeroSearchSection = ({
             {/* Main Search Input */}
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Tìm kiếm sản phẩm, khóa học, dịch vụ..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-14 pl-12 pr-4 text-base bg-background/80 backdrop-blur-sm border-2 border-border focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/20 rounded-xl shadow-lg"
-              />
+              <Input type="text" placeholder="Tìm kiếm sản phẩm, khóa học, dịch vụ..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="h-14 pl-12 pr-4 text-base bg-background/80 backdrop-blur-sm border-2 border-border focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/20 rounded-xl shadow-lg px-[11px]" />
             </div>
 
             {/* Filters Row */}
@@ -110,11 +90,7 @@ const HeroSearchSection = ({
               </Select>
 
               {/* Search Button */}
-              <Button 
-                type="submit"
-                size="lg"
-                className="h-12 px-8 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg hover:shadow-xl transition-all font-semibold sm:min-w-[140px]"
-              >
+              <Button type="submit" size="lg" className="h-12 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl shadow-lg hover:shadow-xl transition-all font-semibold sm:min-w-[140px] px-[28px]">
                 <Search className="h-5 w-5 mr-2" />
                 Tìm kiếm
               </Button>
@@ -124,23 +100,15 @@ const HeroSearchSection = ({
           {/* Popular Keywords */}
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
             <span className="text-sm text-muted-foreground">Phổ biến:</span>
-            {['Canva Pro', 'ChatGPT', 'Netflix', 'Spotify', 'Notion'].map((keyword) => (
-              <button
-                key={keyword}
-                onClick={() => {
-                  setSearchQuery(keyword);
-                  navigate(`/search?q=${encodeURIComponent(keyword)}`);
-                }}
-                className="px-3 py-1 text-xs bg-muted/80 hover:bg-muted border border-border rounded-full transition-colors"
-              >
+            {['Canva Pro', 'ChatGPT', 'Netflix', 'Spotify', 'Notion'].map(keyword => <button key={keyword} onClick={() => {
+            setSearchQuery(keyword);
+            navigate(`/search?q=${encodeURIComponent(keyword)}`);
+          }} className="px-3 py-1 text-xs bg-muted/80 hover:bg-muted border border-border rounded-full transition-colors">
                 {keyword}
-              </button>
-            ))}
+              </button>)}
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default HeroSearchSection;

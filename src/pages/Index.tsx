@@ -10,14 +10,11 @@ import SellerCTA from "@/components/home/SellerCTA";
 import ProductToolbar, { SortOption, ViewMode } from "@/components/products/ProductToolbar";
 import FilterPanel from "@/components/products/FilterPanel";
 import { QuickHelpSection } from "@/components/home/QuickHelpSection";
-
 const Index = () => {
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [filters, setFilters] = useState<any>(null);
-
-  return (
-    <div className="flex flex-col min-h-screen bg-background pb-16 lg:pb-0">
+  return <div className="flex flex-col min-h-screen bg-background pb-16 lg:pb-0">
       <EnhancedNavbar />
       
       <main className="flex-1">
@@ -30,18 +27,8 @@ const Index = () => {
         {/* Flash Sale Section */}
         <section className="mb-4 md:mb-6">
           <div className="container mx-auto px-2 md:px-4">
-            <div className="flex items-center justify-between mb-3 md:mb-6">
-              <div>
-                <h2 className="text-xl md:text-2xl lg:text-3xl font-bold flex items-center gap-2">
-                  <span className="text-2xl md:text-3xl">⚡</span>
-                  Flash Sale Hôm Nay
-                </h2>
-                <p className="text-xs md:text-sm text-muted-foreground mt-0.5 md:mt-1">
-                  Săn deal hot - Số lượng có hạn!
-                </p>
-              </div>
-            </div>
-            <FlashSaleSection />
+            
+            <FlashSaleSection className="bg-sky-50" />
           </div>
         </section>
         
@@ -68,17 +55,10 @@ const Index = () => {
                   </p>
                 </div>
 
-                <ProductToolbar
-                  sortBy={sortBy}
-                  onSortChange={setSortBy}
-                  viewMode={viewMode}
-                  onViewModeChange={setViewMode}
-                  onFilterChange={setFilters}
-                  totalProducts={0}
-                />
+                <ProductToolbar sortBy={sortBy} onSortChange={setSortBy} viewMode={viewMode} onViewModeChange={setViewMode} onFilterChange={setFilters} totalProducts={0} className="px-[6px] mx-0" />
 
                 <div className="mt-3 md:mt-6">
-                  <ProductGrid />
+                  <ProductGrid className="px-[4px]" />
                 </div>
               </div>
             </div>
@@ -92,8 +72,6 @@ const Index = () => {
       
       <Footer />
       <MobileBottomNav />
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
