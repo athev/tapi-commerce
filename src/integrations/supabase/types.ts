@@ -583,7 +583,9 @@ export type Database = {
       }
       products: {
         Row: {
+          average_rating: number | null
           category: string
+          complaint_rate: number | null
           created_at: string
           delivery_data: Json | null
           description: string | null
@@ -597,6 +599,7 @@ export type Database = {
           price: number
           product_type: string | null
           purchases: number | null
+          review_count: number | null
           seller_id: string
           seller_name: string
           slug: string | null
@@ -604,7 +607,9 @@ export type Database = {
           title: string
         }
         Insert: {
+          average_rating?: number | null
           category: string
+          complaint_rate?: number | null
           created_at?: string
           delivery_data?: Json | null
           description?: string | null
@@ -618,6 +623,7 @@ export type Database = {
           price: number
           product_type?: string | null
           purchases?: number | null
+          review_count?: number | null
           seller_id: string
           seller_name: string
           slug?: string | null
@@ -625,7 +631,9 @@ export type Database = {
           title: string
         }
         Update: {
+          average_rating?: number | null
           category?: string
+          complaint_rate?: number | null
           created_at?: string
           delivery_data?: Json | null
           description?: string | null
@@ -639,6 +647,7 @@ export type Database = {
           price?: number
           product_type?: string | null
           purchases?: number | null
+          review_count?: number | null
           seller_id?: string
           seller_name?: string
           slug?: string | null
@@ -653,21 +662,36 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_online: boolean | null
+          response_rate: number | null
+          response_time: string | null
           role: string
+          seller_rating: number | null
+          total_products: number | null
         }
         Insert: {
           created_at?: string
           email: string
           full_name: string
           id: string
+          is_online?: boolean | null
+          response_rate?: number | null
+          response_time?: string | null
           role?: string
+          seller_rating?: number | null
+          total_products?: number | null
         }
         Update: {
           created_at?: string
           email?: string
           full_name?: string
           id?: string
+          is_online?: boolean | null
+          response_rate?: number | null
+          response_time?: string | null
           role?: string
+          seller_rating?: number | null
+          total_products?: number | null
         }
         Relationships: []
       }

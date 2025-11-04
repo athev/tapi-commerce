@@ -22,6 +22,7 @@ import ProductPurchaseForm from '@/components/products/ProductPurchaseForm';
 import StickyBottomButton from '@/components/products/StickyBottomButton';
 import { PromotionalBanner } from '@/components/products/PromotionalBanner';
 import { FreeReturnsSection } from '@/components/products/FreeReturnsSection';
+import { LoginIncentiveBanner } from '@/components/products/LoginIncentiveBanner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { mockProducts } from '@/lib/supabase';
@@ -233,24 +234,35 @@ const ProductDetail = () => {
               {product.title}
             </h1>
 
-            {/* Enhanced Rating & Sold - Chiaki Style */}
+            {/* Enhanced Rating & Sold - Marketplace Style */}
             <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-yellow-50 rounded-xl border border-yellow-200">
               <div className="flex items-center gap-2">
                 <div className="flex">
                   {Array(5).fill(0).map((_, i) => <Star key={i} className="h-4 w-4 sm:h-5 sm:w-5 fill-yellow-400 text-yellow-400" />)}
                 </div>
-                <span className="text-xl sm:text-2xl font-bold text-yellow-700">5.0</span>
+                <span className="text-xl sm:text-2xl font-bold text-yellow-700">{product.average_rating || 5.0}</span>
               </div>
               <Separator orientation="vertical" className="h-6 sm:h-8 bg-yellow-300" />
               <div>
                 <p className="text-xs sm:text-sm text-muted-foreground">Đánh giá</p>
-                <p className="text-base sm:text-lg font-bold">(124)</p>
+                <p className="text-base sm:text-lg font-bold">({product.review_count || 124})</p>
               </div>
               <Separator orientation="vertical" className="h-6 sm:h-8 bg-yellow-300" />
               <div>
                 <p className="text-xs sm:text-sm text-muted-foreground">Đã bán</p>
                 <p className="text-base sm:text-lg font-bold">{product.purchases || 0}+</p>
               </div>
+              {product.complaint_rate !== undefined && (
+                <>
+                  <Separator orientation="vertical" className="h-6 sm:h-8 bg-yellow-300" />
+                  <div>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Khiếu nại</p>
+                    <p className={`text-base sm:text-lg font-bold ${product.complaint_rate < 1 ? 'text-green-600' : product.complaint_rate < 3 ? 'text-yellow-600' : 'text-red-600'}`}>
+                      {product.complaint_rate.toFixed(1)}%
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Free Returns Section */}
@@ -300,6 +312,11 @@ const ProductDetail = () => {
                 </div>
               </>}
           </div>
+        </div>
+
+        {/* Login Incentive Banner */}
+        <div className="mb-6 sm:mb-8">
+          <LoginIncentiveBanner isLoggedIn={!!user} hasPurchased={hasPurchased} />
         </div>
 
         {/* Promotional Banner */}
