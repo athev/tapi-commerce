@@ -4,10 +4,16 @@ import { Badge } from "@/components/ui/badge";
 interface ProductImageGalleryProps {
   images: string[];
   title?: string;
+  promotions?: {
+    hasVoucher?: boolean;
+    discount50k?: boolean;
+    discount20Percent?: boolean;
+  };
 }
 const ProductImageGallery = ({
   images,
-  title
+  title,
+  promotions
 }: ProductImageGalleryProps) => {
   const [selectedImage, setSelectedImage] = useState(0);
   if (!images || images.length === 0) {
@@ -27,10 +33,27 @@ const ProductImageGallery = ({
             <img src={images[selectedImage] || '/placeholder.svg'} alt={title || 'Product image'} className="w-full h-full object-cover" />
             
             {/* FOMO Badges */}
-            <div className="absolute top-3 left-3 flex flex-col gap-2">
-              <Badge className="bg-red-500/90 text-white backdrop-blur-sm shadow-lg">
+            <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+              <Badge className="bg-red-500/90 text-white backdrop-blur-sm shadow-lg text-[10px] px-2 py-0.5">
                 🔥 HOT
               </Badge>
+              
+              {/* Promotional badges */}
+              {promotions?.hasVoucher && (
+                <Badge className="bg-orange-500/90 text-white backdrop-blur-sm shadow-lg text-[10px] px-2 py-0.5">
+                  Mã giảm giá
+                </Badge>
+              )}
+              {promotions?.discount50k && (
+                <Badge className="bg-red-600/90 text-white backdrop-blur-sm shadow-lg text-[10px] px-2 py-0.5">
+                  Giảm 50.000đ
+                </Badge>
+              )}
+              {promotions?.discount20Percent && (
+                <Badge className="bg-green-600/90 text-white backdrop-blur-sm shadow-lg text-[10px] px-2 py-0.5">
+                  Giảm 20%
+                </Badge>
+              )}
             </div>
             
             <div className="absolute bottom-3 right-3">

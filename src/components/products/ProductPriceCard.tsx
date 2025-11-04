@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/utils/orderUtils";
-import { Download, Users, User, Key, FileText, Heart, ShoppingBag } from "lucide-react";
+import { Heart } from "lucide-react";
 interface ProductVariant {
   id: string;
   variant_name: string;
@@ -66,42 +66,7 @@ const ProductPriceCard = ({
       onPriceChange(variant.price, variantId, variant.variant_name);
     }
   };
-  const getProductTypeInfo = (type: string) => {
-    const typeInfo = {
-      file_download: {
-        icon: Download,
-        label: 'File tải về'
-      },
-      shared_account: {
-        icon: Users,
-        label: 'Tài khoản dùng chung'
-      },
-      upgrade_account_no_pass: {
-        icon: User,
-        label: 'Nâng cấp tài khoản'
-      },
-      upgrade_account_with_pass: {
-        icon: FileText,
-        label: 'Nâng cấp tài khoản'
-      },
-      license_key_delivery: {
-        icon: Key,
-        label: 'Mã kích hoạt'
-      }
-    };
-    return typeInfo[type as keyof typeof typeInfo] || typeInfo.file_download;
-  };
-  const productTypeInfo = getProductTypeInfo(product?.product_type || 'file_download');
-  const TypeIcon = productTypeInfo.icon;
   return <div className="space-y-2">
-      {/* Product Type Badge */}
-      <div className="flex items-center gap-1">
-        <TypeIcon className="h-4 w-4 text-primary" />
-        <Badge variant="secondary" className="text-xs">
-          {productTypeInfo.label}
-        </Badge>
-      </div>
-
       {/* Price Row with Favorite */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-baseline gap-2 flex-wrap mx-0 px-0">
@@ -120,19 +85,6 @@ const ProductPriceCard = ({
         <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
           <Heart className="h-5 w-5" />
         </Button>
-      </div>
-
-      {/* Promotional Tags */}
-      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
-        <Badge className="bg-orange-100 text-orange-700 border border-orange-200 hover:bg-orange-100 text-[11px] px-2 py-0.5 whitespace-nowrap">
-          Mã giảm giá
-        </Badge>
-        <Badge className="bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 text-[11px] px-2 py-0.5 whitespace-nowrap">
-          Giảm 50.000đ
-        </Badge>
-        <Badge className="bg-green-100 text-green-700 border border-green-200 hover:bg-green-100 text-[11px] px-2 py-0.5 whitespace-nowrap">
-          Giảm 20%
-        </Badge>
       </div>
 
       {product?.in_stock && product.in_stock > 0 && <p className="text-xs text-muted-foreground">

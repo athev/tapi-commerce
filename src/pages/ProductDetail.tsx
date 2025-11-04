@@ -216,17 +216,39 @@ const ProductDetail = () => {
           {/* Left: Images */}
           <div className="space-y-3 sm:space-y-4 min-w-0">
             <div className="w-full">
-              <ProductImageGallery images={[product.image || '/placeholder.svg']} />
+              <ProductImageGallery 
+                images={[product.image || '/placeholder.svg']} 
+                title={product.title}
+                promotions={{
+                  hasVoucher: true,
+                  discount50k: true,
+                  discount20Percent: true
+                }}
+              />
             </div>
             
           </div>
 
           {/* Right: Product Info */}
           <div className="space-y-3 min-w-0">
-            {/* Title - Larger & Bold */}
-            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight">
-              {product.title}
-            </h1>
+            {/* Title with Product Type Badge */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant="secondary" className="text-[11px] px-2 py-0.5 shrink-0">
+                {(() => {
+                  const labels = {
+                    file_download: 'File tải về',
+                    shared_account: 'Tài khoản dùng chung',
+                    upgrade_account_no_pass: 'Nâng cấp tài khoản',
+                    upgrade_account_with_pass: 'Nâng cấp tài khoản',
+                    license_key_delivery: 'Mã kích hoạt'
+                  };
+                  return labels[product.product_type as keyof typeof labels] || 'File tải về';
+                })()}
+              </Badge>
+              <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight">
+                {product.title}
+              </h1>
+            </div>
 
             {/* Compact Rating Row */}
             <div className="flex items-center gap-2 text-xs border-b pb-1.5">
