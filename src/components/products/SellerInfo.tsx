@@ -1,11 +1,9 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Star, Shield, Store, Clock, TrendingUp, CheckCircle } from "lucide-react";
 import ChatButton from "@/components/chat/ChatButton";
 import { cn } from "@/lib/utils";
-
 interface SellerInfoProps {
   sellerId: string;
   sellerName: string;
@@ -20,11 +18,10 @@ interface SellerInfoProps {
   responseRate?: number;
   totalProducts?: number;
 }
-
-const SellerInfo = ({ 
-  sellerId, 
-  sellerName, 
-  sellerRating = 4.8, 
+const SellerInfo = ({
+  sellerId,
+  sellerName,
+  sellerRating = 4.8,
   totalSales = 1250,
   joinDate = "2022-03-15",
   responseTime = "< 1 giờ",
@@ -35,7 +32,6 @@ const SellerInfo = ({
   responseRate = 98,
   totalProducts = 50
 }: SellerInfoProps) => {
-  
   const formatJoinDate = (dateString: string) => {
     const date = new Date(dateString);
     const month = date.getMonth() + 1;
@@ -52,40 +48,31 @@ const SellerInfo = ({
     price: 0,
     image: undefined
   };
-
   const getResponseRateColor = (rate: number) => {
     if (rate >= 90) return "text-green-600";
     if (rate >= 80) return "text-yellow-600";
     return "text-red-600";
   };
-
-  return (
-    <div className="space-y-4">
+  return <div className="space-y-4">
       {/* Seller Basic Info with Online Status */}
       <div className="flex items-center space-x-3 pb-3 border-b">
         <div className="relative">
           <div className="w-12 h-12 sm:w-14 sm:h-14 bg-primary rounded-full flex items-center justify-center text-white font-semibold text-lg sm:text-xl">
             {sellerName.charAt(0).toUpperCase()}
           </div>
-          {isOnline && (
-            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse" />
-          )}
+          {isOnline && <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse" />}
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
             <h3 className="font-bold text-base sm:text-lg truncate">{sellerName}</h3>
-            {isOnline && (
-              <Badge className="bg-green-500/10 text-green-700 border-green-200 text-[10px] px-1.5 py-0.5">
+            {isOnline && <Badge className="bg-green-500/10 text-green-700 border-green-200 text-[10px] px-1.5 py-0.5">
                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 animate-pulse" />
                 Online
-              </Badge>
-            )}
-            {verified && (
-              <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] px-1.5 py-0.5 flex items-center gap-1">
+              </Badge>}
+            {verified && <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] px-1.5 py-0.5 flex items-center gap-1">
                 <CheckCircle className="h-3 w-3" />
                 Đã xác thực
-              </Badge>
-            )}
+              </Badge>}
           </div>
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
             <div className="flex items-center">
@@ -131,15 +118,9 @@ const SellerInfo = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-2 pt-2">
-        {productId && (
-          <ChatButton
-            product={product}
-            variant="outline"
-            className="flex-1 h-10"
-          />
-        )}
-        <Button variant="outline" className="flex-1 h-10">
+      <div className="flex gap-2 pt-2 px-0 mx-0 py-[6px]">
+        {productId && <ChatButton product={product} variant="outline" className="flex-1 h-10" />}
+        <Button variant="outline" className="flex-1 h-10 py-0 text-sm px-0">
           <Store className="h-4 w-4 mr-2" />
           Xem cửa hàng
         </Button>
@@ -160,8 +141,6 @@ const SellerInfo = ({
           <span>Giao hàng ngay sau thanh toán</span>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default SellerInfo;
