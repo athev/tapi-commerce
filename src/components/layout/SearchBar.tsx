@@ -99,8 +99,8 @@ const SearchBar = ({ onSearchComplete }: SearchBarProps = {}) => {
     setSearchHistory(newHistory);
     localStorage.setItem("searchHistory", JSON.stringify(newHistory));
 
-    // Navigate - keep search term in input
-    navigate(`/?search=${encodeURIComponent(term.trim())}`);
+    // Navigate to search page
+    navigate(`/search?q=${encodeURIComponent(term.trim())}`);
     setShowSuggestions(false);
     inputRef.current?.blur();
     

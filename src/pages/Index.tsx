@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import EnhancedNavbar from "@/components/layout/EnhancedNavbar";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import Footer from "@/components/layout/Footer";
-import HeroCarousel from "@/components/home/HeroCarousel";
+import HeroSearchSection from "@/components/home/HeroSearchSection";
 import CategoryScroller from "@/components/home/CategoryScroller";
 import FlashSaleSection from "@/components/home/FlashSaleSection";
 import ProductGrid from "@/components/products/ProductGrid";
@@ -16,18 +15,13 @@ const Index = () => {
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [filters, setFilters] = useState<any>(null);
-  
-  // Use useSearchParams for reactive URL changes
-  const [searchParams] = useSearchParams();
-  const effectiveSearchTerm = searchParams.get('search') || '';
-  const effectiveCategory = searchParams.get('category') || 'all';
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-16 lg:pb-0">
       <EnhancedNavbar />
       
       <main className="flex-1">
-        <HeroCarousel />
+        <HeroSearchSection />
         <div className="h-4 md:h-6" />
 
         <CategoryScroller />
@@ -84,10 +78,7 @@ const Index = () => {
                 />
 
                 <div className="mt-3 md:mt-6">
-                  <ProductGrid 
-                    searchTerm={effectiveSearchTerm}
-                    category={effectiveCategory}
-                  />
+                  <ProductGrid />
                 </div>
               </div>
             </div>
