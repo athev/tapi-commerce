@@ -141,7 +141,7 @@ const SearchBar = ({ onSearchComplete }: SearchBarProps = {}) => {
 
       {/* Suggestions Dropdown */}
       {showSuggestions && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-lg shadow-xl overflow-hidden z-50 max-h-[80vh] overflow-y-auto">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-lg shadow-xl overflow-hidden z-[100] max-h-[80vh] overflow-y-auto">
           {/* Search History */}
           {searchHistory.length > 0 && (
             <div className="p-4 border-b border-border bg-card">
