@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Menu, ShoppingCart, MessageCircle, LogOut, Settings, User, Bell, Package, Home, Search } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useUserRoles } from "@/hooks/useUserRoles";
@@ -21,6 +21,7 @@ import SearchBar from "./SearchBar";
 
 const EnhancedNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const { data: roles } = useUserRoles();
@@ -111,17 +112,27 @@ const EnhancedNavbar = () => {
               </Link>
             </div>
 
-            {/* Center - Search Bar (All devices) */}
-            <div className="flex flex-1 max-w-2xl mx-2 md:mx-4">
+            {/* Center - Search Bar (Desktop only) */}
+            <div className="hidden md:flex flex-1 max-w-2xl mx-4">
               <SearchBar />
             </div>
 
-            {/* Right Side - Notifications + Profile */}
+            {/* Right Side - Notifications + Search (Mobile) + Profile */}
             <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
               {user ? (
                 <>
                   {/* Notifications */}
                   <NotificationDropdown />
+
+                  {/* Mobile Search Button - only show on mobile */}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-9 w-9 sm:h-10 sm:w-10 md:hidden"
+                    onClick={() => setSearchOpen(true)}
+                  >
+                    <Search className="h-5 w-5" />
+                  </Button>
 
                   {/* User Menu */}
                   <DropdownMenu>
@@ -166,6 +177,16 @@ const EnhancedNavbar = () => {
                 </>
               ) : (
                 <>
+                  {/* Mobile Search Button for logged out users */}
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-9 w-9 sm:h-10 sm:w-10 md:hidden"
+                    onClick={() => setSearchOpen(true)}
+                  >
+                    <Search className="h-5 w-5" />
+                  </Button>
+                  
                   <div className="flex items-center gap-1 sm:gap-2">
                     <Button variant="ghost" size="sm" className="h-8 px-2 sm:px-4 text-xs sm:text-sm" asChild>
                       <Link to="/login">Đăng nhập</Link>
@@ -180,6 +201,18 @@ const EnhancedNavbar = () => {
           </div>
         </div>
       </div>
+
+      {/* Search Dialog */}
+      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Tìm kiếm sản phẩm</DialogTitle>
+          </DialogHeader>
+          <div className="mt-4">
+            <SearchBar />
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Sub Navigation */}
       <div className="bg-background border-b hidden lg:block">
