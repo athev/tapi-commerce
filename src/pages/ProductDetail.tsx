@@ -229,10 +229,10 @@ const ProductDetail = () => {
             </h1>
 
             {/* Compact Rating Row */}
-            <div className="flex items-center gap-2 text-sm border-b pb-2">
+            <div className="flex items-center gap-2 text-xs border-b pb-1.5">
               <div className="flex">
                 {Array(5).fill(0).map((_, i) => (
-                  <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                  <Star key={i} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
                 ))}
               </div>
               <span className="font-semibold">{product.average_rating || 5.0}</span>
@@ -280,12 +280,12 @@ const ProductDetail = () => {
               </Card> : <>
                 {/* Price Card - Enhanced */}
                 <Card>
-                  <CardContent className="p-4">
+                  <CardContent className="p-3">
                     <ProductPriceCard product={product} onPriceChange={handlePriceChange} />
                     
                     {/* Subtle FOMO text */}
                     {product.in_stock < 20 && (
-                      <p className="text-xs text-orange-600 flex items-center gap-1 mt-2">
+                      <p className="text-xs text-orange-600 flex items-center gap-1 mt-1">
                         🔥 Chỉ còn {product.in_stock} sản phẩm • 12 người đang xem
                       </p>
                     )}

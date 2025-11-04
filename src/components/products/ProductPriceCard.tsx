@@ -93,80 +93,76 @@ const ProductPriceCard = ({
   };
   const productTypeInfo = getProductTypeInfo(product?.product_type || 'file_download');
   const TypeIcon = productTypeInfo.icon;
-  return <div className="space-y-4">
+  return <div className="space-y-2">
       {/* Product Type Badge */}
-      <div className="flex items-center gap-2">
-        <TypeIcon className="h-5 w-5 text-primary" />
-        <Badge variant="secondary" className="text-sm">
+      <div className="flex items-center gap-1">
+        <TypeIcon className="h-4 w-4 text-primary" />
+        <Badge variant="secondary" className="text-xs">
           {productTypeInfo.label}
         </Badge>
       </div>
 
       {/* Price Row with Favorite */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-baseline gap-3 flex-wrap mx-0 px-0">
-          <span className="sm:text-4xl md:text-5xl font-extrabold text-destructive text-2xl">
+        <div className="flex items-baseline gap-2 flex-wrap mx-0 px-0">
+          <span className="text-2xl sm:text-3xl font-extrabold text-destructive">
             {formatPrice(currentPrice)}
           </span>
           {originalPrice && originalPrice > currentPrice && <>
-              <span className="sm:text-xl text-muted-foreground line-through text-sm">
+              <span className="text-base text-muted-foreground line-through">
                 {formatPrice(originalPrice)}
               </span>
-              {discountPercentage && <Badge variant="destructive" className="text-sm sm:text-base px-2 py-1">
+              {discountPercentage && <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
                   -{discountPercentage}%
                 </Badge>}
             </>}
         </div>
-        <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0">
-          <Heart className="h-6 w-6" />
+        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+          <Heart className="h-5 w-5" />
         </Button>
       </div>
 
-      {/* Sold Count */}
-      
-
       {/* Promotional Tags */}
-      <div className="flex flex-wrap gap-2">
-        <Badge className="bg-orange-100 text-orange-700 border border-orange-200 hover:bg-orange-100">
+      <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+        <Badge className="bg-orange-100 text-orange-700 border border-orange-200 hover:bg-orange-100 text-[11px] px-2 py-0.5 whitespace-nowrap">
           Mã giảm giá
         </Badge>
-        <Badge className="bg-red-100 text-red-700 border border-red-200 hover:bg-red-100">
+        <Badge className="bg-red-100 text-red-700 border border-red-200 hover:bg-red-100 text-[11px] px-2 py-0.5 whitespace-nowrap">
           Giảm 50.000đ
         </Badge>
-        
-        <Badge className="bg-green-100 text-green-700 border border-green-200 hover:bg-green-100">
+        <Badge className="bg-green-100 text-green-700 border border-green-200 hover:bg-green-100 text-[11px] px-2 py-0.5 whitespace-nowrap">
           Giảm 20%
         </Badge>
       </div>
 
-      {product?.in_stock && product.in_stock > 0 && <p className="text-sm text-muted-foreground">
+      {product?.in_stock && product.in_stock > 0 && <p className="text-xs text-muted-foreground">
           Còn lại: <span className="font-semibold text-foreground">{product.in_stock}</span> sản phẩm
         </p>}
 
       {/* Variants Selector - Only if variants exist */}
       {variants.length > 0 && <Card>
-          <CardContent className="p-4">
-            <Label className="text-sm font-medium mb-3 block">
+          <CardContent className="p-3">
+            <Label className="text-xs font-medium mb-2 block">
               Chọn gói sản phẩm
             </Label>
             
             <RadioGroup value={selectedVariantId || ''} onValueChange={handleVariantChange}>
-              <div className="space-y-2">
-                {variants.map(variant => <label key={variant.id} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:border-primary transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                    <div className="flex items-center gap-3">
+              <div className="space-y-1.5">
+                {variants.map(variant => <label key={variant.id} className="flex items-center justify-between p-2 border rounded-lg cursor-pointer hover:border-primary transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                    <div className="flex items-center gap-2">
                       <RadioGroupItem value={variant.id} />
                       <div>
-                        <p className="font-medium">{variant.variant_name}</p>
-                        {variant.badge && <Badge variant="secondary" className="text-xs mt-1">
+                        <p className="font-medium text-sm">{variant.variant_name}</p>
+                        {variant.badge && <Badge variant="secondary" className="text-[10px] mt-0.5">
                             {variant.badge}
                           </Badge>}
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-lg font-bold text-destructive">
+                      <p className="text-base font-bold text-destructive">
                         {formatPrice(variant.price)}
                       </p>
-                      {variant.original_price && variant.original_price > variant.price && <p className="text-xs line-through text-muted-foreground">
+                      {variant.original_price && variant.original_price > variant.price && <p className="text-[10px] line-through text-muted-foreground">
                           {formatPrice(variant.original_price)}
                         </p>}
                     </div>
