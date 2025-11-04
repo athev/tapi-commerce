@@ -60,108 +60,107 @@ const SellerInfo = ({
   };
 
   return (
-    <Card>
-      <CardHeader className="p-4 pb-3">
-        <CardTitle className="flex items-center space-x-2 text-base sm:text-lg">
-          <Store className="h-4 w-4 sm:h-5 sm:w-5" />
-          <span>Thông tin người bán</span>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pt-0 space-y-3">
-        {/* Seller Basic Info with Online Status */}
-        <div className="flex items-center space-x-3">
-          <div className="relative">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-marketplace-primary rounded-full flex items-center justify-center text-white font-semibold text-sm sm:text-lg">
-              {sellerName.charAt(0).toUpperCase()}
-            </div>
+    <div className="space-y-4">
+      {/* Seller Basic Info with Online Status */}
+      <div className="flex items-center space-x-3 pb-3 border-b">
+        <div className="relative">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-primary rounded-full flex items-center justify-center text-white font-semibold text-lg sm:text-xl">
+            {sellerName.charAt(0).toUpperCase()}
+          </div>
+          {isOnline && (
+            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-green-500 rounded-full border-2 border-white animate-pulse" />
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
+            <h3 className="font-bold text-base sm:text-lg truncate">{sellerName}</h3>
             {isOnline && (
-              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-green-500 rounded-full border-2 border-white animate-pulse" />
+              <Badge className="bg-green-500/10 text-green-700 border-green-200 text-[10px] px-1.5 py-0.5">
+                <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 animate-pulse" />
+                Online
+              </Badge>
+            )}
+            {verified && (
+              <Badge className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] px-1.5 py-0.5 flex items-center gap-1">
+                <CheckCircle className="h-3 w-3" />
+                Đã xác thực
+              </Badge>
             )}
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-              <h3 className="font-semibold text-sm sm:text-base truncate">{sellerName}</h3>
-              {isOnline && (
-                <Badge className="bg-green-500/10 text-green-700 border-green-200 text-[10px] px-1.5 py-0.5">
-                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1 animate-pulse" />
-                  Online
-                </Badge>
-              )}
-              {verified && (
-                <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[10px] px-1.5 py-0.5 flex items-center gap-1">
-                  <Shield className="h-2.5 w-2.5" />
-                  Đã xác thực
-                </Badge>
-              )}
+          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+            <div className="flex items-center">
+              <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
+              <span className="font-semibold text-foreground">{sellerRating}</span>
             </div>
-            <div className="flex items-center space-x-2 text-xs sm:text-sm text-gray-600">
-              <div className="flex items-center">
-                <Star className="h-3 w-3 sm:h-4 sm:w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                <span className="font-semibold">{sellerRating}</span>
-              </div>
-              <span>•</span>
-              <span>{totalSales.toLocaleString()} đã bán</span>
-            </div>
+            <span>|</span>
+            <span>{totalSales.toLocaleString()} đã bán</span>
           </div>
         </div>
+      </div>
 
-        {/* Enhanced Seller Stats Grid */}
-        <div className="grid grid-cols-2 gap-2 p-2.5 bg-gray-50 rounded-lg">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <TrendingUp className="h-3 w-3" />
-              <span>Sản phẩm</span>
-            </div>
-            <p className="text-sm font-semibold">{totalProducts}+</p>
+      {/* Stats Section - Vertical List */}
+      <div className="space-y-2">
+        <h4 className="text-xs font-bold text-muted-foreground uppercase flex items-center gap-1">
+          <TrendingUp className="h-3 w-3" />
+          Thống kê người bán
+        </h4>
+        
+        <div className="space-y-2 text-sm">
+          <div className="flex items-center justify-between py-1.5">
+            <span className="text-muted-foreground">Sản phẩm:</span>
+            <span className="font-semibold">{totalProducts}+</span>
           </div>
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <CheckCircle className="h-3 w-3" />
-              <span>Tỷ lệ phản hồi</span>
-            </div>
-            <p className={cn("text-sm font-semibold", getResponseRateColor(responseRate))}>
-              {responseRate}%
-            </p>
+          
+          <div className="flex items-center justify-between py-1.5">
+            <span className="text-muted-foreground">Tỷ lệ phản hồi:</span>
+            <span className={cn("font-semibold flex items-center gap-1", getResponseRateColor(responseRate))}>
+              {responseRate}% {responseRate >= 90 && <CheckCircle className="h-3.5 w-3.5" />}
+            </span>
           </div>
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <Clock className="h-3 w-3" />
-              <span>Thời gian phản hồi</span>
-            </div>
-            <p className="text-sm font-semibold">{responseTime}</p>
+          
+          <div className="flex items-center justify-between py-1.5">
+            <span className="text-muted-foreground">T.gian phản hồi:</span>
+            <span className="font-semibold">{responseTime}</span>
           </div>
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <Star className="h-3 w-3" />
-              <span>Tham gia</span>
-            </div>
-            <p className="text-sm font-semibold">{formatJoinDate(joinDate)}</p>
+          
+          <div className="flex items-center justify-between py-1.5">
+            <span className="text-muted-foreground">Tham gia:</span>
+            <span className="font-semibold">{formatJoinDate(joinDate)}</span>
           </div>
         </div>
+      </div>
 
-        {/* Action Buttons - Compact */}
-        <div className="flex gap-2">
-          {productId && (
-            <ChatButton
-              product={product}
-              variant="outline"
-              className="flex-1 h-9 text-xs sm:text-sm"
-            />
-          )}
-          <Button variant="outline" className="flex-1 h-9 text-xs sm:text-sm">
-            <Store className="h-4 w-4 mr-1" />
-            <span className="truncate">Cửa hàng</span>
-          </Button>
-        </div>
+      {/* Action Buttons */}
+      <div className="flex gap-2 pt-2">
+        {productId && (
+          <ChatButton
+            product={product}
+            variant="outline"
+            className="flex-1 h-10"
+          />
+        )}
+        <Button variant="outline" className="flex-1 h-10">
+          <Store className="h-4 w-4 mr-2" />
+          Xem cửa hàng
+        </Button>
+      </div>
 
-        {/* Seller Policies - Hidden on mobile */}
-        <div className="text-xs text-gray-500 space-y-1 hidden sm:block">
-          <p>• Hỗ trợ 24/7 qua chat</p>
-          <p>• Đảm bảo hoàn tiền nếu sản phẩm lỗi</p>
-          <p>• Giao hàng ngay sau khi thanh toán</p>
+      {/* Seller Policies */}
+      <div className="space-y-1.5 pt-3 border-t">
+        <div className="flex items-start gap-2 text-xs text-muted-foreground">
+          <CheckCircle className="h-3.5 w-3.5 text-green-600 mt-0.5 flex-shrink-0" />
+          <span>Hỗ trợ 24/7 qua chat</span>
         </div>
-      </CardContent>
-    </Card>
+        <div className="flex items-start gap-2 text-xs text-muted-foreground">
+          <CheckCircle className="h-3.5 w-3.5 text-green-600 mt-0.5 flex-shrink-0" />
+          <span>Hoàn tiền nếu sản phẩm lỗi</span>
+        </div>
+        <div className="flex items-start gap-2 text-xs text-muted-foreground">
+          <CheckCircle className="h-3.5 w-3.5 text-green-600 mt-0.5 flex-shrink-0" />
+          <span>Giao hàng ngay sau thanh toán</span>
+        </div>
+      </div>
+    </div>
   );
 };
 

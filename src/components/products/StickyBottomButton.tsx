@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { MessageCircle, ShoppingCart, Zap } from "lucide-react";
+import { MessageCircle, ShoppingCart, Zap, Lock } from "lucide-react";
 import { formatPrice } from "@/utils/orderUtils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -9,6 +9,7 @@ interface StickyBottomButtonProps {
   hasPurchased: boolean;
   productType: string;
   price: number;
+  isLoggedIn: boolean;
 }
 
 const StickyBottomButton = ({ 
@@ -16,7 +17,8 @@ const StickyBottomButton = ({
   isProcessing, 
   hasPurchased,
   productType,
-  price
+  price,
+  isLoggedIn
 }: StickyBottomButtonProps) => {
   const isMobile = useIsMobile();
 
@@ -47,7 +49,7 @@ const StickyBottomButton = ({
 
         {/* Buy Now Button - Larger */}
         <Button 
-          className="flex-[2] h-12 font-bold bg-destructive hover:bg-destructive/90 text-sm sm:text-base"
+          className="flex-[2] h-12 font-bold bg-destructive hover:bg-destructive/90 text-sm sm:text-base disabled:opacity-70"
           onClick={onBuyNow}
           disabled={isProcessing}
         >
@@ -55,6 +57,12 @@ const StickyBottomButton = ({
             <>
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
               Xử lý...
+            </>
+          ) : !isLoggedIn ? (
+            <>
+              <Lock className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">ĐĂNG NHẬP</span>
+              <span className="sm:hidden">ĐĂNG NHẬP</span>
             </>
           ) : (
             <>

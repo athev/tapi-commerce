@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { Zap, ShoppingCart, Shield, Headphones } from "lucide-react";
+import { Zap, ShoppingCart, Shield, Headphones, Lock } from "lucide-react";
 import { formatPrice } from "@/utils/orderUtils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ProductCTAButtonsProps {
   currentPrice: number;
@@ -9,6 +10,7 @@ interface ProductCTAButtonsProps {
   isProcessing: boolean;
   hasPurchased: boolean;
   productType: string;
+  isLoggedIn: boolean;
 }
 
 const ProductCTAButtons = ({ 
@@ -16,7 +18,8 @@ const ProductCTAButtons = ({
   onBuyNow, 
   isProcessing,
   hasPurchased,
-  productType
+  productType,
+  isLoggedIn
 }: ProductCTAButtonsProps) => {
   const isMobile = useIsMobile();
 
@@ -25,27 +28,45 @@ const ProductCTAButtons = ({
     return null;
   }
 
+  const buttonContent = isProcessing ? (
+    <>
+      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+      Đang xử lý...
+    </>
+  ) : !isLoggedIn ? (
+    <>
+      <Lock className="h-5 w-5 mr-2" />
+      ĐĂNG NHẬP ĐỂ MUA
+    </>
+  ) : (
+    <>
+      <Zap className="h-5 w-5 mr-2" />
+      MUA NGAY
+    </>
+  );
+
   return (
     <div className="space-y-4">
       {/* Primary CTA */}
-      <Button 
-        size="lg"
-        className="w-full h-14 text-lg font-bold bg-destructive hover:bg-destructive/90 shadow-lg"
-        onClick={onBuyNow}
-        disabled={isProcessing}
-      >
-        {isProcessing ? (
-          <>
-            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-            Đang xử lý...
-          </>
-        ) : (
-          <>
-            <Zap className="h-5 w-5 mr-2" />
-            MUA NGAY
-          </>
-        )}
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button 
+              size="lg"
+              className="w-full h-14 text-lg font-bold bg-destructive hover:bg-destructive/90 shadow-lg disabled:opacity-70"
+              onClick={onBuyNow}
+              disabled={isProcessing}
+            >
+              {buttonContent}
+            </Button>
+          </TooltipTrigger>
+          {!isLoggedIn && (
+            <TooltipContent>
+              <p>Vui lòng đăng nhập để mua hàng và nhận quà tặng</p>
+            </TooltipContent>
+          )}
+        </Tooltip>
+      </TooltipProvider>
       
       {/* Minimal Trust Indicators */}
       <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground pt-2">

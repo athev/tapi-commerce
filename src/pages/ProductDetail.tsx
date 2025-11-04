@@ -23,6 +23,7 @@ import StickyBottomButton from '@/components/products/StickyBottomButton';
 import { PromotionalBanner } from '@/components/products/PromotionalBanner';
 import { FreeReturnsSection } from '@/components/products/FreeReturnsSection';
 import { LoginIncentiveBanner } from '@/components/products/LoginIncentiveBanner';
+import LoginRequiredModal from '@/components/products/LoginRequiredModal';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { mockProducts } from '@/lib/supabase';
@@ -45,6 +46,7 @@ const ProductDetail = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasPurchased, setHasPurchased] = useState(false);
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const [currentPrice, setCurrentPrice] = useState(0);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectedVariantName, setSelectedVariantName] = useState<string>('');
@@ -107,11 +109,7 @@ const ProductDetail = () => {
   }, [id, user, toast]);
   const handleBuyNow = () => {
     if (!user) {
-      toast({
-        title: "Cần đăng nhập",
-        description: "Vui lòng đăng nhập để mua sản phẩm",
-        variant: "destructive"
-      });
+      setShowLoginModal(true);
       return;
     }
 
@@ -308,7 +306,14 @@ const ProductDetail = () => {
 
                 {/* CTA Buttons - Larger & More Prominent */}
                 <div className="sticky top-24 space-y-3">
-                  <ProductCTAButtons currentPrice={currentPrice || product.price} onBuyNow={handleBuyNow} isProcessing={isProcessing} hasPurchased={hasPurchased} productType={product.product_type || 'file_download'} />
+                  <ProductCTAButtons 
+                    currentPrice={currentPrice || product.price} 
+                    onBuyNow={handleBuyNow} 
+                    isProcessing={isProcessing} 
+                    hasPurchased={hasPurchased} 
+                    productType={product.product_type || 'file_download'}
+                    isLoggedIn={!!user}
+                  />
                 </div>
               </>}
           </div>
@@ -367,11 +372,25 @@ const ProductDetail = () => {
       {/* Bottom padding for mobile sticky bar */}
       {isMobile && <div className="h-20" />}
 
+      {/* Login Required Modal */}
+      <LoginRequiredModal 
+        isOpen={showLoginModal} 
+        onClose={() => setShowLoginModal(false)}
+        productTitle={product.title}
+      />
+
       {/* Purchase Form (Progressive Disclosure) */}
       <ProductPurchaseForm isOpen={showPurchaseForm} onClose={() => setShowPurchaseForm(false)} productType={product.product_type || 'file_download'} product={product} currentPrice={currentPrice || product.price} selectedVariantId={selectedVariantId} selectedVariantName={selectedVariantName} onConfirm={handleConfirmPurchase} isProcessing={isProcessing} />
 
       {/* Sticky Bottom Button for Mobile */}
-      {isMobile && <StickyBottomButton onBuyNow={handleBuyNow} isProcessing={isProcessing} hasPurchased={hasPurchased} productType={product.product_type || 'file_download'} price={currentPrice || product.price} />}
+      {isMobile && <StickyBottomButton 
+        onBuyNow={handleBuyNow} 
+        isProcessing={isProcessing} 
+        hasPurchased={hasPurchased} 
+        productType={product.product_type || 'file_download'} 
+        price={currentPrice || product.price}
+        isLoggedIn={!!user}
+      />}
 
       <MobileBottomNav />
       <Footer />
