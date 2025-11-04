@@ -23,8 +23,21 @@ const ProductImageGallery = ({
       <CardContent className="p-6">
         <div className="space-y-4">
           {/* Main Image */}
-          <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden px-[13px]">
+          <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden px-[13px] relative">
             <img src={images[selectedImage] || '/placeholder.svg'} alt={title || 'Product image'} className="w-full h-full object-cover" />
+            
+            {/* FOMO Badges */}
+            <div className="absolute top-3 left-3 flex flex-col gap-2">
+              <Badge className="bg-red-500/90 text-white backdrop-blur-sm shadow-lg">
+                🔥 HOT
+              </Badge>
+            </div>
+            
+            <div className="absolute bottom-3 right-3">
+              <Badge className="bg-black/60 text-white text-xs backdrop-blur-sm">
+                👁️ 12 đang xem
+              </Badge>
+            </div>
           </div>
 
           {/* Thumbnail Images */}

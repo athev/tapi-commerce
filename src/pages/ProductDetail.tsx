@@ -222,57 +222,37 @@ const ProductDetail = () => {
           </div>
 
           {/* Right: Product Info */}
-          <div className="space-y-4 min-w-0">
-            {/* Category Badge */}
-            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-              {product.category}
-            </Badge>
-            
+          <div className="space-y-3 min-w-0">
             {/* Title - Larger & Bold */}
-            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight py-0">
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight">
               {product.title}
             </h1>
 
-            {/* Trust Badges */}
-            <TrustBadges />
-
-            {/* Enhanced Rating & Sold - Marketplace Style */}
-            <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-yellow-50 rounded-xl border border-yellow-200">
-              <div className="flex items-center gap-2">
-                <div className="flex">
-                  {Array(5).fill(0).map((_, i) => <Star key={i} className="h-4 w-4 sm:h-5 sm:w-5 fill-yellow-400 text-yellow-400" />)}
-                </div>
-                <span className="text-xl sm:text-2xl font-bold text-yellow-700">{product.average_rating || 5.0}</span>
+            {/* Compact Rating Row */}
+            <div className="flex items-center gap-2 text-sm border-b pb-2">
+              <div className="flex">
+                {Array(5).fill(0).map((_, i) => (
+                  <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+                ))}
               </div>
-              <Separator orientation="vertical" className="h-6 sm:h-8 bg-yellow-300" />
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground">Đánh giá</p>
-                <p className="text-base sm:text-lg font-bold">({product.review_count || 124})</p>
-              </div>
-              <Separator orientation="vertical" className="h-6 sm:h-8 bg-yellow-300" />
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground">Đã bán</p>
-                <p className="text-base sm:text-lg font-bold">{product.purchases || 0}+</p>
-              </div>
+              <span className="font-semibold">{product.average_rating || 5.0}</span>
+              <span className="text-muted-foreground">|</span>
+              <span className="text-muted-foreground">
+                {product.review_count || 124} đánh giá
+              </span>
+              <span className="text-muted-foreground">|</span>
+              <span className="text-muted-foreground">
+                {product.purchases || 0} đã bán
+              </span>
               {product.complaint_rate !== undefined && (
                 <>
-                  <Separator orientation="vertical" className="h-6 sm:h-8 bg-yellow-300" />
-                  <div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">Khiếu nại</p>
-                    <p className={`text-base sm:text-lg font-bold ${product.complaint_rate < 1 ? 'text-green-600' : product.complaint_rate < 3 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      {product.complaint_rate.toFixed(1)}%
-                    </p>
-                  </div>
+                  <span className="text-muted-foreground">|</span>
+                  <span className={product.complaint_rate < 1 ? 'text-green-600 text-xs' : 'text-red-600 text-xs'}>
+                    {product.complaint_rate}% khiếu nại
+                  </span>
                 </>
               )}
             </div>
-
-            {/* Urgency Indicators */}
-            <UrgencyIndicators 
-              stock={product.in_stock} 
-              showViewers={true} 
-              showRecentPurchase={true} 
-            />
 
             {/* After Purchase UI for file_download */}
             {hasPurchased && product.product_type === 'file_download' ? <Card className="bg-success-bg border-success-text/20">
@@ -302,11 +282,18 @@ const ProductDetail = () => {
                 <Card>
                   <CardContent className="p-4">
                     <ProductPriceCard product={product} onPriceChange={handlePriceChange} />
+                    
+                    {/* Subtle FOMO text */}
+                    {product.in_stock < 20 && (
+                      <p className="text-xs text-orange-600 flex items-center gap-1 mt-2">
+                        🔥 Chỉ còn {product.in_stock} sản phẩm • 12 người đang xem
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
 
                 {/* CTA Buttons - Larger & More Prominent */}
-                <ProductCTAButtons 
+                <ProductCTAButtons
                   currentPrice={currentPrice || product.price} 
                   onBuyNow={handleBuyNow} 
                   isProcessing={isProcessing} 

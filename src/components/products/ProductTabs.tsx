@@ -1,7 +1,7 @@
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Shield, Download, HelpCircle, FileText, Settings } from "lucide-react";
+import { Shield, Download, HelpCircle, FileText, Settings, Truck, RefreshCw, Headphones } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -84,10 +84,11 @@ const ProductTabs = ({ description, productType }: ProductTabsProps) => {
   return (
     <Tabs defaultValue="description" className="w-full">
       <div className="sticky top-16 z-10 bg-background border-b mb-6">
-        <TabsList className="grid w-full grid-cols-5 rounded-none h-12">
+        <TabsList className="grid w-full grid-cols-6 rounded-none h-12">
           <TabsTrigger value="description">Mô tả</TabsTrigger>
           <TabsTrigger value="features">Tính năng</TabsTrigger>
           <TabsTrigger value="guide">Hướng dẫn</TabsTrigger>
+          <TabsTrigger value="policy">🛡️ Chính sách</TabsTrigger>
           <TabsTrigger value="guarantee">Cam kết</TabsTrigger>
           <TabsTrigger value="faq">FAQ</TabsTrigger>
         </TabsList>
@@ -153,6 +154,56 @@ const ProductTabs = ({ description, productType }: ProductTabsProps) => {
                 <p className="text-gray-700 text-sm">
                   Đội ngũ hỗ trợ 24/7 sẵn sàng giúp đỡ qua chat hoặc email. Thời gian phản hồi trung bình dưới 1 giờ.
                 </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="policy" className="mt-6">
+        <Card>
+          <CardContent className="p-6">
+            <h3 className="font-bold text-lg mb-4">Chính sách & Bảo hành</h3>
+            
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div className="flex items-start gap-3 p-4 border rounded-lg">
+                <Truck className="h-6 w-6 text-blue-600 shrink-0" />
+                <div>
+                  <h4 className="font-semibold mb-1">Giao hàng ngay lập tức</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Sản phẩm digital được giao ngay sau khi thanh toán thành công.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-4 border rounded-lg">
+                <RefreshCw className="h-6 w-6 text-green-600 shrink-0" />
+                <div>
+                  <h4 className="font-semibold mb-1">Hoàn tiền 100%</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Hoàn tiền nếu sản phẩm không hoạt động hoặc sai mô tả.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-4 border rounded-lg">
+                <Shield className="h-6 w-6 text-purple-600 shrink-0" />
+                <div>
+                  <h4 className="font-semibold mb-1">Bảo mật 100%</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Thông tin thanh toán được mã hóa và bảo mật tuyệt đối.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3 p-4 border rounded-lg">
+                <Headphones className="h-6 w-6 text-orange-600 shrink-0" />
+                <div>
+                  <h4 className="font-semibold mb-1">Hỗ trợ 24/7</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Đội ngũ hỗ trợ sẵn sàng giải đáp mọi thắc mắc của bạn.
+                  </p>
+                </div>
               </div>
             </div>
           </CardContent>
