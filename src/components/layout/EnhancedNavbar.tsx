@@ -204,12 +204,12 @@ const EnhancedNavbar = () => {
 
       {/* Search Dialog */}
       <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Tìm kiếm sản phẩm</DialogTitle>
+        <DialogContent className="top-4 translate-y-0 max-h-[90vh] w-[calc(100vw-2rem)] sm:max-w-[600px] data-[state=open]:slide-in-from-top-4 data-[state=closed]:slide-out-to-top-4">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-base sm:text-lg">Tìm kiếm sản phẩm</DialogTitle>
           </DialogHeader>
-          <div className="mt-4">
-            <SearchBar />
+          <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+            <SearchBar onSearchComplete={() => setSearchOpen(false)} />
           </div>
         </DialogContent>
       </Dialog>

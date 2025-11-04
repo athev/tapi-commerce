@@ -7,7 +7,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 
-const SearchBar = () => {
+interface SearchBarProps {
+  onSearchComplete?: () => void;
+}
+
+const SearchBar = ({ onSearchComplete }: SearchBarProps = {}) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -99,6 +103,9 @@ const SearchBar = () => {
     navigate(`/?search=${encodeURIComponent(term.trim())}`);
     setShowSuggestions(false);
     inputRef.current?.blur();
+    
+    // Notify parent to close dialog
+    onSearchComplete?.();
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -200,6 +207,7 @@ const SearchBar = () => {
                       onClick={() => {
                         navigate(`/product/${product.id}`);
                         setShowSuggestions(false);
+                        onSearchComplete?.();
                       }}
                       className="flex items-center gap-2.5 p-2 hover:bg-muted rounded transition-colors text-left group"
                     >
