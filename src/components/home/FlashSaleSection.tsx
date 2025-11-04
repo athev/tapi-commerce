@@ -41,24 +41,21 @@ const FlashSaleSection = () => {
   const flashSaleEndTime = new Date(Date.now() + 3 * 60 * 60 * 1000);
 
   return (
-    <div className="bg-gradient-to-r from-destructive to-destructive/90 py-6">
+    <div style={{ background: 'linear-gradient(90deg, #ff6b35 0%, #f7931e 100%)' }} className="py-4">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">⚡</span>
-              <h2 className="text-xl md:text-2xl font-bold text-destructive-foreground">
-                FLASH SALE
-              </h2>
-            </div>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <h2 className="text-lg md:text-xl font-extrabold text-white uppercase tracking-wide">
+              FLASH SALE
+            </h2>
             <CountdownTimer endTime={flashSaleEndTime} />
           </div>
           <Link 
             to="/?category=Flash Sale"
-            className="text-sm text-destructive-foreground hover:text-destructive-foreground/80 flex items-center gap-1"
+            className="text-xs md:text-sm text-white hover:text-white/90 flex items-center gap-0.5 font-medium"
           >
-            Xem tất cả
-            <ChevronRight className="h-4 w-4" />
+            Xem Tất Cả
+            <ChevronRight className="h-3.5 w-3.5 md:h-4 md:w-4" />
           </Link>
         </div>
 
