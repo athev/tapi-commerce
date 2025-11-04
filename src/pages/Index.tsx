@@ -27,7 +27,7 @@ const Index = () => {
         {/* Flash Sale Section */}
         <section className="mb-4 md:mb-6">
           <div className="container mx-auto px-2 md:px-4">
-            <FlashSaleSection />
+            <FlashSaleSection className="bg-sky-50" />
           </div>
         </section>
         
