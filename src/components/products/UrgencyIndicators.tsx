@@ -14,29 +14,56 @@ const UrgencyIndicators = ({
   showRecentPurchase = true 
 }: UrgencyIndicatorsProps) => {
   const [viewerCount, setViewerCount] = useState(12);
+  const [recentBuyer, setRecentBuyer] = useState("Nguyễn V***");
+  const [timeSincePurchase, setTimeSincePurchase] = useState("2 phút trước");
 
+  const recentBuyers = [
+    "Nguyễn V***", "Trần T***", "Lê M***", "Phạm T***",
+    "Hoàng A***", "Đỗ B***", "Vũ C***", "Bùi D***"
+  ];
+
+  const timeOptions = [
+    "1 phút trước", "2 phút trước", "3 phút trước", 
+    "5 phút trước", "7 phút trước", "10 phút trước"
+  ];
+
+  // Dynamic viewer count with occasional jumps
   useEffect(() => {
     if (!showViewers) return;
     
-    const interval = setInterval(() => {
+    const updateViewers = () => {
       setViewerCount(prev => {
+        // 20% chance of "jump" (nhiều người vào cùng lúc)
+        if (Math.random() > 0.8) {
+          const jump = Math.floor(Math.random() * 5) + 2; // +2 to +6
+          return Math.min(30, prev + jump);
+        }
+        
+        // Normal fluctuation
         const change = Math.random() > 0.5 ? 1 : -1;
         const newCount = prev + change;
-        return Math.max(8, Math.min(25, newCount));
+        return Math.max(10, Math.min(30, newCount));
       });
-    }, 5000);
+    };
+    
+    const interval = setInterval(updateViewers, Math.random() * 4000 + 3000); // 3-7s
     
     return () => clearInterval(interval);
   }, [showViewers]);
 
-  const recentBuyers = [
-    "Nguyễn Văn A",
-    "Trần Thị B",
-    "Lê Minh C",
-    "Phạm Thu D"
-  ];
-
-  const randomBuyer = recentBuyers[Math.floor(Math.random() * recentBuyers.length)];
+  // Dynamic recent purchase notification
+  useEffect(() => {
+    if (!showRecentPurchase) return;
+    
+    const interval = setInterval(() => {
+      const randomBuyer = recentBuyers[Math.floor(Math.random() * recentBuyers.length)];
+      const randomTime = timeOptions[Math.floor(Math.random() * timeOptions.length)];
+      setRecentBuyer(randomBuyer);
+      setTimeSincePurchase(randomTime);
+    }, Math.random() * 7000 + 8000); // 8-15 seconds
+    
+    return () => clearInterval(interval);
+  }, [showRecentPurchase]);
 
   return (
     <div className="space-y-3">
@@ -65,8 +92,9 @@ const UrgencyIndicators = ({
       {showRecentPurchase && (
         <div className="flex items-center gap-2 text-sm bg-green-50 p-3 rounded-lg border border-green-200">
           <ShoppingBag className="h-4 w-4 text-green-600" />
-          <span className="text-green-800">
-            <strong>{randomBuyer}</strong> vừa mua sản phẩm này <span className="text-green-600">2 phút trước</span>
+          <span className="text-green-800 transition-opacity duration-300">
+            <strong>{recentBuyer}</strong> vừa mua sản phẩm này{" "}
+            <span className="text-green-600">{timeSincePurchase}</span>
           </span>
         </div>
       )}
