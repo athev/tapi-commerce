@@ -24,6 +24,9 @@ import { PromotionalBanner } from '@/components/products/PromotionalBanner';
 import { FreeReturnsSection } from '@/components/products/FreeReturnsSection';
 import { LoginIncentiveBanner } from '@/components/products/LoginIncentiveBanner';
 import LoginRequiredModal from '@/components/products/LoginRequiredModal';
+import TrustBadges from '@/components/products/TrustBadges';
+import UrgencyIndicators from '@/components/products/UrgencyIndicators';
+import ProductTabs from '@/components/products/ProductTabs';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { mockProducts } from '@/lib/supabase';
@@ -216,12 +219,10 @@ const ProductDetail = () => {
               <ProductImageGallery images={[product.image || '/placeholder.svg']} />
             </div>
             
-            {/* Enhanced Trust Badges - Chiaki Style */}
-            
           </div>
 
           {/* Right: Product Info */}
-          <div className="space-y-3 sm:space-y-6 min-w-0">
+          <div className="space-y-4 min-w-0">
             {/* Category Badge */}
             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
               {product.category}
@@ -231,6 +232,9 @@ const ProductDetail = () => {
             <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight py-0">
               {product.title}
             </h1>
+
+            {/* Trust Badges */}
+            <TrustBadges />
 
             {/* Enhanced Rating & Sold - Marketplace Style */}
             <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-yellow-50 rounded-xl border border-yellow-200">
@@ -263,8 +267,12 @@ const ProductDetail = () => {
               )}
             </div>
 
-            {/* Free Returns Section */}
-            
+            {/* Urgency Indicators */}
+            <UrgencyIndicators 
+              stock={product.in_stock} 
+              showViewers={true} 
+              showRecentPurchase={true} 
+            />
 
             {/* After Purchase UI for file_download */}
             {hasPurchased && product.product_type === 'file_download' ? <Card className="bg-success-bg border-success-text/20">
@@ -291,30 +299,21 @@ const ProductDetail = () => {
                 </CardContent>
               </Card> : <>
                 {/* Price Card - Enhanced */}
-                <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-                  <CardContent className="p-6 w-full overflow-hidden py-[8px] px-[8px]">
+                <Card>
+                  <CardContent className="p-4">
                     <ProductPriceCard product={product} onPriceChange={handlePriceChange} />
                   </CardContent>
                 </Card>
 
-                {/* Seller Info - More Prominent */}
-                <Card>
-                  <CardContent className="p-4 sm:p-6 w-full overflow-hidden">
-                    <SellerInfo sellerId={product.seller_id} sellerName={product.seller_name} productId={product.id} productTitle={product.title} />
-                  </CardContent>
-                </Card>
-
                 {/* CTA Buttons - Larger & More Prominent */}
-                <div className="sticky top-24 space-y-3">
-                  <ProductCTAButtons 
-                    currentPrice={currentPrice || product.price} 
-                    onBuyNow={handleBuyNow} 
-                    isProcessing={isProcessing} 
-                    hasPurchased={hasPurchased} 
-                    productType={product.product_type || 'file_download'}
-                    isLoggedIn={!!user}
-                  />
-                </div>
+                <ProductCTAButtons 
+                  currentPrice={currentPrice || product.price} 
+                  onBuyNow={handleBuyNow} 
+                  isProcessing={isProcessing} 
+                  hasPurchased={hasPurchased} 
+                  productType={product.product_type || 'file_download'}
+                  isLoggedIn={!!user}
+                />
               </>}
           </div>
         </div>
@@ -329,37 +328,28 @@ const ProductDetail = () => {
           <PromotionalBanner />
         </div>
 
-        {/* Product Details Tabs - Full Width */}
-        <div className="mt-8 sm:mt-12 overflow-x-hidden">
-          <div className="overflow-x-auto no-scrollbar">
-            <Tabs defaultValue="description" className="w-full min-w-0">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="description" className="truncate">Mô tả</TabsTrigger>
-                <TabsTrigger value="details" className="truncate">Chi tiết</TabsTrigger>
-                <TabsTrigger value="reviews" className="truncate">Đánh giá</TabsTrigger>
-              </TabsList>
-            
-            <TabsContent value="description" className="mt-6">
-              <Card>
-                <CardContent className="p-4 sm:p-6">
-                  <div className="prose max-w-none">
-                    {product.description ? <p className="text-sm sm:text-base text-gray-700 leading-relaxed whitespace-pre-line">
-                        {product.description}
-                      </p> : <p className="text-sm sm:text-base text-gray-500 italic">Chưa có mô tả cho sản phẩm này.</p>}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            
-            <TabsContent value="details" className="mt-6">
-              <ProductDetailsAccordion product={product} />
-            </TabsContent>
-            
-            <TabsContent value="reviews" className="mt-6">
-              <ProductReviews productId={product.id} />
-            </TabsContent>
-            </Tabs>
-          </div>
+        {/* Seller Info - Compact, Above Tabs */}
+        <div className="mb-6">
+          <Card className="border-l-4 border-l-green-500">
+            <CardContent className="p-4">
+              <SellerInfo 
+                sellerId={product.seller_id} 
+                sellerName={product.seller_name} 
+                productId={product.id} 
+                productTitle={product.title}
+                totalProducts={product.seller_total_products}
+                responseRate={product.seller_response_rate}
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Product Details Tabs - Full Width with Sticky Header */}
+        <div className="mt-8 sm:mt-12">
+          <ProductTabs 
+            description={product.description || 'Chưa có mô tả cho sản phẩm này.'}
+            productType={product.product_type || 'file_download'}
+          />
         </div>
 
         {/* Related Products */}

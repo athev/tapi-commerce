@@ -83,12 +83,15 @@ const ProductTabs = ({ description, productType }: ProductTabsProps) => {
 
   return (
     <Tabs defaultValue="description" className="w-full">
-      <TabsList className="grid w-full grid-cols-4">
-        <TabsTrigger value="description">Mô tả</TabsTrigger>
-        <TabsTrigger value="features">Tính năng</TabsTrigger>
-        <TabsTrigger value="guarantee">Cam kết</TabsTrigger>
-        <TabsTrigger value="faq">FAQ</TabsTrigger>
-      </TabsList>
+      <div className="sticky top-16 z-10 bg-background border-b mb-6">
+        <TabsList className="grid w-full grid-cols-5 rounded-none h-12">
+          <TabsTrigger value="description">Mô tả</TabsTrigger>
+          <TabsTrigger value="features">Tính năng</TabsTrigger>
+          <TabsTrigger value="guide">Hướng dẫn</TabsTrigger>
+          <TabsTrigger value="guarantee">Cam kết</TabsTrigger>
+          <TabsTrigger value="faq">FAQ</TabsTrigger>
+        </TabsList>
+      </div>
 
       <TabsContent value="description" className="mt-6">
         <Card>
@@ -120,6 +123,37 @@ const ProductTabs = ({ description, productType }: ProductTabsProps) => {
                   <span className="text-gray-700">{feature}</span>
                 </div>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="guide" className="mt-6">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center space-x-2 mb-4">
+              <Download className="h-5 w-5 text-marketplace-primary" />
+              <h3 className="text-lg font-semibold">Hướng dẫn sử dụng</h3>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold mb-2">1. Sau khi mua hàng:</h4>
+                <p className="text-gray-700 text-sm">
+                  Bạn sẽ nhận được thông tin sản phẩm qua email và có thể xem chi tiết trong mục "Đơn hàng của tôi".
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2">2. Sử dụng sản phẩm:</h4>
+                <p className="text-gray-700 text-sm">
+                  Làm theo hướng dẫn chi tiết được cung cấp. Nếu gặp khó khăn, vui lòng liên hệ bộ phận hỗ trợ.
+                </p>
+              </div>
+              <div>
+                <h4 className="font-semibold mb-2">3. Hỗ trợ kỹ thuật:</h4>
+                <p className="text-gray-700 text-sm">
+                  Đội ngũ hỗ trợ 24/7 sẵn sàng giúp đỡ qua chat hoặc email. Thời gian phản hồi trung bình dưới 1 giờ.
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

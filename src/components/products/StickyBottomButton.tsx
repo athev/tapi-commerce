@@ -27,29 +27,29 @@ const StickyBottomButton = ({
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-background border-t shadow-2xl z-50 safe-area-pb">
-      <div className="flex items-center gap-2 p-2">
-        {/* Chat Button */}
+    <div className="fixed bottom-0 left-0 right-0 bg-background border-t shadow-2xl z-50 pb-safe">
+      <div className="flex items-stretch h-16 gap-2 p-2">
+        {/* Chat icon - smaller */}
         <Button 
           variant="outline" 
-          className="h-12 px-3 sm:px-4 flex items-center gap-2 flex-1"
+          size="icon"
+          className="h-full px-3"
         >
           <MessageCircle className="h-5 w-5" />
-          <span className="text-sm font-medium hidden sm:inline">Chat</span>
         </Button>
 
-        {/* Add to Cart Button */}
+        {/* Cart icon - smaller */}
         <Button 
           variant="outline" 
-          className="h-12 px-3 sm:px-4 flex items-center gap-2 flex-1"
+          size="icon"
+          className="h-full px-3"
         >
           <ShoppingCart className="h-5 w-5" />
-          <span className="text-sm font-medium hidden sm:inline">Giỏ</span>
         </Button>
 
-        {/* Buy Now Button - Larger */}
+        {/* Buy Now Button - Takes 60% width */}
         <Button 
-          className="flex-[2] h-12 font-bold bg-destructive hover:bg-destructive/90 text-sm sm:text-base disabled:opacity-70"
+          className="flex-[3] h-full font-bold bg-destructive hover:bg-destructive/90 text-base disabled:opacity-70"
           onClick={onBuyNow}
           disabled={isProcessing}
         >
@@ -60,14 +60,13 @@ const StickyBottomButton = ({
             </>
           ) : !isLoggedIn ? (
             <>
-              <Lock className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">ĐĂNG NHẬP</span>
-              <span className="sm:hidden">ĐĂNG NHẬP</span>
+              <Lock className="h-5 w-5 mr-2" />
+              ĐĂNG NHẬP
             </>
           ) : (
             <>
-              <Zap className="h-4 w-4 mr-2" />
-              MUA NGAY
+              <Zap className="h-5 w-5 mr-1" />
+              MUA NGAY • {formatPrice(price)}
             </>
           )}
         </Button>

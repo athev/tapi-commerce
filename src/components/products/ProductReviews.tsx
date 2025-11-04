@@ -1,8 +1,8 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
+import RatingBreakdown from "./RatingBreakdown";
 
 interface ProductReviewsProps {
   // Make props optional to handle any product structure
@@ -40,17 +40,26 @@ const ProductReviews = (props: ProductReviewsProps) => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Đánh giá sản phẩm</CardTitle>
-      </CardHeader>
-      <CardContent>
-        {reviews.length === 0 ? (
-          <p className="text-center text-gray-500 py-8">
-            Chưa có đánh giá nào cho sản phẩm này
-          </p>
-        ) : (
-          <div className="space-y-6">
+    <div className="grid md:grid-cols-[300px,1fr] gap-6">
+      {/* Left: Rating summary */}
+      <RatingBreakdown 
+        avgRating={4.8}
+        totalReviews={124}
+        ratingDistribution={{ 5: 80, 4: 30, 3: 10, 2: 3, 1: 1 }}
+      />
+
+      {/* Right: Review list */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Đánh giá từ khách hàng</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {reviews.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">
+              Chưa có đánh giá nào cho sản phẩm này
+            </p>
+          ) : (
+            <div className="space-y-6">
             {reviews.map((review) => (
               <div key={review.id} className="border-b pb-4 last:border-b-0">
                 <div className="flex items-start space-x-4">
@@ -84,6 +93,7 @@ const ProductReviews = (props: ProductReviewsProps) => {
         )}
       </CardContent>
     </Card>
+    </div>
   );
 };
 
