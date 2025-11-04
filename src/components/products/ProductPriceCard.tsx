@@ -92,7 +92,7 @@ const ProductPriceCard = ({
         </p>}
 
       {/* Variants Selector - Only if variants exist */}
-      {variants.length > 0 && <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+      {variants.length > 0 && <div className="bg-muted/30 rounded-lg p-2 space-y-1.5">
           <Label className="text-xs font-medium block">
             Chọn gói sản phẩm
           </Label>
