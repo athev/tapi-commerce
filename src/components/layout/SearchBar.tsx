@@ -6,14 +6,6 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-const SUGGESTED_KEYWORDS = [
-  "Canva Pro",
-  "ChatGPT",
-  "Spotify Premium",
-  "Adobe Creative",
-  "Microsoft Office",
-  "Netflix Premium"
-];
 
 const SearchBar = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,6 +14,35 @@ const SearchBar = () => {
   const navigate = useNavigate();
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Fetch trending searches from database
+  const { data: trendingSearches } = useQuery({
+    queryKey: ['trending-searches'],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('products')
+        .select('keywords')
+        .eq('status', 'active')
+        .not('keywords', 'is', null)
+        .limit(100);
+      
+      // Flatten and count keywords
+      const keywordCounts = new Map<string, number>();
+      data?.forEach(p => {
+        p.keywords?.forEach((kw: string) => {
+          keywordCounts.set(kw, (keywordCounts.get(kw) || 0) + 1);
+        });
+      });
+      
+      // Sort and get top 6
+      return Array.from(keywordCounts.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6)
+        .map(([keyword]) => keyword);
+    },
+    staleTime: 10 * 60 * 1000, // Cache 10 minutes
+    enabled: showSuggestions
+  });
 
   // Fetch popular products
   const { data: popularProducts } = useQuery({
@@ -37,6 +58,7 @@ const SearchBar = () => {
       if (error) throw error;
       return data || [];
     },
+    staleTime: 5 * 60 * 1000, // Cache 5 minutes
     enabled: showSuggestions
   });
 
@@ -45,6 +67,13 @@ const SearchBar = () => {
     const history = localStorage.getItem("searchHistory");
     if (history) {
       setSearchHistory(JSON.parse(history));
+    }
+
+    // Sync input with URL search param
+    const params = new URLSearchParams(window.location.search);
+    const urlSearch = params.get('search');
+    if (urlSearch) {
+      setSearchTerm(urlSearch);
     }
 
     // Close suggestions when clicking outside
@@ -66,10 +95,9 @@ const SearchBar = () => {
     setSearchHistory(newHistory);
     localStorage.setItem("searchHistory", JSON.stringify(newHistory));
 
-    // Navigate
+    // Navigate - keep search term in input
     navigate(`/?search=${encodeURIComponent(term.trim())}`);
     setShowSuggestions(false);
-    setSearchTerm("");
     inputRef.current?.blur();
   };
 
@@ -134,27 +162,29 @@ const SearchBar = () => {
           )}
 
           <div className="p-4">
-            {/* Suggested Keywords */}
-            <div className="mb-4">
-              <div className="flex items-center gap-1.5 mb-3">
-                <TrendingUp className="h-4 w-4 text-destructive" />
-                <span className="text-sm font-semibold text-foreground">Đề xuất tìm kiếm</span>
+            {/* Trending Keywords from Database */}
+            {trendingSearches && trendingSearches.length > 0 && (
+              <div className="mb-4">
+                <div className="flex items-center gap-1.5 mb-3">
+                  <TrendingUp className="h-4 w-4 text-destructive" />
+                  <span className="text-sm font-semibold text-foreground">Đề xuất tìm kiếm</span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {trendingSearches.map((keyword, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleSearch(keyword)}
+                      className="flex items-center gap-2 p-2 text-sm hover:bg-muted rounded transition-colors text-left"
+                    >
+                      <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/5 rounded flex items-center justify-center flex-shrink-0">
+                        <Search className="h-4 w-4 text-primary" />
+                      </div>
+                      <span className="text-sm">{keyword}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                {SUGGESTED_KEYWORDS.map((keyword, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleSearch(keyword)}
-                    className="flex items-center gap-2 p-2 text-sm hover:bg-muted rounded transition-colors text-left"
-                  >
-                    <div className="w-8 h-8 bg-gradient-to-br from-primary/10 to-primary/5 rounded flex items-center justify-center flex-shrink-0">
-                      <Search className="h-4 w-4 text-primary" />
-                    </div>
-                    <span className="text-sm">{keyword}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            )}
 
             {/* Popular Products */}
             {popularProducts && popularProducts.length > 0 && (

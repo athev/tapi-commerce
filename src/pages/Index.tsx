@@ -1,5 +1,5 @@
-
 import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import EnhancedNavbar from "@/components/layout/EnhancedNavbar";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import Footer from "@/components/layout/Footer";
@@ -13,20 +13,14 @@ import FilterPanel from "@/components/products/FilterPanel";
 import { QuickHelpSection } from "@/components/home/QuickHelpSection";
 
 const Index = () => {
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [filters, setFilters] = useState<any>(null);
-
-  // Extract search params from URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const urlSearchTerm = urlParams.get('search') || '';
-  const urlCategory = urlParams.get('category') || '';
-
-  // Use URL params if available
-  const effectiveSearchTerm = urlSearchTerm || searchTerm;
-  const effectiveCategory = urlCategory || activeCategory;
+  
+  // Use useSearchParams for reactive URL changes
+  const [searchParams] = useSearchParams();
+  const effectiveSearchTerm = searchParams.get('search') || '';
+  const effectiveCategory = searchParams.get('category') || 'all';
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-16 lg:pb-0">

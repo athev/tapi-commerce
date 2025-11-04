@@ -1,9 +1,9 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import EnhancedProductCard from "./EnhancedProductCard";
 import { mockProducts, Product } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
+import { matchesSearchTerm } from "@/lib/searchUtils";
 
 interface ProductGridProps {
   searchTerm?: string;
@@ -21,15 +21,32 @@ const ProductGrid = ({
   error: externalError 
 }: ProductGridProps) => {
   const { data: products, isLoading, error } = useQuery({
-    queryKey: ['products'],
+    queryKey: ['products', searchTerm, category],
     queryFn: async () => {
-      console.log('Fetching products from database');
+      console.log('Fetching products from database with filters:', { searchTerm, category });
       
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('products')
           .select('*')
-          .order('created_at', { ascending: false });
+          .eq('status', 'active');
+        
+        // Filter by category on server-side
+        if (category && category !== 'all') {
+          query = query.eq('category', category);
+        }
+        
+        // Full-text search if searchTerm exists
+        if (searchTerm && searchTerm.trim()) {
+          const searchPattern = `%${searchTerm.trim()}%`;
+          query = query.or(
+            `title.ilike.${searchPattern},description.ilike.${searchPattern},seller_name.ilike.${searchPattern},meta_title.ilike.${searchPattern}`
+          );
+        }
+        
+        query = query.order('created_at', { ascending: false });
+        
+        const { data, error } = await query;
         
         if (error) {
           console.error('Error fetching products:', error);
@@ -45,6 +62,7 @@ const ProductGrid = ({
         return mockProducts;
       }
     },
+    staleTime: 60 * 1000, // Cache for 1 minute
     enabled: !externalProducts,
   });
 
@@ -53,9 +71,9 @@ const ProductGrid = ({
   const finalIsLoading = externalIsLoading !== undefined ? externalIsLoading : isLoading;
   const finalError = externalError !== undefined ? externalError : error;
 
+  // Client-side filtering with Vietnamese normalization (fallback for keywords)
   const filteredProducts = finalProducts?.filter(product => {
-    const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = matchesSearchTerm(product, searchTerm);
     const matchesCategory = category === "all" || product.category === category;
     return matchesSearch && matchesCategory;
   });
