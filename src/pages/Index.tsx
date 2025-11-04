@@ -27,8 +27,7 @@ const Index = () => {
         {/* Flash Sale Section */}
         <section className="mb-4 md:mb-6">
           <div className="container mx-auto px-2 md:px-4">
-            
-            <FlashSaleSection className="bg-sky-50" />
+            <FlashSaleSection />
           </div>
         </section>
         
@@ -55,10 +54,10 @@ const Index = () => {
                   </p>
                 </div>
 
-                <ProductToolbar sortBy={sortBy} onSortChange={setSortBy} viewMode={viewMode} onViewModeChange={setViewMode} onFilterChange={setFilters} totalProducts={0} className="px-[6px] mx-0" />
+                <ProductToolbar sortBy={sortBy} onSortChange={setSortBy} viewMode={viewMode} onViewModeChange={setViewMode} onFilterChange={setFilters} totalProducts={0} />
 
                 <div className="mt-3 md:mt-6">
-                  <ProductGrid className="px-[4px]" />
+                  <ProductGrid />
                 </div>
               </div>
             </div>
