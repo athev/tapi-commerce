@@ -24,9 +24,13 @@ import { PromotionalBanner } from '@/components/products/PromotionalBanner';
 import { FreeReturnsSection } from '@/components/products/FreeReturnsSection';
 import { LoginIncentiveBanner } from '@/components/products/LoginIncentiveBanner';
 import LoginRequiredModal from '@/components/products/LoginRequiredModal';
-import TrustBadges from '@/components/products/TrustBadges';
-import UrgencyIndicators from '@/components/products/UrgencyIndicators';
 import ProductTabs from '@/components/products/ProductTabs';
+import CompactRatingRow from '@/components/products/CompactRatingRow';
+import EnhancedPriceSection from '@/components/products/EnhancedPriceSection';
+import WarrantyIcons from '@/components/products/WarrantyIcons';
+import QuantitySelector from '@/components/products/QuantitySelector';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Label } from '@/components/ui/label';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { mockProducts } from '@/lib/supabase';
@@ -53,6 +57,7 @@ const ProductDetail = () => {
   const [currentPrice, setCurrentPrice] = useState(0);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectedVariantName, setSelectedVariantName] = useState<string>('');
+  const [quantity, setQuantity] = useState(1);
   useEffect(() => {
     // Simulate fetching product data from an API
     // Replace this with your actual data fetching logic
@@ -222,90 +227,72 @@ const ProductDetail = () => {
           </div>
 
           {/* Right: Product Info */}
-          <div className="space-y-4 min-w-0">
-            {/* Category Badge */}
-            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
-              {product.category}
-            </Badge>
-            
-            {/* Title - Larger & Bold */}
-            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight py-0">
+          <div className="space-y-3 lg:space-y-4 min-w-0">
+            {/* 1. Title */}
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight">
               {product.title}
             </h1>
-
-            {/* Trust Badges */}
-            <TrustBadges />
-
-            {/* Enhanced Rating & Sold - Marketplace Style */}
-            <div className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-yellow-50 rounded-xl border border-yellow-200">
-              <div className="flex items-center gap-2">
-                <div className="flex">
-                  {Array(5).fill(0).map((_, i) => <Star key={i} className="h-4 w-4 sm:h-5 sm:w-5 fill-yellow-400 text-yellow-400" />)}
-                </div>
-                <span className="text-xl sm:text-2xl font-bold text-yellow-700">{product.average_rating || 5.0}</span>
-              </div>
-              <Separator orientation="vertical" className="h-6 sm:h-8 bg-yellow-300" />
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground">Đánh giá</p>
-                <p className="text-base sm:text-lg font-bold">({product.review_count || 124})</p>
-              </div>
-              <Separator orientation="vertical" className="h-6 sm:h-8 bg-yellow-300" />
-              <div>
-                <p className="text-xs sm:text-sm text-muted-foreground">Đã bán</p>
-                <p className="text-base sm:text-lg font-bold">{product.purchases || 0}+</p>
-              </div>
-              {product.complaint_rate !== undefined && (
-                <>
-                  <Separator orientation="vertical" className="h-6 sm:h-8 bg-yellow-300" />
-                  <div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">Khiếu nại</p>
-                    <p className={`text-base sm:text-lg font-bold ${product.complaint_rate < 1 ? 'text-green-600' : product.complaint_rate < 3 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      {product.complaint_rate.toFixed(1)}%
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Urgency Indicators */}
-            <UrgencyIndicators 
-              stock={product.in_stock} 
-              showViewers={true} 
-              showRecentPurchase={true} 
+            
+            {/* 2. Compact Rating Row (REPLACE yellow box) */}
+            <CompactRatingRow 
+              rating={product.average_rating}
+              reviewCount={product.review_count}
+              purchases={product.purchases}
+              complaintRate={product.complaint_rate}
             />
-
+            
             {/* After Purchase UI for file_download */}
-            {hasPurchased && product.product_type === 'file_download' ? <Card className="bg-success-bg border-success-text/20">
+            {hasPurchased && product.product_type === 'file_download' ? (
+              <Card className="bg-success-bg border-success-text/20">
                 <CardContent className="p-6">
-                <div className="flex items-center space-x-3 mb-4">
-                  <Download className="h-6 w-6 text-green-600" />
-                  <h3 className="font-bold text-green-900 text-lg">Sản phẩm đã mua</h3>
-                </div>
-                <p className="text-sm text-green-800 mb-4">
-                  Bạn có thể tải xuống file ngay bây giờ.
-                </p>
-                <Button className="w-full bg-green-600 hover:bg-green-700 h-12 text-base font-bold" onClick={() => {
-                if (product?.file_url) {
-                  window.open(product.file_url, '_blank');
-                } else {
-                  const link = document.createElement('a');
-                  link.href = 'data:text/plain;charset=utf-8,Sample Digital Product Content';
-                  link.download = `${product?.title || 'product'}.txt`;
-                  link.click();
-                }
-              }}>
-                  <Download className="h-5 w-5 mr-2" /> Tải xuống file
-                </Button>
+                  <div className="flex items-center space-x-3 mb-4">
+                    <Download className="h-6 w-6 text-green-600" />
+                    <h3 className="font-bold text-green-900 text-lg">Sản phẩm đã mua</h3>
+                  </div>
+                  <p className="text-sm text-green-800 mb-4">
+                    Bạn có thể tải xuống file ngay bây giờ.
+                  </p>
+                  <Button className="w-full bg-green-600 hover:bg-green-700 h-12 text-base font-bold" onClick={() => {
+                    if (product?.file_url) {
+                      window.open(product.file_url, '_blank');
+                    } else {
+                      const link = document.createElement('a');
+                      link.href = 'data:text/plain;charset=utf-8,Sample Digital Product Content';
+                      link.download = `${product?.title || 'product'}.txt`;
+                      link.click();
+                    }
+                  }}>
+                    <Download className="h-5 w-5 mr-2" /> Tải xuống file
+                  </Button>
                 </CardContent>
-              </Card> : <>
-                {/* Price Card - Enhanced */}
-                <Card>
-                  <CardContent className="p-4">
-                    <ProductPriceCard product={product} onPriceChange={handlePriceChange} />
-                  </CardContent>
-                </Card>
-
-                {/* CTA Buttons - Larger & More Prominent */}
+              </Card>
+            ) : (
+              <>
+                {/* 3. Price Section (NO CARD) */}
+                <EnhancedPriceSection 
+                  product={product}
+                  onPriceChange={handlePriceChange}
+                />
+                
+                {/* 4. Warranty/Policy Icons */}
+                <WarrantyIcons />
+                
+                {/* 5. Quantity Selector */}
+                <div className="flex items-center justify-between py-2">
+                  <Label className="text-sm font-medium">Số lượng</Label>
+                  <QuantitySelector value={quantity} onChange={setQuantity} />
+                </div>
+                
+                {/* 6. Urgency (conditional) */}
+                {product.in_stock && product.in_stock < 20 && (
+                  <Alert className="py-2 border-orange-200 bg-orange-50">
+                    <AlertDescription className="text-sm text-orange-800">
+                      🔥 Chỉ còn <strong>{product.in_stock}</strong> sản phẩm
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                {/* 7. CTA Buttons */}
                 <ProductCTAButtons 
                   currentPrice={currentPrice || product.price} 
                   onBuyNow={handleBuyNow} 
@@ -314,23 +301,21 @@ const ProductDetail = () => {
                   productType={product.product_type || 'file_download'}
                   isLoggedIn={!!user}
                 />
-              </>}
+              </>
+            )}
           </div>
         </div>
 
         {/* Login Incentive Banner */}
-        <div className="mb-6 sm:mb-8">
-          <LoginIncentiveBanner isLoggedIn={!!user} hasPurchased={hasPurchased} />
-        </div>
-
-        {/* Promotional Banner */}
-        <div className="mb-6 sm:mb-8">
-          <PromotionalBanner />
-        </div>
+        {!user && (
+          <div className="mb-6">
+            <LoginIncentiveBanner isLoggedIn={false} hasPurchased={false} />
+          </div>
+        )}
 
         {/* Seller Info - Compact, Above Tabs */}
         <div className="mb-6">
-          <Card className="border-l-4 border-l-green-500">
+          <Card>
             <CardContent className="p-4">
               <SellerInfo 
                 sellerId={product.seller_id} 
@@ -339,6 +324,7 @@ const ProductDetail = () => {
                 productTitle={product.title}
                 totalProducts={product.seller_total_products}
                 responseRate={product.seller_response_rate}
+                totalSales={product.purchases || 0}
               />
             </CardContent>
           </Card>

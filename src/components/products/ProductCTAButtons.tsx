@@ -46,7 +46,7 @@ const ProductCTAButtons = ({
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Primary CTA */}
       <TooltipProvider>
         <Tooltip>
@@ -68,18 +68,10 @@ const ProductCTAButtons = ({
         </Tooltip>
       </TooltipProvider>
       
-      {/* Minimal Trust Indicators */}
-      <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground pt-2">
-        <span className="flex items-center gap-1">
-          <Shield className="h-3 w-3" /> Bảo mật 100%
-        </span>
-        <span className="flex items-center gap-1">
-          <Zap className="h-3 w-3" /> Giao ngay
-        </span>
-        <span className="flex items-center gap-1">
-          <Headphones className="h-3 w-3" /> Hỗ trợ 24/7
-        </span>
-      </div>
+      {/* Micro trust text - REPLACE old trust badges */}
+      <p className="text-xs text-center text-muted-foreground pt-1">
+        🔒 Thanh toán bảo mật | 🚚 Giao hàng ngay | 💬 Hỗ trợ 24/7
+      </p>
     </div>
   );
 };
