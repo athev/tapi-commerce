@@ -219,11 +219,6 @@ const ProductDetail = () => {
               <ProductImageGallery 
                 images={[product.image || '/placeholder.svg']} 
                 title={product.title}
-                promotions={{
-                  hasVoucher: true,
-                  discount50k: true,
-                  discount20Percent: true
-                }}
               />
             </div>
             

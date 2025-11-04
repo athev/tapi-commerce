@@ -84,13 +84,13 @@ const ProductTabs = ({ description, productType }: ProductTabsProps) => {
   return (
     <Tabs defaultValue="description" className="w-full">
       <div className="sticky top-16 z-10 bg-background border-b mb-6">
-        <TabsList className="grid w-full grid-cols-6 rounded-none h-12">
-          <TabsTrigger value="description">Mô tả</TabsTrigger>
-          <TabsTrigger value="features">Tính năng</TabsTrigger>
-          <TabsTrigger value="guide">Hướng dẫn</TabsTrigger>
-          <TabsTrigger value="policy">🛡️ Chính sách</TabsTrigger>
-          <TabsTrigger value="guarantee">Cam kết</TabsTrigger>
-          <TabsTrigger value="faq">FAQ</TabsTrigger>
+        <TabsList className="inline-flex w-full overflow-x-auto rounded-none h-12 justify-start">
+          <TabsTrigger value="description" className="flex-shrink-0 px-4">Mô tả</TabsTrigger>
+          <TabsTrigger value="features" className="flex-shrink-0 px-4">Tính năng</TabsTrigger>
+          <TabsTrigger value="guide" className="flex-shrink-0 px-4">Hướng dẫn</TabsTrigger>
+          <TabsTrigger value="policy" className="flex-shrink-0 px-4">Chính sách</TabsTrigger>
+          <TabsTrigger value="guarantee" className="flex-shrink-0 px-4">Cam kết</TabsTrigger>
+          <TabsTrigger value="faq" className="flex-shrink-0 px-4">FAQ</TabsTrigger>
         </TabsList>
       </div>
 
