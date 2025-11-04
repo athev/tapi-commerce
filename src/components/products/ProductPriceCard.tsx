@@ -123,12 +123,7 @@ const ProductPriceCard = ({
       </div>
 
       {/* Sold Count */}
-      <div className="flex items-center gap-2">
-        <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">
-          Đã bán <strong className="text-foreground">{product?.purchases || 0}+</strong>
-        </span>
-      </div>
+      
 
       {/* Promotional Tags */}
       <div className="flex flex-wrap gap-2">
