@@ -29,6 +29,10 @@ export const LoginIncentiveBanner = ({ isLoggedIn, hasPurchased }: LoginIncentiv
     navigate('/login');
   };
 
+  const handleRegister = () => {
+    navigate('/register-choice');
+  };
+
   // Only show if: not logged in OR logged in but hasn't purchased
   const shouldShow = (!isLoggedIn || (isLoggedIn && !hasPurchased)) && !isDismissed;
 
@@ -60,25 +64,27 @@ export const LoginIncentiveBanner = ({ isLoggedIn, hasPurchased }: LoginIncentiv
               <h3 className="text-base sm:text-lg font-bold text-gray-900 mb-1">
                 🎁 ĐĂNG NHẬP ĐỂ NHẬN QUÀ TẶNG!
               </h3>
+              <p className="text-sm text-gray-800 font-medium mb-1">
+                Vui lòng đăng nhập để mua hàng và nhận quà tặng
+              </p>
               <p className="text-sm sm:text-base text-gray-700">
                 Đăng nhập ngay để được <span className="font-bold text-primary">tặng miễn phí Canva Pro 1 tháng</span> cho đơn hàng đầu tiên!
               </p>
             </div>
             
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-4">
               <Button
+                onClick={handleRegister}
+                className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white font-bold h-10 px-6 shadow-md hover:shadow-lg transition-all"
+              >
+                Đăng ký ngay
+              </Button>
+              <button
                 onClick={handleLogin}
-                className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white font-semibold h-9 sm:h-10 px-4 sm:px-6"
+                className="text-primary hover:text-primary/80 font-medium text-sm underline-offset-4 hover:underline transition-colors"
               >
-                Đăng nhập ngay
-              </Button>
-              <Button
-                variant="outline"
-                className="h-9 sm:h-10 px-4 sm:px-6"
-                onClick={() => window.open('/register', '_blank')}
-              >
-                Tìm hiểu thêm
-              </Button>
+                Đăng nhập
+              </button>
             </div>
             
             <div className="flex items-center gap-2 text-xs text-gray-600">
