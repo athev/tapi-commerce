@@ -305,10 +305,10 @@ const ProductDetail = () => {
                   <CardContent className="p-3">
                     <ProductPriceCard product={product} onPriceChange={handlePriceChange} />
                     
-                    {/* Subtle FOMO text */}
+                    {/* Purchase notification */}
                     {product.in_stock < 20 && (
-                      <p className="text-xs text-orange-600 flex items-center gap-1 mt-1">
-                        🔥 Chỉ còn {product.in_stock} sản phẩm • 12 người đang xem
+                      <p className="text-xs text-orange-600 flex items-center gap-1 mt-2">
+                        🎉 Nguyễn V*** vừa mua sản phẩm này 2 phút trước
                       </p>
                     )}
                   </CardContent>

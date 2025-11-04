@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -92,37 +92,35 @@ const ProductPriceCard = ({
         </p>}
 
       {/* Variants Selector - Only if variants exist */}
-      {variants.length > 0 && <Card>
-          <CardContent className="p-3">
-            <Label className="text-xs font-medium mb-2 block">
-              Chọn gói sản phẩm
-            </Label>
-            
-            <RadioGroup value={selectedVariantId || ''} onValueChange={handleVariantChange}>
-              <div className="space-y-1.5">
-                {variants.map(variant => <label key={variant.id} className="flex items-center justify-between p-2 border rounded-lg cursor-pointer hover:border-primary transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                    <div className="flex items-center gap-2">
-                      <RadioGroupItem value={variant.id} />
-                      <div>
-                        <p className="font-medium text-sm">{variant.variant_name}</p>
-                        {variant.badge && <Badge variant="secondary" className="text-[10px] mt-0.5">
-                            {variant.badge}
-                          </Badge>}
-                      </div>
+      {variants.length > 0 && <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+          <Label className="text-xs font-medium block">
+            Chọn gói sản phẩm
+          </Label>
+          
+          <RadioGroup value={selectedVariantId || ''} onValueChange={handleVariantChange}>
+            <div className="space-y-1">
+              {variants.map(variant => <label key={variant.id} className="flex items-center justify-between p-2 border rounded-lg cursor-pointer hover:border-primary transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                  <div className="flex items-center gap-2">
+                    <RadioGroupItem value={variant.id} />
+                    <div>
+                      <p className="font-medium text-sm">{variant.variant_name}</p>
+                      {variant.badge && <Badge variant="secondary" className="text-[10px] mt-0.5">
+                          {variant.badge}
+                        </Badge>}
                     </div>
-                    <div className="text-right">
-                      <p className="text-base font-bold text-destructive">
-                        {formatPrice(variant.price)}
-                      </p>
-                      {variant.original_price && variant.original_price > variant.price && <p className="text-[10px] line-through text-muted-foreground">
-                          {formatPrice(variant.original_price)}
-                        </p>}
-                    </div>
-                  </label>)}
-              </div>
-            </RadioGroup>
-          </CardContent>
-        </Card>}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-base font-bold text-destructive">
+                      {formatPrice(variant.price)}
+                    </p>
+                    {variant.original_price && variant.original_price > variant.price && <p className="text-[10px] line-through text-muted-foreground">
+                        {formatPrice(variant.original_price)}
+                      </p>}
+                  </div>
+                </label>)}
+            </div>
+          </RadioGroup>
+        </div>}
     </div>;
 };
 export default ProductPriceCard;
