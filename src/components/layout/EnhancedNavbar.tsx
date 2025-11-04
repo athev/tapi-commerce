@@ -112,21 +112,26 @@ const EnhancedNavbar = () => {
               </Link>
             </div>
 
-            {/* Right Side - Notifications + Search + Profile */}
+            {/* Center - Search Bar (Desktop only) */}
+            <div className="hidden md:flex flex-1 max-w-2xl mx-4">
+              <SearchBar />
+            </div>
+
+            {/* Right Side - Notifications + Search (Mobile) + Profile */}
             <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 flex-shrink-0">
               {user ? (
                 <>
                   {/* Notifications */}
                   <NotificationDropdown />
 
-                  {/* Search */}
+                  {/* Mobile Search Button - only show on mobile */}
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-9 w-9 sm:h-10 sm:w-10 md:h-12 md:w-12"
+                    className="h-9 w-9 sm:h-10 sm:w-10 md:hidden"
                     onClick={() => setSearchOpen(true)}
                   >
-                    <Search className="h-5 w-5 md:h-6 md:w-6" />
+                    <Search className="h-5 w-5" />
                   </Button>
 
                   {/* User Menu */}
@@ -172,14 +177,14 @@ const EnhancedNavbar = () => {
                 </>
               ) : (
                 <>
-                  {/* Search for logged out users */}
+                  {/* Mobile Search Button for logged out users */}
                   <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="h-9 w-9 sm:h-10 sm:w-10 md:h-12 md:w-12"
+                    className="h-9 w-9 sm:h-10 sm:w-10 md:hidden"
                     onClick={() => setSearchOpen(true)}
                   >
-                    <Search className="h-5 w-5 md:h-6 md:w-6" />
+                    <Search className="h-5 w-5" />
                   </Button>
                   
                   <div className="flex items-center gap-1 sm:gap-2">
