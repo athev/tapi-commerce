@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash, Download } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Product {
   id: string;
@@ -24,6 +25,12 @@ interface SellerProductItemProps {
 }
 
 const SellerProductItem = ({ product, isDeleting, onDelete }: SellerProductItemProps) => {
+  const navigate = useNavigate();
+
+  const handleEdit = () => {
+    navigate(`/seller/edit-product/${product.id}`);
+  };
+
   return (
     <Card className="overflow-hidden">
       <CardContent className="p-0">
@@ -80,6 +87,7 @@ const SellerProductItem = ({ product, isDeleting, onDelete }: SellerProductItemP
                   variant="outline" 
                   size="sm"
                   className="border-green-500 text-green-600 hover:bg-green-50"
+                  onClick={handleEdit}
                 >
                   <Edit className="h-4 w-4 mr-1" /> Sửa
                 </Button>

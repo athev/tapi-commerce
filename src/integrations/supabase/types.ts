@@ -658,39 +658,54 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
+          avatar: string | null
           created_at: string
           email: string
           full_name: string
           id: string
           is_online: boolean | null
+          phone: string | null
           response_rate: number | null
           response_time: string | null
           role: string
           seller_rating: number | null
+          shop_banner: string | null
+          shop_description: string | null
           total_products: number | null
         }
         Insert: {
+          address?: string | null
+          avatar?: string | null
           created_at?: string
           email: string
           full_name: string
           id: string
           is_online?: boolean | null
+          phone?: string | null
           response_rate?: number | null
           response_time?: string | null
           role?: string
           seller_rating?: number | null
+          shop_banner?: string | null
+          shop_description?: string | null
           total_products?: number | null
         }
         Update: {
+          address?: string | null
+          avatar?: string | null
           created_at?: string
           email?: string
           full_name?: string
           id?: string
           is_online?: boolean | null
+          phone?: string | null
           response_rate?: number | null
           response_time?: string | null
           role?: string
           seller_rating?: number | null
+          shop_banner?: string | null
+          shop_description?: string | null
           total_products?: number | null
         }
         Relationships: []

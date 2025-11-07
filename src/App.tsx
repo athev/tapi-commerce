@@ -24,6 +24,7 @@ import Notifications from "./pages/Notifications";
 import SellerDashboard from "./pages/SellerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import AccountantDashboard from "./pages/AccountantDashboard";
+import ShopPage from "./pages/ShopPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/chat" element={<Chat />} />
             <Route path="/chat/:conversationId" element={<Chat />} />
             <Route path="/notifications" element={<Notifications />} />
+            <Route path="/shop/:sellerId" element={<ShopPage />} />
             
             {/* Protected Routes */}
             <Route 
