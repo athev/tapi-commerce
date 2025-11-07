@@ -18,7 +18,7 @@ export const useSupabaseAuth = (isOnline: boolean) => {
   const { profile, setProfile, fetchProfile, refreshProfile } = useUserProfile();
 
   // Use the authentication operations hook
-  const { signIn, signOut } = useAuthOperations(fetchProfile, setProfile);
+  const { signIn, signOut, signInWithGoogle } = useAuthOperations(fetchProfile, setProfile);
 
   // Use the sign up hook
   const { signUp: signUpHook } = useSignUp();
@@ -41,6 +41,7 @@ export const useSupabaseAuth = (isOnline: boolean) => {
     signIn,
     signUp,
     signOut,
+    signInWithGoogle,
     refreshProfile: () => refreshProfile(user),
     fetchProfile
   };

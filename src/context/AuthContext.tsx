@@ -11,6 +11,7 @@ const AuthContext = createContext<AuthContextType>({
   signIn: async () => ({ error: null }),
   signUp: async () => ({ error: null, success: false }),
   signOut: async () => {},
+  signInWithGoogle: async () => ({ error: null }),
   refreshProfile: async () => {},
   isOnline: true,
 });

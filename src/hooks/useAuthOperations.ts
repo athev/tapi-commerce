@@ -117,8 +117,62 @@ export const useAuthOperations = (fetchProfile: (userId: string) => Promise<any>
     }
   };
 
+  // Sign in with Google OAuth
+  const signInWithGoogle = async () => {
+    if (!navigator.onLine) {
+      console.error('useAuthOperations: Network error - User is offline');
+      return { 
+        error: { 
+          message: "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.",
+          code: "network_error" 
+        } 
+      };
+    }
+
+    try {
+      console.log('useAuthOperations: Starting Google sign in');
+      
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
+      });
+      
+      if (error) {
+        console.error('useAuthOperations: Google sign in error:', error);
+        throw error;
+      }
+      
+      console.log('useAuthOperations: Google sign in initiated');
+      return { error: null };
+      
+    } catch (error: any) {
+      console.error('useAuthOperations: Google sign in error:', error);
+      
+      if (error.message?.includes('fetch') || error.message?.includes('network') || !navigator.onLine) {
+        error.code = "network_error";
+        error.message = "Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối internet và thử lại sau.";
+      }
+      
+      toastNotification({
+        title: "Đăng nhập Google thất bại",
+        description: error.message || "Không thể kết nối. Vui lòng thử lại sau.",
+        variant: "destructive",
+      });
+      return { error };
+    }
+  };
+
   return {
     signIn,
-    signOut
+    signOut,
+    signInWithGoogle
   };
 };

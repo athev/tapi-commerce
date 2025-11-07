@@ -21,6 +21,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signIn,
     signUp,
     signOut,
+    signInWithGoogle,
     refreshProfile,
     fetchProfile
   } = useSupabaseAuth(isOnline);
@@ -46,6 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       signIn,
       signUp,
       signOut,
+      signInWithGoogle,
       refreshProfile,
       isOnline,
     }}>

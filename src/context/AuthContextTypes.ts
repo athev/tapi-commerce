@@ -10,6 +10,7 @@ export type AuthContextType = {
   signIn: ReturnType<typeof useSupabaseAuth>['signIn'];
   signUp: ReturnType<typeof useSupabaseAuth>['signUp'];
   signOut: ReturnType<typeof useSupabaseAuth>['signOut'];
+  signInWithGoogle: ReturnType<typeof useSupabaseAuth>['signInWithGoogle'];
   refreshProfile: ReturnType<typeof useSupabaseAuth>['refreshProfile'];
   isOnline: boolean;
 };

@@ -11,16 +11,17 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { useAuth } from "@/context";
 import { useToast } from "@/hooks/use-toast";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, Chrome } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const { signIn, user, session } = useAuth();
+  const { signIn, signInWithGoogle, user, session } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -75,6 +76,26 @@ const Login = () => {
       setErrorMessage("Có lỗi xảy ra. Vui lòng thử lại sau.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    setErrorMessage("");
+    
+    try {
+      console.log('Login page: Starting Google sign in');
+      const { error } = await signInWithGoogle();
+      
+      if (error) {
+        console.error('Login page: Google sign in error:', error);
+        setErrorMessage(error.message || "Đăng nhập Google thất bại. Vui lòng thử lại.");
+      }
+    } catch (error) {
+      console.error('Login page: Unexpected Google error:', error);
+      setErrorMessage("Có lỗi xảy ra. Vui lòng thử lại sau.");
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -140,11 +161,43 @@ const Login = () => {
                 <Button 
                   type="submit" 
                   className="w-full bg-marketplace-primary hover:bg-marketplace-primary/90"
-                  disabled={isLoading}
+                  disabled={isLoading || isGoogleLoading}
                 >
                   {isLoading ? "Đang xử lý..." : "Đăng nhập"}
                 </Button>
               </form>
+              
+              {/* Google Sign-In divider and button */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Hoặc tiếp tục với
+                  </span>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleGoogleSignIn}
+                disabled={isGoogleLoading || isLoading}
+              >
+                {isGoogleLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Đang xử lý...
+                  </>
+                ) : (
+                  <>
+                    <Chrome className="mr-2 h-4 w-4" />
+                    Đăng nhập với Google
+                  </>
+                )}
+              </Button>
               
               <div className="mt-6 text-center text-sm">
                 Chưa có tài khoản?{" "}
