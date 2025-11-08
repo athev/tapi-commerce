@@ -22,6 +22,10 @@ const EditProduct = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [categories, setCategories] = useState<any[]>([]);
+  const [currentImage, setCurrentImage] = useState<string>('');
+  const [newImageFile, setNewImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -51,6 +55,9 @@ const EditProduct = () => {
           category: product.category || "",
           in_stock: product.in_stock?.toString() || "",
         });
+        
+        setCurrentImage(product.image || '');
+        setImagePreview(product.image || '');
 
         // Fetch categories
         const { data: categoriesData } = await supabase
@@ -78,6 +85,28 @@ const EditProduct = () => {
 
     setIsSaving(true);
     try {
+      let imageUrl = currentImage;
+
+      // Upload new image if selected
+      if (newImageFile) {
+        setIsUploadingImage(true);
+        const fileExt = newImageFile.name.split('.').pop();
+        const fileName = `${productId}-${Date.now()}.${fileExt}`;
+        
+        const { error: uploadError } = await supabase.storage
+          .from('product-images')
+          .upload(fileName, newImageFile, { upsert: true });
+        
+        if (uploadError) throw uploadError;
+        
+        const { data: { publicUrl } } = supabase.storage
+          .from('product-images')
+          .getPublicUrl(fileName);
+        
+        imageUrl = publicUrl;
+        setIsUploadingImage(false);
+      }
+
       const { error } = await supabase
         .from('products')
         .update({
@@ -86,6 +115,7 @@ const EditProduct = () => {
           price: parseInt(formData.price),
           category: formData.category,
           in_stock: parseInt(formData.in_stock),
+          image: imageUrl,
         })
         .eq('id', productId);
 
@@ -96,6 +126,7 @@ const EditProduct = () => {
     } catch (error: any) {
       console.error('Error updating product:', error);
       toast.error("Lỗi khi cập nhật sản phẩm");
+      setIsUploadingImage(false);
     } finally {
       setIsSaving(false);
     }
@@ -149,6 +180,37 @@ const EditProduct = () => {
             </div>
 
             <div className="space-y-2">
+              <Label>Hình ảnh sản phẩm</Label>
+              {imagePreview && (
+                <div className="relative w-full h-48 mb-2 rounded-md overflow-hidden border">
+                  <img 
+                    src={imagePreview} 
+                    alt="Preview" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    if (file.size > 5 * 1024 * 1024) {
+                      toast.error("Kích thước file không được vượt quá 5MB");
+                      return;
+                    }
+                    setNewImageFile(file);
+                    setImagePreview(URL.createObjectURL(file));
+                  }
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                JPG, PNG hoặc WEBP (tối đa 5MB)
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="category">Danh mục *</Label>
               <Select
                 value={formData.category}
@@ -197,16 +259,17 @@ const EditProduct = () => {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Mô tả chi tiết về sản phẩm..."
-                rows={6}
+                rows={12}
+                className="min-h-[300px] resize-y"
               />
             </div>
 
             <div className="flex space-x-3">
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? (
+              <Button type="submit" disabled={isSaving || isUploadingImage}>
+                {isSaving || isUploadingImage ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Đang lưu...
+                    {isUploadingImage ? "Đang tải ảnh..." : "Đang lưu..."}
                   </>
                 ) : (
                   <>
