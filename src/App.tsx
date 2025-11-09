@@ -39,7 +39,15 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/search" element={<SearchResults />} />
-            <Route path="/product/:id" element={<ProductDetail />} />
+            
+            {/* SEO-friendly slug routes */}
+            <Route path="/product/:slug" element={<ProductDetail />} />
+            <Route path="/shop/:slug" element={<ShopPage />} />
+            
+            {/* Backward compatibility - UUID routes */}
+            <Route path="/product/id/:id" element={<ProductDetail />} />
+            <Route path="/shop/id/:id" element={<ShopPage />} />
+            
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/register-choice" element={<RegisterChoice />} />
@@ -53,7 +61,6 @@ const App = () => (
             <Route path="/chat" element={<Chat />} />
             <Route path="/chat/:conversationId" element={<Chat />} />
             <Route path="/notifications" element={<Notifications />} />
-            <Route path="/shop/:sellerId" element={<ShopPage />} />
             
             {/* Protected Routes */}
             <Route 

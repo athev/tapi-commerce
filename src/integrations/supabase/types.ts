@@ -672,6 +672,7 @@ export type Database = {
           seller_rating: number | null
           shop_banner: string | null
           shop_description: string | null
+          slug: string | null
           total_products: number | null
         }
         Insert: {
@@ -689,6 +690,7 @@ export type Database = {
           seller_rating?: number | null
           shop_banner?: string | null
           shop_description?: string | null
+          slug?: string | null
           total_products?: number | null
         }
         Update: {
@@ -706,6 +708,7 @@ export type Database = {
           seller_rating?: number | null
           shop_banner?: string | null
           shop_description?: string | null
+          slug?: string | null
           total_products?: number | null
         }
         Relationships: []
@@ -1109,7 +1112,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      generate_slug: { Args: { title: string }; Returns: string }
+      generate_slug: { Args: { input_text: string }; Returns: string }
       get_order_for_seller: {
         Args: { order_id: string; seller_id: string }
         Returns: Json

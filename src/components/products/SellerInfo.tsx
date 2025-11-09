@@ -43,7 +43,7 @@ const SellerInfo = ({
     const fetchSellerProfile = async () => {
       const { data } = await supabase
         .from('profiles')
-        .select('full_name, avatar, shop_description, phone, address, seller_rating, response_rate, response_time, is_online, total_products, created_at')
+        .select('full_name, avatar, shop_description, phone, address, seller_rating, response_rate, response_time, is_online, total_products, created_at, slug')
         .eq('id', sellerId)
         .single();
       
@@ -161,7 +161,7 @@ const SellerInfo = ({
         <Button 
           variant="outline" 
           className="flex-1 h-10 py-0 text-sm px-0"
-          onClick={() => navigate(`/shop/${sellerId}`)}
+          onClick={() => navigate(`/shop/${sellerProfile?.slug || sellerId}`)}
         >
           <Store className="h-4 w-4 mr-2" />
           Xem cửa hàng

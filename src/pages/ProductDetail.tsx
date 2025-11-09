@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { Star, ShoppingBag, Download } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 const ProductDetail = () => {
   const {
+    slug,
     id
   } = useParams();
   const navigate = useNavigate();
@@ -70,11 +72,23 @@ const ProductDetail = () => {
       try {
         setLoading(true);
 
+        // Determine if we're using slug or id
+        const identifier = slug || id;
+        const isUUID = identifier?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+        
+        // Build query based on slug or UUID
+        let query = supabase.from('products').select('*');
+        if (isUUID) {
+          query = query.eq('id', identifier);
+        } else {
+          query = query.eq('slug', identifier);
+        }
+
         // Try to fetch from Supabase
         const {
           data,
           error
-        } = await supabase.from('products').select('*').eq('id', id).single();
+        } = await query.single();
         if (error) {
           console.log('Supabase error, falling back to mock data:', error);
           // Fallback to mock data
@@ -86,6 +100,8 @@ const ProductDetail = () => {
           }
         } else {
           setProduct(data);
+          // Set dynamic page title
+          document.title = `${data.title} - DigitalMarket`;
         }
 
         // Check if user has purchased this product
@@ -106,10 +122,11 @@ const ProductDetail = () => {
         setLoading(false);
       }
     };
-    if (id) {
+    const identifier = slug || id;
+    if (identifier) {
       fetchProduct();
     }
-  }, [id, user, toast]);
+  }, [slug, id, user, toast]);
   const handleBuyNow = () => {
     if (!user) {
       setShowLoginModal(true);
@@ -203,6 +220,19 @@ const ProductDetail = () => {
       </div>;
   }
   return <div className="min-h-screen bg-background overflow-x-hidden">
+      <Helmet>
+        <title>{product.title} - DigitalMarket</title>
+        <meta name="description" content={product.description || `Mua ${product.title} chất lượng cao với giá tốt nhất`} />
+        <meta property="og:title" content={product.title} />
+        <meta property="og:description" content={product.description || `Mua ${product.title} chất lượng cao với giá tốt nhất`} />
+        <meta property="og:image" content={product.image || '/placeholder.svg'} />
+        <meta property="og:url" content={`${window.location.origin}/product/${product.slug || product.id}`} />
+        <meta property="og:type" content="product" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={product.title} />
+        <meta name="twitter:description" content={product.description || `Mua ${product.title} chất lượng cao với giá tốt nhất`} />
+        <meta name="twitter:image" content={product.image || '/placeholder.svg'} />
+      </Helmet>
       <EnhancedNavbar />
       
       <div className="container mx-auto px-2 sm:px-4 py-4 sm:py-6 max-w-7xl overflow-x-hidden">

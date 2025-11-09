@@ -1,5 +1,6 @@
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Helmet } from 'react-helmet-async';
 import { supabase } from "@/integrations/supabase/client";
 import EnhancedNavbar from "@/components/layout/EnhancedNavbar";
 import Footer from "@/components/layout/Footer";
@@ -9,11 +10,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, Store, Star, MessageCircle, MapPin, Phone, Package, ShoppingCart } from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
 
 const ShopPage = () => {
-  const { sellerId } = useParams();
+  const { slug, id, sellerId } = useParams();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [seller, setSeller] = useState<any>(null);
@@ -23,26 +23,39 @@ const ShopPage = () => {
     document.title = "Gian hàng | DigitalMarket";
     
     const fetchShopData = async () => {
-      if (!sellerId) return;
+      const identifier = slug || id || sellerId;
+      if (!identifier) return;
 
       try {
+        // Determine if we're using slug or id
+        const isUUID = identifier?.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+        
+        // Build query based on slug or UUID
+        let sellerQuery = supabase.from('profiles').select('*');
+        if (isUUID) {
+          sellerQuery = sellerQuery.eq('id', identifier);
+        } else {
+          sellerQuery = sellerQuery.eq('slug', identifier);
+        }
+
         // Fetch seller profile
-        const { data: sellerData, error: sellerError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', sellerId)
-          .single();
+        const { data: sellerData, error: sellerError } = await sellerQuery.single();
 
         if (sellerError) throw sellerError;
-        setSeller(sellerData);
+      setSeller(sellerData);
+      
+      // Set dynamic page title
+      if (sellerData) {
+        document.title = `${sellerData.full_name} - DigitalMarket`;
+      }
 
-        // Fetch seller's products
-        const { data: productsData, error: productsError } = await supabase
-          .from('products')
-          .select('*')
-          .eq('seller_id', sellerId)
-          .eq('status', 'active')
-          .order('created_at', { ascending: false });
+      // Fetch seller's products using seller_id from the fetched seller data
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select('*')
+        .eq('seller_id', sellerData.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
 
         if (productsError) throw productsError;
         setProducts(productsData || []);
@@ -60,7 +73,7 @@ const ShopPage = () => {
     };
 
     fetchShopData();
-  }, [sellerId]);
+  }, [slug, id, sellerId]);
 
   if (isLoading) {
     return (
@@ -91,6 +104,19 @@ const ShopPage = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <Helmet>
+        <title>{seller.full_name} - Cửa hàng DigitalMarket</title>
+        <meta name="description" content={seller.shop_description || `Xem các sản phẩm từ ${seller.full_name}`} />
+        <meta property="og:title" content={`${seller.full_name} - Cửa hàng DigitalMarket`} />
+        <meta property="og:description" content={seller.shop_description || `Xem các sản phẩm từ ${seller.full_name}`} />
+        <meta property="og:image" content={seller.avatar || seller.shop_banner || '/placeholder.svg'} />
+        <meta property="og:url" content={`${window.location.origin}/shop/${seller.slug || seller.id}`} />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${seller.full_name} - Cửa hàng DigitalMarket`} />
+        <meta name="twitter:description" content={seller.shop_description || `Xem các sản phẩm từ ${seller.full_name}`} />
+        <meta name="twitter:image" content={seller.avatar || seller.shop_banner || '/placeholder.svg'} />
+      </Helmet>
       <EnhancedNavbar />
       
       <main className="flex-1 container py-8">
@@ -117,7 +143,7 @@ const ShopPage = () => {
                       </p>
                     )}
                   </div>
-                  <Button onClick={() => navigate(`/chat?seller=${sellerId}`)}>
+                  <Button onClick={() => navigate(`/chat?seller=${seller.slug || seller.id}`)}>
                     <MessageCircle className="h-4 w-4 mr-2" />
                     Nhắn tin
                   </Button>
@@ -187,7 +213,7 @@ const ShopPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {products.map((product) => (
               <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                <Link to={`/product/${product.id}`}>
+                <Link to={`/product/${product.slug || product.id}`}>
                   <div className="aspect-square overflow-hidden bg-gray-100">
                     <img
                       src={product.image || '/placeholder.svg'}
@@ -197,7 +223,7 @@ const ShopPage = () => {
                   </div>
                 </Link>
                 <CardContent className="p-4">
-                  <Link to={`/product/${product.id}`}>
+                  <Link to={`/product/${product.slug || product.id}`}>
                     <h3 className="font-semibold mb-2 line-clamp-2 hover:text-primary">
                       {product.title}
                     </h3>
@@ -211,7 +237,7 @@ const ShopPage = () => {
                       }).format(product.price)}
                     </div>
                     <Button size="sm" asChild>
-                      <Link to={`/product/${product.id}`}>
+                      <Link to={`/product/${product.slug || product.id}`}>
                         <ShoppingCart className="h-4 w-4 mr-1" />
                         Xem
                       </Link>
