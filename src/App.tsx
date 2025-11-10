@@ -16,6 +16,7 @@ import RegisterUser from "./pages/RegisterUser";
 import RegisterSeller from "./pages/RegisterSeller";
 import VerifyEmailPrompt from "./pages/VerifyEmailPrompt";
 import MyPurchases from "./pages/MyPurchases";
+import Favorites from "./pages/Favorites";
 import SellerApply from "./pages/SellerApply";
 import NotFound from "./pages/NotFound";
 import Payment from "./pages/Payment";
@@ -57,6 +58,7 @@ const App = () => (
             <Route path="/verify-email" element={<VerifyEmailPrompt />} />
             <Route path="/my-account" element={<Navigate to="/my-purchases" replace />} />
             <Route path="/my-purchases" element={<MyPurchases />} />
+            <Route path="/favorites" element={<Favorites />} />
             <Route path="/payment/:orderId" element={<Payment />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/chat/:conversationId" element={<Chat />} />

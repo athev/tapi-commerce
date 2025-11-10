@@ -1,11 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Grid3x3, ShoppingCart, User } from "lucide-react";
+import { Home, Grid3x3, Heart, User } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { cn } from "@/lib/utils";
+import { useFavorites } from "@/hooks/useFavorites";
 
 const MobileBottomNav = () => {
   const location = useLocation();
   const { user } = useAuth();
+  const { favoriteCount } = useFavorites();
 
   // Hide on product detail page
   if (location.pathname.startsWith('/product/')) {
@@ -15,7 +17,7 @@ const MobileBottomNav = () => {
   const navItems = [
     { icon: Home, label: 'Trang chủ', path: '/' },
     { icon: Grid3x3, label: 'Danh mục', path: '/?view=categories' },
-    { icon: ShoppingCart, label: 'Giỏ hàng', path: '/cart' },
+    { icon: Heart, label: 'Yêu thích', path: '/favorites' },
     { icon: User, label: 'Tôi', path: user ? '/my-purchases' : '/login' }
   ];
 
@@ -47,10 +49,10 @@ const MobileBottomNav = () => {
                   isActive && 'scale-110'
                 )} />
                 
-                {/* Badge for cart */}
-                {item.label === 'Giỏ hàng' && (
+                {/* Badge for favorites */}
+                {item.label === 'Yêu thích' && favoriteCount > 0 && (
                   <span className="absolute -top-1.5 -right-1.5 bg-destructive text-white text-[9px] md:text-[10px] font-bold rounded-full h-4 md:h-5 min-w-[1rem] md:min-w-[1.25rem] px-0.5 md:px-1 flex items-center justify-center shadow-md">
-                    3
+                    {favoriteCount}
                   </span>
                 )}
               </div>

@@ -1,9 +1,11 @@
 
 import { Link } from "react-router-dom";
-import { Star, ShoppingCart, Eye } from "lucide-react";
+import { Star, ShoppingCart, Eye, Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { useFavorites } from "@/hooks/useFavorites";
+import { cn } from "@/lib/utils";
 
 export interface ProductCardProps {
   id: string;
@@ -48,6 +50,8 @@ const ProductCard = ({
   isHot,
   discount,
 }: ProductCardProps) => {
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const favorited = isFavorite(id);
   return (
     <Card className="group bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
       <div className="relative">
@@ -83,14 +87,28 @@ const ProductCard = ({
           </div>
         </Link>
 
-        {/* Quick actions on hover */}
-        <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="flex flex-col gap-2">
-            <Button size="sm" variant="secondary" className="w-8 h-8 p-0 bg-white/90 hover:bg-white">
-              <Eye className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        {/* Favorite Button - Always visible */}
+        <Button
+          size="icon"
+          variant="secondary"
+          className={cn(
+            "absolute top-3 right-3 h-8 w-8 rounded-full shadow-md transition-all z-10",
+            favorited 
+              ? "bg-red-50 hover:bg-red-100 text-red-500" 
+              : "bg-white/90 hover:bg-white"
+          )}
+          onClick={(e) => {
+            e.preventDefault();
+            toggleFavorite(id);
+          }}
+        >
+          <Heart 
+            className={cn(
+              "h-4 w-4 transition-all",
+              favorited && "fill-red-500"
+            )} 
+          />
+        </Button>
       </div>
 
       <CardContent className="p-4">

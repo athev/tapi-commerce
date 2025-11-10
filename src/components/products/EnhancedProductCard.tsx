@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { ProductCardProps } from "./ProductCard";
 import { cn } from "@/lib/utils";
+import { useFavorites } from "@/hooks/useFavorites";
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { 
@@ -45,6 +46,8 @@ const EnhancedProductCard = ({
   isHot,
   discount,
 }: ProductCardProps) => {
+  const { toggleFavorite, isFavorite } = useFavorites();
+  const favorited = isFavorite(id);
   const discountedPrice = discount ? price.min * (1 - discount / 100) : price.min;
   
   // Mock data with realistic values
@@ -88,15 +91,29 @@ const EnhancedProductCard = ({
           </div>
         </Link>
 
-        {/* Quick actions on hover - Desktop only */}
-        <div className="hidden md:flex absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex-col gap-2 z-10">
-          <Button size="icon" variant="secondary" className="h-8 w-8 bg-background/90 hover:bg-background rounded-full shadow-md">
-            <Heart className="h-4 w-4" />
-          </Button>
-          <Button size="icon" variant="secondary" className="h-8 w-8 bg-background/90 hover:bg-background rounded-full shadow-md">
-            <Eye className="h-4 w-4" />
-          </Button>
-        </div>
+        {/* Favorite Button - Always visible */}
+        <Button
+          size="icon"
+          variant="secondary"
+          className={cn(
+            "absolute top-2 right-2 h-8 w-8 rounded-full shadow-md transition-all z-10",
+            favorited 
+              ? "bg-red-50 hover:bg-red-100 text-red-500" 
+              : "bg-background/90 hover:bg-background"
+          )}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleFavorite(id);
+          }}
+        >
+          <Heart 
+            className={cn(
+              "h-4 w-4 transition-all",
+              favorited && "fill-red-500"
+            )} 
+          />
+        </Button>
       </div>
 
       <CardContent className="p-2 md:p-3">
