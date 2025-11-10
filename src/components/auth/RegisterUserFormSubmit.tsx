@@ -1,20 +1,22 @@
 
 import { Button } from "@/components/ui/button";
-import { WifiOff, ShoppingCart } from "lucide-react";
+import { WifiOff, ShoppingCart, Chrome, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 interface RegisterUserFormSubmitProps {
   isLoading: boolean;
+  isGoogleLoading: boolean;
   networkError: boolean;
+  onGoogleSignIn: () => void;
 }
 
-const RegisterUserFormSubmit = ({ isLoading, networkError }: RegisterUserFormSubmitProps) => {
+const RegisterUserFormSubmit = ({ isLoading, isGoogleLoading, networkError, onGoogleSignIn }: RegisterUserFormSubmitProps) => {
   return (
     <>
       <Button 
         type="submit" 
         className="w-full bg-blue-600 hover:bg-blue-700"
-        disabled={isLoading || networkError}
+        disabled={isLoading || networkError || isGoogleLoading}
       >
         {isLoading ? (
           <>
@@ -30,6 +32,37 @@ const RegisterUserFormSubmit = ({ isLoading, networkError }: RegisterUserFormSub
           <>
             <ShoppingCart className="mr-2 h-4 w-4" />
             Đăng ký làm người mua
+          </>
+        )}
+      </Button>
+
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-background px-2 text-muted-foreground">
+            Hoặc tiếp tục với
+          </span>
+        </div>
+      </div>
+
+      <Button
+        type="button"
+        variant="outline"
+        className="w-full"
+        onClick={onGoogleSignIn}
+        disabled={isGoogleLoading || isLoading || networkError}
+      >
+        {isGoogleLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Đang xử lý...
+          </>
+        ) : (
+          <>
+            <Chrome className="mr-2 h-4 w-4" />
+            Tiếp tục với Google
           </>
         )}
       </Button>

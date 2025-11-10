@@ -22,8 +22,9 @@ const RegisterSellerForm = ({ networkError, handleRetry, userType }: RegisterSel
   const [confirmPassword, setConfirmPassword] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
-  const { signUp } = useAuth();
+  const { signUp, signInWithGoogle } = useAuth();
   const { validateForm } = useRegisterFormValidation();
   const navigate = useNavigate();
 
@@ -73,6 +74,25 @@ const RegisterSellerForm = ({ networkError, handleRetry, userType }: RegisterSel
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    
+    try {
+      console.log('Starting Google sign in from seller register page');
+      const { error } = await signInWithGoogle();
+      
+      if (error) {
+        console.error('Google sign in error:', error);
+        toast.error(error.message || "Đăng nhập Google thất bại. Vui lòng thử lại.");
+      }
+    } catch (error) {
+      console.error('Unexpected Google error:', error);
+      toast.error("Có lỗi xảy ra. Vui lòng thử lại sau.");
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {showSuccess && (
@@ -102,7 +122,9 @@ const RegisterSellerForm = ({ networkError, handleRetry, userType }: RegisterSel
       
       <RegisterSellerFormSubmit 
         isLoading={isLoading}
+        isGoogleLoading={isGoogleLoading}
         networkError={networkError}
+        onGoogleSignIn={handleGoogleSignIn}
       />
     </form>
   );
