@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import QRPayment from "@/components/payment/QRPayment";
 import ManualConfirmation from "@/components/payment/ManualConfirmation";
 import OrderSupportChatButton from "@/components/chat/OrderSupportChatButton";
+import { VoucherInput } from "@/components/payment/VoucherInput";
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { 
@@ -30,6 +31,8 @@ const Payment = () => {
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'confirming' | 'completed'>('pending');
   const [showManualButton, setShowManualButton] = useState(false);
+  const [appliedVoucher, setAppliedVoucher] = useState<any>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
 
   // Query để kiểm tra trạng thái thanh toán real-time với interval ngắn hơn
   const { data: order, isLoading, error } = useQuery({
@@ -86,6 +89,12 @@ const Payment = () => {
 
   // Calculate actual price (variant price takes priority)
   const actualPrice = order?.product_variants?.price || order?.products?.price || 0;
+  const finalPrice = actualPrice - discountAmount;
+
+  const handleVoucherApplied = (voucher: any, discount: number) => {
+    setAppliedVoucher(voucher);
+    setDiscountAmount(discount);
+  };
 
   useEffect(() => {
     document.title = "Thanh toán đơn hàng | DigitalMarket";
@@ -472,10 +481,20 @@ const Payment = () => {
                 </CardContent>
               </Card>
               
+              {/* Voucher Input */}
+              {order?.product_id && (
+                <VoucherInput
+                  orderId={orderId || ''}
+                  productId={order.product_id}
+                  currentPrice={actualPrice}
+                  onVoucherApplied={handleVoucherApplied}
+                />
+              )}
+              
               {/* QR Payment Component */}
               <QRPayment
                 orderId={orderId || ''}
-                amount={actualPrice}
+                amount={finalPrice}
                 onManualConfirmation={handleManualPaymentConfirmation}
                 actualDescription={order.casso_transactions?.[0]?.description}
               />
@@ -529,17 +548,19 @@ const Payment = () => {
                         <span className="font-medium">{formatPrice(actualPrice)}</span>
                       </div>
                       
-                      <div className="flex justify-between text-sm text-green-600">
-                        <span>Giảm giá:</span>
-                        <span className="font-medium">-{formatPrice(0)}</span>
-                      </div>
+                      {discountAmount > 0 && (
+                        <div className="flex justify-between text-sm text-green-600">
+                          <span>Giảm giá ({appliedVoucher?.code}):</span>
+                          <span className="font-medium">-{formatPrice(discountAmount)}</span>
+                        </div>
+                      )}
                       
                       <div className="h-px bg-border"></div>
                       
                       <div className="flex justify-between items-center">
                         <span className="font-bold text-base">Tổng thanh toán:</span>
                         <span className="font-bold text-2xl text-destructive">
-                          {formatPrice(actualPrice)}
+                          {formatPrice(finalPrice)}
                         </span>
                       </div>
                     </div>

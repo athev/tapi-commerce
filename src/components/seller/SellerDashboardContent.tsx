@@ -9,6 +9,8 @@ import SellerAddProduct from "@/components/seller/SellerAddProduct";
 import SellerPromotionsManager from "@/components/seller/SellerPromotionsManager";
 import SellerPoliciesManager from "@/components/seller/SellerPoliciesManager";
 import SellerShopInfoEditor from "@/components/seller/SellerShopInfoEditor";
+import SellerVoucherManager from "@/components/seller/SellerVoucherManager";
+import VoucherAnalytics from "@/components/seller/VoucherAnalytics";
 import EditProduct from "@/pages/EditProduct";
 import SellerTabsNavigation from "./SellerTabsNavigation";
 
@@ -60,6 +62,16 @@ const SellerDashboardContent = ({ currentTab }: SellerDashboardContentProps) => 
           <SellerTabsNavigation />
           <TabsContent value="add-product" className="space-y-6">
             <SellerAddProduct />
+          </TabsContent>
+        </Tabs>
+      } />
+      
+      <Route path="/vouchers" element={
+        <Tabs value="vouchers" className="space-y-6">
+          <SellerTabsNavigation />
+          <TabsContent value="vouchers" className="space-y-6">
+            <SellerVoucherManager />
+            <VoucherAnalytics />
           </TabsContent>
         </Tabs>
       } />

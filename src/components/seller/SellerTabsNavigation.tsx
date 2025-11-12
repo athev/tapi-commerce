@@ -7,12 +7,13 @@ import {
   ShoppingCart, 
   Plus, 
   Wallet,
-  Settings
+  Settings,
+  Ticket
 } from "lucide-react";
 
 const SellerTabsNavigation = () => {
   return (
-    <TabsList className="grid w-full grid-cols-6">
+    <TabsList className="grid w-full grid-cols-7">
       <TabsTrigger value="overview" asChild>
         <Link to="/seller" className="flex items-center space-x-2">
           <BarChart3 className="h-4 w-4" />
@@ -41,6 +42,12 @@ const SellerTabsNavigation = () => {
         <Link to="/seller/add-product" className="flex items-center space-x-2">
           <Plus className="h-4 w-4" />
           <span>Thêm SP</span>
+        </Link>
+      </TabsTrigger>
+      <TabsTrigger value="vouchers" asChild>
+        <Link to="/seller/vouchers" className="flex items-center space-x-2">
+          <Ticket className="h-4 w-4" />
+          <span>Voucher</span>
         </Link>
       </TabsTrigger>
       <TabsTrigger value="shop-settings" asChild>

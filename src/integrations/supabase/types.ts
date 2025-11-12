@@ -928,6 +928,71 @@ export type Database = {
         }
         Relationships: []
       }
+      voucher_categories: {
+        Row: {
+          category_name: string
+          created_at: string | null
+          id: string
+          voucher_id: string
+        }
+        Insert: {
+          category_name: string
+          created_at?: string | null
+          id?: string
+          voucher_id: string
+        }
+        Update: {
+          category_name?: string
+          created_at?: string | null
+          id?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voucher_categories_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voucher_products: {
+        Row: {
+          created_at: string | null
+          id: string
+          product_id: string
+          voucher_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          product_id: string
+          voucher_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          product_id?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voucher_products_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voucher_products_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vouchers: {
         Row: {
           applicable_to: string | null

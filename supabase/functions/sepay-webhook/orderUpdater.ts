@@ -33,6 +33,9 @@ export async function processOrderCompletion(order: any, transaction: any, trans
   console.log(`📦 Processing automatic delivery...`)
   const deliveryResult = await processAutomaticDelivery(order, supabase)
   
+  // Increment voucher usage if applicable
+  await incrementVoucherUsage(order, supabase)
+  
   // Create notifications
   await createNotifications(order, deliveryResult, supabase)
   
@@ -51,6 +54,27 @@ export async function processOrderCompletion(order: any, transaction: any, trans
     amount: transaction.amount,
     delivery_status: deliveryResult.success ? 'auto_delivered' : 'manual_required',
     product_type: order.products?.product_type
+  }
+}
+
+async function incrementVoucherUsage(order: any, supabase: any) {
+  try {
+    if (order.voucher_id) {
+      console.log(`🎟️ Incrementing voucher usage for voucher ${order.voucher_id}`)
+      
+      const { error } = await supabase
+        .from('vouchers')
+        .update({ used_count: supabase.sql`used_count + 1` })
+        .eq('id', order.voucher_id)
+      
+      if (error) {
+        console.error('⚠️ Error incrementing voucher usage:', error)
+      } else {
+        console.log(`✅ Voucher usage incremented`)
+      }
+    }
+  } catch (error) {
+    console.error('⚠️ Voucher increment error:', error)
   }
 }
 
