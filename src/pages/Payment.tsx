@@ -13,7 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import QRPayment from "@/components/payment/QRPayment";
 import ManualConfirmation from "@/components/payment/ManualConfirmation";
 import OrderSupportChatButton from "@/components/chat/OrderSupportChatButton";
-import { VoucherInput } from "@/components/payment/VoucherInput";
+import { Ticket } from "lucide-react";
 
 const formatPrice = (price: number) => {
   return new Intl.NumberFormat('vi-VN', { 
@@ -31,8 +31,6 @@ const Payment = () => {
   const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'confirming' | 'completed'>('pending');
   const [showManualButton, setShowManualButton] = useState(false);
-  const [appliedVoucher, setAppliedVoucher] = useState<any>(null);
-  const [discountAmount, setDiscountAmount] = useState(0);
 
   // Query để kiểm tra trạng thái thanh toán real-time với interval ngắn hơn
   const { data: order, isLoading, error } = useQuery({
@@ -89,12 +87,8 @@ const Payment = () => {
 
   // Calculate actual price (variant price takes priority)
   const actualPrice = order?.product_variants?.price || order?.products?.price || 0;
-  const finalPrice = actualPrice - discountAmount;
-
-  const handleVoucherApplied = (voucher: any, discount: number) => {
-    setAppliedVoucher(voucher);
-    setDiscountAmount(discount);
-  };
+  const orderDiscountAmount = order?.discount_amount || 0;
+  const finalPrice = actualPrice - orderDiscountAmount;
 
   useEffect(() => {
     document.title = "Thanh toán đơn hàng | DigitalMarket";
@@ -481,14 +475,25 @@ const Payment = () => {
                 </CardContent>
               </Card>
               
-              {/* Voucher Input */}
-              {order?.product_id && (
-                <VoucherInput
-                  orderId={orderId || ''}
-                  productId={order.product_id}
-                  currentPrice={actualPrice}
-                  onVoucherApplied={handleVoucherApplied}
-                />
+              {/* Applied Voucher Display */}
+              {order?.voucher_id && orderDiscountAmount > 0 && (
+                <Card className="border-green-200 bg-green-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
+                        <Ticket className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-green-900">
+                          Đã áp dụng mã giảm giá
+                        </div>
+                        <div className="text-sm text-green-700">
+                          Tiết kiệm {formatPrice(orderDiscountAmount)}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               )}
               
               {/* QR Payment Component */}
@@ -548,10 +553,10 @@ const Payment = () => {
                         <span className="font-medium">{formatPrice(actualPrice)}</span>
                       </div>
                       
-                      {discountAmount > 0 && (
+                      {orderDiscountAmount > 0 && (
                         <div className="flex justify-between text-sm text-green-600">
-                          <span>Giảm giá ({appliedVoucher?.code}):</span>
-                          <span className="font-medium">-{formatPrice(discountAmount)}</span>
+                          <span>Giảm giá:</span>
+                          <span className="font-medium">-{formatPrice(orderDiscountAmount)}</span>
                         </div>
                       )}
                       

@@ -8,13 +8,14 @@ import { formatPrice } from '@/utils/priceUtils';
 import { toast } from 'sonner';
 
 interface VoucherInputProps {
-  orderId: string;
-  productId: string;
+  orderId?: string;
+  productId?: string;
   currentPrice: number;
   onVoucherApplied: (voucher: any, discount: number) => void;
+  preValidationMode?: boolean;
 }
 
-export const VoucherInput = ({ orderId, productId, currentPrice, onVoucherApplied }: VoucherInputProps) => {
+export const VoucherInput = ({ orderId, productId, currentPrice, onVoucherApplied, preValidationMode = false }: VoucherInputProps) => {
   const [voucherCode, setVoucherCode] = useState('');
   const [appliedVoucher, setAppliedVoucher] = useState<any>(null);
   const [discount, setDiscount] = useState(0);
@@ -27,6 +28,11 @@ export const VoucherInput = ({ orderId, productId, currentPrice, onVoucherApplie
       return;
     }
 
+    if (!productId) {
+      toast.error('Không tìm thấy thông tin sản phẩm');
+      return;
+    }
+
     const result = await validateVoucher(voucherCode, productId, currentPrice);
 
     if (!result.valid) {
@@ -36,11 +42,14 @@ export const VoucherInput = ({ orderId, productId, currentPrice, onVoucherApplie
 
     const discountAmount = calculateDiscount(result.voucher, currentPrice);
     
-    const applyResult = await applyVoucher(orderId, result.voucher.id, discountAmount);
-    
-    if (!applyResult.success) {
-      toast.error(applyResult.error || 'Không thể áp dụng mã');
-      return;
+    // Only save to DB if NOT in pre-validation mode
+    if (!preValidationMode && orderId) {
+      const applyResult = await applyVoucher(orderId, result.voucher.id, discountAmount);
+      
+      if (!applyResult.success) {
+        toast.error(applyResult.error || 'Không thể áp dụng mã');
+        return;
+      }
     }
 
     setAppliedVoucher(result.voucher);
@@ -53,7 +62,11 @@ export const VoucherInput = ({ orderId, productId, currentPrice, onVoucherApplie
   };
 
   const handleRemoveVoucher = async () => {
-    await applyVoucher(orderId, '', 0);
+    // Only update DB if NOT in pre-validation mode
+    if (!preValidationMode && orderId) {
+      await applyVoucher(orderId, '', 0);
+    }
+    
     setAppliedVoucher(null);
     setDiscount(0);
     setVoucherCode('');
