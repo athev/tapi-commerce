@@ -43,7 +43,13 @@ export const useVoucherValidation = () => {
       }
 
       // 5. Check min purchase
-      if (orderAmount < voucher.min_purchase_amount) {
+      console.log('🔍 [VOUCHER] Checking min_purchase_amount:', {
+        orderAmount,
+        min_purchase_amount: voucher.min_purchase_amount,
+        comparison: orderAmount < voucher.min_purchase_amount
+      });
+      
+      if (voucher.min_purchase_amount && orderAmount < voucher.min_purchase_amount) {
         return { 
           valid: false, 
           error: `Đơn tối thiểu ${formatPrice(voucher.min_purchase_amount)}` 

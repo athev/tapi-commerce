@@ -20,6 +20,8 @@ interface PurchaseConfirmationModalProps {
     email?: string;
     username?: string;
   };
+  discountAmount?: number;
+  appliedVoucher?: any;
 }
 
 const formatPrice = (price: number) => {
@@ -49,11 +51,13 @@ const PurchaseConfirmationModal = ({
   product,
   currentPrice,
   selectedVariantName,
-  buyerData
+  buyerData,
+  discountAmount = 0,
+  appliedVoucher
 }: PurchaseConfirmationModalProps) => {
   const quantity = 1;
-  const discount = 0; // Can be extended later
   const totalAmount = currentPrice || product.price;
+  const finalAmount = totalAmount - discountAmount;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -91,13 +95,13 @@ const PurchaseConfirmationModal = ({
             
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-600">Giá:</span>
-              <span className="font-medium">{formatPrice(totalAmount)}</span>
+              <span className={discountAmount > 0 ? "line-through text-gray-400" : "font-medium"}>{formatPrice(totalAmount)}</span>
             </div>
             
-            {discount > 0 && (
+            {discountAmount > 0 && (
               <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">Giảm giá:</span>
-                <span className="font-medium text-green-600">-{discount}%</span>
+                <span className="text-gray-600">Giảm giá ({appliedVoucher?.code}):</span>
+                <span className="font-medium text-green-600">-{formatPrice(discountAmount)}</span>
               </div>
             )}
             
@@ -105,7 +109,7 @@ const PurchaseConfirmationModal = ({
               <div className="flex justify-between items-center">
                 <span className="font-medium text-gray-900">Tổng tiền:</span>
                 <span className="font-bold text-lg text-marketplace-primary">
-                  {formatPrice(totalAmount)}
+                  {formatPrice(finalAmount)}
                 </span>
               </div>
             </div>
