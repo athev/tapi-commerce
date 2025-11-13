@@ -239,6 +239,8 @@ const ProductPurchaseForm = ({
         currentPrice={currentPrice}
         selectedVariantName={selectedVariantName}
         buyerData={buyerData}
+        discountAmount={discountAmount}
+        appliedVoucher={appliedVoucher}
       />
     </>
   );
