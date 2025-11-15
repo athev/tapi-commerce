@@ -67,24 +67,19 @@ const ProductPriceCard = ({
     }
   };
   return <div className="space-y-2">
-      {/* Price Row with Favorite */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-baseline gap-2 flex-wrap mx-0 px-0">
-          <span className="text-2xl sm:text-3xl font-extrabold text-destructive">
-            {formatPrice(currentPrice)}
-          </span>
-          {originalPrice && originalPrice > currentPrice && <>
-              <span className="text-base text-muted-foreground line-through">
-                {formatPrice(originalPrice)}
-              </span>
-              {discountPercentage && <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
-                  -{discountPercentage}%
-                </Badge>}
-            </>}
-        </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-          <Heart className="h-5 w-5" />
-        </Button>
+      {/* Price Row */}
+      <div className="flex items-baseline gap-2 flex-wrap mx-0 px-0">
+        <span className="text-2xl sm:text-3xl font-extrabold text-destructive">
+          {formatPrice(currentPrice)}
+        </span>
+        {originalPrice && originalPrice > currentPrice && <>
+            <span className="text-base text-muted-foreground line-through">
+              {formatPrice(originalPrice)}
+            </span>
+            {discountPercentage && <Badge variant="destructive" className="text-xs px-1.5 py-0.5">
+                -{discountPercentage}%
+              </Badge>}
+          </>}
       </div>
 
       {product?.in_stock && product.in_stock > 0 && <p className="text-xs text-muted-foreground">
