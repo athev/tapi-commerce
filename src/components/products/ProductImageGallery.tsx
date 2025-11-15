@@ -23,8 +23,8 @@ const ProductImageGallery = ({
       <CardContent className="p-6">
         <div className="space-y-4 px-0">
           {/* Main Image */}
-          <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden px-[13px]">
-            <img src={images[selectedImage] || '/placeholder.svg'} alt={title || 'Product image'} className="w-full h-full object-cover px-0" />
+          <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+            <img src={images[selectedImage] || '/placeholder.svg'} alt={title || 'Product image'} className="w-full h-full object-cover" />
           </div>
 
           {/* Thumbnail Images */}
