@@ -20,7 +20,7 @@ const ProductImageGallery = ({
       </Card>;
   }
   return <Card>
-      <CardContent className="p-6">
+      <CardContent className="p-6 mx-0 my-px px-px py-0">
         <div className="space-y-4 px-0">
           {/* Main Image */}
           <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
