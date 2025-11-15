@@ -98,26 +98,50 @@ const OrderDetailsModal = ({ open, onOpenChange, order }: OrderDetailsModalProps
               <CreditCard className="h-4 w-4" />
               <span>Thông tin thanh toán</span>
             </div>
-            <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
-              <div>
-                <p className="text-xs text-muted-foreground">Số tiền</p>
-                <p className="font-semibold">{formatPrice(order.bank_amount || product.price)}</p>
-              </div>
+            <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+              {(() => {
+                const original = product.price || 0;
+                const discount = order.discount_amount || 0;
+                const computedFinal = Math.max(0, original - discount);
+                const finalAmount = order.bank_amount ?? computedFinal;
+                
+                return (
+                  <>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Giá gốc:</span>
+                      <span className={discount > 0 ? "line-through text-muted-foreground" : "font-medium"}>
+                        {formatPrice(original)}
+                      </span>
+                    </div>
+                    {discount > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Giảm giá:</span>
+                        <span className="text-red-500">-{formatPrice(discount)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-base font-semibold pt-2 border-t">
+                      <span>Tổng thanh toán:</span>
+                      <span className="text-marketplace-primary">{formatPrice(finalAmount)}</span>
+                    </div>
+                  </>
+                );
+              })()}
               {order.bank_transaction_id && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Mã giao dịch</p>
-                  <p className="font-mono text-sm">{order.bank_transaction_id}</p>
+                <div className="flex justify-between text-sm pt-2 border-t">
+                  <span className="text-muted-foreground">Mã giao dịch:</span>
+                  <span className="font-mono">{order.bank_transaction_id}</span>
                 </div>
               )}
               {order.payment_verified_at && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Xác thực lúc</p>
-                  <p className="text-sm">{formatDate(order.payment_verified_at)}</p>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Xác thực lúc:</span>
+                  <span>{formatDate(order.payment_verified_at)}</span>
                 </div>
               )}
             </div>
           </div>
 
+          <Separator />
           <Separator />
 
           {/* Delivery Notes */}
