@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/utils/orderUtils";
-import { Heart } from "lucide-react";
+import { FavoriteButton } from "@/components/products/FavoriteButton";
 interface ProductVariant {
   id: string;
   variant_name: string;
@@ -82,9 +81,7 @@ const ProductPriceCard = ({
                 </Badge>}
             </>}
         </div>
-        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-          <Heart className="h-5 w-5" />
-        </Button>
+        <FavoriteButton productId={product.id} size="md" />
       </div>
 
       {product?.in_stock && product.in_stock > 0 && <p className="text-xs text-muted-foreground">
