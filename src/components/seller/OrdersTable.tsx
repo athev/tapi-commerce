@@ -20,6 +20,9 @@ interface Order {
   created_at: string;
   buyer_email: string | null;
   delivery_status: string | null;
+  discount_amount?: number;
+  bank_amount?: number;
+  payment_verified_at?: string | null;
   products: {
     id: string;
     title: string;
@@ -74,8 +77,32 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
               </TableCell>
               
               <TableCell>
-                <div className="font-medium text-marketplace-primary">
-                  {formatPrice(order.products?.price || 0)}
+                <div className="space-y-1">
+                  {(() => {
+                    const original = order.products?.price || 0;
+                    const discount = order.discount_amount || 0;
+                    const computedFinal = Math.max(0, original - discount);
+                    const final = order.bank_amount ?? computedFinal;
+                    
+                    if (discount > 0 && !order.bank_amount) {
+                      return (
+                        <>
+                          <div className="text-sm text-muted-foreground line-through">
+                            {formatPrice(original)}
+                          </div>
+                          <div className="font-medium text-marketplace-primary">
+                            {formatPrice(final)}
+                          </div>
+                        </>
+                      );
+                    }
+                    
+                    return (
+                      <div className="font-medium text-marketplace-primary">
+                        {formatPrice(final)}
+                      </div>
+                    );
+                  })()}
                 </div>
               </TableCell>
               

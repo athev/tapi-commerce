@@ -46,6 +46,11 @@ const SellerOrders = () => {
             buyer_email,
             delivery_status,
             delivery_notes,
+            discount_amount,
+            bank_amount,
+            payment_verified_at,
+            voucher_id,
+            bank_transaction_id,
             products!inner(
               id,
               title,
