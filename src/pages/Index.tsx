@@ -57,7 +57,7 @@ const Index = () => {
                 <ProductToolbar sortBy={sortBy} onSortChange={setSortBy} viewMode={viewMode} onViewModeChange={setViewMode} onFilterChange={setFilters} totalProducts={0} />
 
                 <div className="mt-3 md:mt-6">
-                  <ProductGrid />
+                  <ProductGrid sortBy={sortBy} />
                 </div>
               </div>
             </div>

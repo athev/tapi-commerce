@@ -16,6 +16,7 @@ export interface Product {
   product_type?: string;
   in_stock?: number;
   purchases?: number;
+  average_rating?: number;
   delivery_data?: any;
   created_at: string;
 }
