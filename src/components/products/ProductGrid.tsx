@@ -87,6 +87,10 @@ const ProductGrid = ({
     sortedProducts = [...sortedProducts].sort((a, b) => {
       const scoreA = calculateRelevanceScore(a, searchTerm);
       const scoreB = calculateRelevanceScore(b, searchTerm);
+      
+      // Debug logging for top products
+      console.log(`[Relevance] "${a.title.trim()}" = ${scoreA} | "${b.title.trim()}" = ${scoreB}`);
+      
       return scoreB - scoreA; // Descending
     });
   } else {

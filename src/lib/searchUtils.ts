@@ -43,7 +43,7 @@ export const calculateRelevanceScore = (product: any, searchTerm: string): numbe
   const searchWords = normalizedSearch.split(/\s+/);
   
   // Title scoring (highest priority)
-  const normalizedTitle = normalizeVietnamese(product.title || '');
+  const normalizedTitle = normalizeVietnamese(product.title || '').trim();
   if (normalizedTitle === normalizedSearch) {
     score += 100; // Exact match
   } else if (normalizedTitle.includes(normalizedSearch)) {
@@ -53,18 +53,18 @@ export const calculateRelevanceScore = (product: any, searchTerm: string): numbe
   }
   
   // Keywords scoring
-  if (product.keywords?.some((kw: string) => normalizeVietnamese(kw) === normalizedSearch)) {
+  if (product.keywords?.some((kw: string) => normalizeVietnamese(kw).trim() === normalizedSearch)) {
     score += 40;
   }
   
   // Meta title scoring
-  const normalizedMeta = normalizeVietnamese(product.meta_title || '');
+  const normalizedMeta = normalizeVietnamese(product.meta_title || '').trim();
   if (normalizedMeta.includes(normalizedSearch)) {
     score += 25;
   }
   
   // Description scoring
-  const normalizedDesc = normalizeVietnamese(product.description || '');
+  const normalizedDesc = normalizeVietnamese(product.description || '').trim();
   if (normalizedDesc.includes(normalizedSearch)) {
     score += 20;
   } else if (searchWords.every(word => normalizedDesc.includes(word))) {
@@ -72,7 +72,7 @@ export const calculateRelevanceScore = (product: any, searchTerm: string): numbe
   }
   
   // Seller name scoring (lowest priority)
-  if (normalizeVietnamese(product.seller_name || '').includes(normalizedSearch)) {
+  if (normalizeVietnamese(product.seller_name || '').trim().includes(normalizedSearch)) {
     score += 5;
   }
   
