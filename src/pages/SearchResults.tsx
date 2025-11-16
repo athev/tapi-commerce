@@ -5,7 +5,7 @@ import Footer from "@/components/layout/Footer";
 import ProductGrid from "@/components/products/ProductGrid";
 import ProductToolbar, { SortOption, ViewMode } from "@/components/products/ProductToolbar";
 import FilterPanel from "@/components/products/FilterPanel";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -21,9 +21,16 @@ const SearchResults = () => {
   const searchQuery = searchParams.get('q') || '';
   const categoryParam = searchParams.get('category') || 'all';
   
-  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [sortBy, setSortBy] = useState<SortOption>(searchQuery ? "relevance" : "newest");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [filters, setFilters] = useState<any>(null);
+
+  // Reset to relevance when search query changes
+  useEffect(() => {
+    if (searchQuery) {
+      setSortBy("relevance");
+    }
+  }, [searchQuery]);
 
   return (
     <div className="flex flex-col min-h-screen bg-background pb-16 lg:pb-0">
@@ -101,6 +108,7 @@ const SearchResults = () => {
                   <ProductGrid 
                     searchTerm={searchQuery}
                     category={categoryParam}
+                    sortBy={sortBy}
                   />
                 </div>
               </div>

@@ -3,11 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import EnhancedProductCard from "./EnhancedProductCard";
 import { mockProducts, Product } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
-import { matchesSearchTerm } from "@/lib/searchUtils";
+import { matchesSearchTerm, calculateRelevanceScore } from "@/lib/searchUtils";
+import { SortOption } from "./ProductToolbar";
 
 interface ProductGridProps {
   searchTerm?: string;
   category?: string;
+  sortBy?: SortOption;
   products?: Product[];
   isLoading?: boolean;
   error?: Error | null;
@@ -15,7 +17,8 @@ interface ProductGridProps {
 
 const ProductGrid = ({ 
   searchTerm = "", 
-  category = "all", 
+  category = "all",
+  sortBy = "newest",
   products: externalProducts,
   isLoading: externalIsLoading,
   error: externalError 
@@ -43,8 +46,6 @@ const ProductGrid = ({
             `title.ilike.${searchPattern},description.ilike.${searchPattern},seller_name.ilike.${searchPattern},meta_title.ilike.${searchPattern}`
           );
         }
-        
-        query = query.order('created_at', { ascending: false });
         
         const { data, error } = await query;
         
@@ -78,6 +79,36 @@ const ProductGrid = ({
     return matchesSearch && matchesCategory;
   });
 
+  // Client-side sorting
+  let sortedProducts = filteredProducts || [];
+
+  if (searchTerm && sortBy === 'relevance') {
+    // Sort by relevance score when searching
+    sortedProducts = [...sortedProducts].sort((a, b) => {
+      const scoreA = calculateRelevanceScore(a, searchTerm);
+      const scoreB = calculateRelevanceScore(b, searchTerm);
+      return scoreB - scoreA; // Descending
+    });
+  } else {
+    // Apply other sorting methods
+    sortedProducts = [...sortedProducts].sort((a, b) => {
+      switch (sortBy) {
+        case 'newest':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'price_asc':
+          return a.price - b.price;
+        case 'price_desc':
+          return b.price - a.price;
+        case 'popular':
+          return (b.purchases || 0) - (a.purchases || 0);
+        case 'rating':
+          return (b.average_rating || 0) - (a.average_rating || 0);
+        default:
+          return 0;
+      }
+    });
+  }
+
   if (finalIsLoading) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
@@ -102,7 +133,7 @@ const ProductGrid = ({
     console.error('ProductGrid error:', finalError);
   }
 
-  if (!filteredProducts || filteredProducts.length === 0) {
+  if (!sortedProducts || sortedProducts.length === 0) {
     return (
       <div className="text-center py-16">
         <div className="max-w-md mx-auto">

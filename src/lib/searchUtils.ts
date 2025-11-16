@@ -31,3 +31,50 @@ export const matchesSearchTerm = (product: any, searchTerm: string): boolean => 
     )
   );
 };
+
+/**
+ * Calculate relevance score for search ranking
+ */
+export const calculateRelevanceScore = (product: any, searchTerm: string): number => {
+  if (!searchTerm) return 0;
+  
+  let score = 0;
+  const normalizedSearch = normalizeVietnamese(searchTerm.trim().toLowerCase());
+  const searchWords = normalizedSearch.split(/\s+/);
+  
+  // Title scoring (highest priority)
+  const normalizedTitle = normalizeVietnamese(product.title || '');
+  if (normalizedTitle === normalizedSearch) {
+    score += 100; // Exact match
+  } else if (normalizedTitle.includes(normalizedSearch)) {
+    score += 50; // Contains phrase
+  } else if (searchWords.every(word => normalizedTitle.includes(word))) {
+    score += 30; // All words present
+  }
+  
+  // Keywords scoring
+  if (product.keywords?.some((kw: string) => normalizeVietnamese(kw) === normalizedSearch)) {
+    score += 40;
+  }
+  
+  // Meta title scoring
+  const normalizedMeta = normalizeVietnamese(product.meta_title || '');
+  if (normalizedMeta.includes(normalizedSearch)) {
+    score += 25;
+  }
+  
+  // Description scoring
+  const normalizedDesc = normalizeVietnamese(product.description || '');
+  if (normalizedDesc.includes(normalizedSearch)) {
+    score += 20;
+  } else if (searchWords.every(word => normalizedDesc.includes(word))) {
+    score += 10;
+  }
+  
+  // Seller name scoring (lowest priority)
+  if (normalizeVietnamese(product.seller_name || '').includes(normalizedSearch)) {
+    score += 5;
+  }
+  
+  return score;
+};
