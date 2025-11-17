@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 // Create order support conversation
+// Can be initiated by either buyer or seller
 export const createOrderSupportConversation = async (
   buyerId: string,
   sellerId: string,

@@ -70,8 +70,6 @@ const OrderInlineChat = ({ order, sellerId, height = 360 }: OrderInlineChatProps
     if (!firstMessage.trim() || !user) return;
     try {
       setSending(true);
-      // Only buyers can create new conversations per RLS
-      if (isSeller) return;
 
       const convId = await createOrderSupportConversation(order.id, sellerId);
       setConversationId(convId);
@@ -99,18 +97,21 @@ const OrderInlineChat = ({ order, sellerId, height = 360 }: OrderInlineChatProps
   return (
     <div className="space-y-2">
       <div className="text-sm text-muted-foreground">
-        Chưa có cuộc trò chuyện cho đơn hàng này. {isSeller ? 'Khách hàng cần gửi tin nhắn đầu tiên.' : 'Hãy gửi tin nhắn để bắt đầu trao đổi.'}
+        {isSeller 
+          ? 'Chưa có cuộc trò chuyện cho đơn hàng này. Hãy gửi tin nhắn để bắt đầu trao đổi với khách hàng.'
+          : 'Chưa có cuộc trò chuyện cho đơn hàng này. Hãy gửi tin nhắn để bắt đầu trao đổi với người bán.'
+        }
       </div>
 
       <div className="flex gap-2">
         <Input
           value={firstMessage}
           onChange={(e) => setFirstMessage(e.target.value)}
-          onKeyPress={(e) => e.key === 'Enter' && !isSeller && handleSendFirst()}
-          placeholder={isSeller ? "Chờ khách hàng khởi tạo chat…" : "Nhập tin nhắn đầu tiên…"}
-          disabled={isSeller || sending}
+          onKeyPress={(e) => e.key === 'Enter' && handleSendFirst()}
+          placeholder={isSeller ? "Nhập tin nhắn cho khách hàng…" : "Nhập tin nhắn cho người bán…"}
+          disabled={sending}
         />
-        <Button onClick={handleSendFirst} disabled={isSeller || sending || !firstMessage.trim()}>
+        <Button onClick={handleSendFirst} disabled={sending || !firstMessage.trim()}>
           Gửi
         </Button>
       </div>
