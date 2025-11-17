@@ -153,7 +153,7 @@ const ProductDetail = () => {
         buyer_data: buyerData || {},
         buyer_email: buyerData?.email || user.email,
         variant_id: selectedVariantId,
-        bank_amount: actualPrice,
+        bank_amount: actualPrice - (buyerData.discount_amount || 0),
         status: 'pending',
         voucher_id: buyerData.voucher_id || null,
         discount_amount: buyerData.discount_amount || 0,
