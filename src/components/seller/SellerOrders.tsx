@@ -1,6 +1,6 @@
 
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import OrdersLoadingSkeleton from "./OrdersLoadingSkeleton";
@@ -11,6 +11,7 @@ import OrdersFilters from "./OrdersFilters";
 
 const SellerOrders = () => {
   const { user, profile } = useAuth();
+  const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState('all');
   const [deliveryFilter, setDeliveryFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -87,6 +88,34 @@ const SellerOrders = () => {
   });
 
   console.log('Query state:', { isLoading, hasError: !!error, ordersCount: orders?.length || 0 });
+
+  // Setup realtime subscription for order updates
+  useEffect(() => {
+    if (!user?.id) return;
+
+    console.log('[SellerOrders] Setting up realtime subscription for orders');
+    
+    const channel = supabase
+      .channel('seller-orders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('[SellerOrders] Order changed:', payload);
+          queryClient.invalidateQueries({ queryKey: ['seller-orders'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('[SellerOrders] Cleaning up realtime subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient]);
 
   // Filter and search orders
   const filteredOrders = useMemo(() => {
