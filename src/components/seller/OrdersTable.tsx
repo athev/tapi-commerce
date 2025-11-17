@@ -81,10 +81,9 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
                   {(() => {
                     const original = order.products?.price || 0;
                     const discount = order.discount_amount || 0;
-                    const computedFinal = Math.max(0, original - discount);
-                    const final = order.bank_amount ?? computedFinal;
+                    const final = order.bank_amount || (original - discount);
                     
-                    if (discount > 0 && !order.bank_amount) {
+                    if (discount > 0) {
                       return (
                         <>
                           <div className="text-sm text-muted-foreground line-through">
@@ -92,6 +91,9 @@ const OrdersTable = ({ orders }: OrdersTableProps) => {
                           </div>
                           <div className="font-medium text-marketplace-primary">
                             {formatPrice(final)}
+                          </div>
+                          <div className="text-xs text-green-600">
+                            Giảm {formatPrice(discount)}
                           </div>
                         </>
                       );
