@@ -11,7 +11,7 @@ import { SlidersHorizontal, Grid3x3, List } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import FilterPanel from "./FilterPanel";
 
-export type SortOption = "relevance" | "newest" | "price_asc" | "price_desc" | "popular" | "rating";
+export type SortOption = "recommended" | "trending" | "relevance" | "newest" | "price_asc" | "price_desc" | "popular" | "rating";
 export type ViewMode = "grid" | "list";
 
 interface ProductToolbarProps {
@@ -70,6 +70,8 @@ const ProductToolbar = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="recommended">🌟 Đề xuất</SelectItem>
+              <SelectItem value="trending">🔥 Xu hướng</SelectItem>
               <SelectItem value="relevance">Độ liên quan</SelectItem>
               <SelectItem value="newest">Mới nhất</SelectItem>
               <SelectItem value="popular">Bán chạy</SelectItem>

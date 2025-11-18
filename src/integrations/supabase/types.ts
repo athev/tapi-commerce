@@ -614,74 +614,101 @@ export type Database = {
         Row: {
           average_rating: number | null
           category: string
+          chat_initiated_count: number | null
           complaint_rate: number | null
           created_at: string
           delivery_data: Json | null
           description: string | null
+          favorites_count: number | null
           file_url: string | null
           id: string
           image: string | null
           in_stock: number | null
+          is_mall_product: boolean | null
+          is_sponsored: boolean | null
           keywords: string[] | null
+          last_score_calculated_at: string | null
           meta_description: string | null
           meta_title: string | null
           price: number
           product_type: string | null
           purchases: number | null
+          purchases_last_30_days: number | null
+          purchases_last_7_days: number | null
+          quality_score: number | null
           review_count: number | null
           seller_id: string
           seller_name: string
           slug: string | null
           status: string | null
           title: string
+          views: number | null
         }
         Insert: {
           average_rating?: number | null
           category: string
+          chat_initiated_count?: number | null
           complaint_rate?: number | null
           created_at?: string
           delivery_data?: Json | null
           description?: string | null
+          favorites_count?: number | null
           file_url?: string | null
           id?: string
           image?: string | null
           in_stock?: number | null
+          is_mall_product?: boolean | null
+          is_sponsored?: boolean | null
           keywords?: string[] | null
+          last_score_calculated_at?: string | null
           meta_description?: string | null
           meta_title?: string | null
           price: number
           product_type?: string | null
           purchases?: number | null
+          purchases_last_30_days?: number | null
+          purchases_last_7_days?: number | null
+          quality_score?: number | null
           review_count?: number | null
           seller_id: string
           seller_name: string
           slug?: string | null
           status?: string | null
           title: string
+          views?: number | null
         }
         Update: {
           average_rating?: number | null
           category?: string
+          chat_initiated_count?: number | null
           complaint_rate?: number | null
           created_at?: string
           delivery_data?: Json | null
           description?: string | null
+          favorites_count?: number | null
           file_url?: string | null
           id?: string
           image?: string | null
           in_stock?: number | null
+          is_mall_product?: boolean | null
+          is_sponsored?: boolean | null
           keywords?: string[] | null
+          last_score_calculated_at?: string | null
           meta_description?: string | null
           meta_title?: string | null
           price?: number
           product_type?: string | null
           purchases?: number | null
+          purchases_last_30_days?: number | null
+          purchases_last_7_days?: number | null
+          quality_score?: number | null
           review_count?: number | null
           seller_id?: string
           seller_name?: string
           slug?: string | null
           status?: string | null
           title?: string
+          views?: number | null
         }
         Relationships: []
       }
