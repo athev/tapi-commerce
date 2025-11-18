@@ -71,6 +71,9 @@ export const useFavorites = () => {
 
         if (error) throw error;
         
+        // Increment favorites_count on product
+        await supabase.rpc('increment_favorites_count', { product_id: productId });
+        
         setFavorites(prev => [...prev, productId]);
         toast({
           title: "Đã thêm vào yêu thích",

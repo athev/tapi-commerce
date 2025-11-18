@@ -15,6 +15,8 @@ const AdminProducts = () => {
   const [category, setCategory] = useState("all");
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
+  const [isUpdating, setIsUpdating] = useState<string | null>(null);
+
   const { data: products, isLoading, refetch } = useQuery({
     queryKey: ['admin-products'],
     queryFn: async () => {
@@ -23,7 +25,7 @@ const AdminProducts = () => {
       const { data, error } = await supabase
         .from('products')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('quality_score', { ascending: false, nullsFirst: false });
       
       if (error) {
         console.error('Error fetching admin products:', error);
@@ -34,6 +36,66 @@ const AdminProducts = () => {
       return data;
     }
   });
+
+  const toggleMallProduct = async (productId: string, currentStatus: boolean) => {
+    setIsUpdating(productId);
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_mall_product: !currentStatus })
+        .eq('id', productId);
+      
+      if (error) throw error;
+      toast.success(`Đã ${!currentStatus ? 'bật' : 'tắt'} Mall Product`);
+      refetch();
+    } catch (error: any) {
+      console.error('Error toggling mall product:', error);
+      toast.error('Có lỗi xảy ra');
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const toggleSponsored = async (productId: string, currentStatus: boolean) => {
+    setIsUpdating(productId);
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({ is_sponsored: !currentStatus })
+        .eq('id', productId);
+      
+      if (error) throw error;
+      toast.success(`Đã ${!currentStatus ? 'bật' : 'tắt'} Sponsored`);
+      refetch();
+    } catch (error: any) {
+      console.error('Error toggling sponsored:', error);
+      toast.error('Có lỗi xảy ra');
+    } finally {
+      setIsUpdating(null);
+    }
+  };
+
+  const recalculateScores = async () => {
+    try {
+      toast.info('Đang tính toán lại điểm chất lượng...');
+      const response = await fetch(
+        `${supabase.supabaseUrl}/functions/v1/calculate-product-scores`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabase.supabaseKey}`,
+          }
+        }
+      );
+      
+      const result = await response.json();
+      toast.success(`Đã cập nhật ${result.updated} sản phẩm`);
+      refetch();
+    } catch (error) {
+      console.error('Error recalculating scores:', error);
+      toast.error('Có lỗi xảy ra khi tính toán');
+    }
+  };
 
   const filteredProducts = products?.filter(product => {
     const matchesSearch = product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -73,7 +135,12 @@ const AdminProducts = () => {
 
   return (
     <div>
-      <h2 className="text-2xl font-semibold mb-6">Quản lý sản phẩm</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-semibold">Quản lý sản phẩm</h2>
+        <Button onClick={recalculateScores} variant="outline">
+          🔄 Tính lại điểm chất lượng
+        </Button>
+      </div>
       
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="flex-1">

@@ -11,7 +11,7 @@ import ProductToolbar, { SortOption, ViewMode } from "@/components/products/Prod
 import FilterPanel from "@/components/products/FilterPanel";
 import { QuickHelpSection } from "@/components/home/QuickHelpSection";
 const Index = () => {
-  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [sortBy, setSortBy] = useState<SortOption>("recommended");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [filters, setFilters] = useState<any>(null);
   return <div className="flex flex-col min-h-screen bg-background pb-16 lg:pb-0">
