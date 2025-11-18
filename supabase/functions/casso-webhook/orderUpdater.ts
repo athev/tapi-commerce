@@ -12,7 +12,6 @@ export async function updateOrderStatus(order: any, transaction: any, transactio
       delivery_status: 'processing',
       payment_verified_at: new Date().toISOString(),
       bank_transaction_id: transactionId,
-      bank_amount: transaction.amount,
       casso_transaction_id: transactionId,
       updated_at: new Date().toISOString()
     })
