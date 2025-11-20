@@ -197,6 +197,11 @@ export const createConversation = async (
     throw error;
   }
 
+  // Track chat initiated for product consultation
+  if (chatType === 'product_consultation' && productId) {
+    await supabase.rpc('increment_chat_initiated', { product_id: productId });
+  }
+
   console.log('Created new conversation:', newConv.id);
   return newConv.id;
 };

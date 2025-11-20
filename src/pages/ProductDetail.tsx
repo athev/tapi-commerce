@@ -125,6 +125,17 @@ const ProductDetail = () => {
     const identifier = slug || id;
     if (identifier) {
       fetchProduct();
+      
+      // Track product view (debounced)
+      const viewTimer = setTimeout(async () => {
+        try {
+          await supabase.rpc('increment_product_views', { product_id: id });
+        } catch (error) {
+          console.error('Error tracking view:', error);
+        }
+      }, 3000); // Wait 3 seconds before counting as view
+      
+      return () => clearTimeout(viewTimer);
     }
   }, [slug, id, user, toast]);
   const handleBuyNow = () => {

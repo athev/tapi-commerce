@@ -58,6 +58,9 @@ export const useFavorites = () => {
 
         if (error) throw error;
         
+        // Decrement favorites_count on product
+        await supabase.rpc('decrement_favorites_count', { product_id: productId });
+        
         setFavorites(prev => prev.filter(id => id !== productId));
         toast({
           title: "Đã xóa khỏi yêu thích",
