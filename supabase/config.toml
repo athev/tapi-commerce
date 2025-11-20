@@ -3,8 +3,17 @@ project_id = "navlxvufcajsozhvbulu"
 [functions.sepay-webhook]
 verify_jwt = false
 
+[functions.casso-webhook]
+verify_jwt = false
+
 [functions.release-pi-early]
 verify_jwt = true
 
 [functions.backfill-wallet-data]
 verify_jwt = true
+
+[functions.calculate-product-scores]
+verify_jwt = false
+
+[functions.product-scores-cron]
+verify_jwt = false

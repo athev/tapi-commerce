@@ -78,20 +78,12 @@ const AdminProducts = () => {
   const recalculateScores = async () => {
     try {
       toast.info('Đang tính toán lại điểm chất lượng...');
-      const response = await fetch(
-        `${supabase.supabaseUrl}/functions/v1/calculate-product-scores`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${supabase.supabaseKey}`,
-          }
-        }
-      );
+      const { data, error } = await supabase.functions.invoke('calculate-product-scores');
       
-      const result = await response.json();
-      toast.success(`Đã cập nhật ${result.updated} sản phẩm`);
+      if (error) throw error;
+      toast.success(`Đã cập nhật ${data?.updated || 0} sản phẩm`);
       refetch();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error recalculating scores:', error);
       toast.error('Có lỗi xảy ra khi tính toán');
     }
@@ -207,11 +199,31 @@ const AdminProducts = () => {
                     <p className="text-gray-500 mt-2 line-clamp-2">{product.description}</p>
                     
                     <div className="flex justify-between items-center mt-4">
-                      <div className="text-sm text-gray-500">
-                        Đã bán: {product.purchases || 0} | Còn lại: {product.in_stock || 'Không giới hạn'}
+                      <div className="flex gap-4 text-sm text-gray-500">
+                        <span>⭐ {product.quality_score?.toFixed(0) || '0'}</span>
+                        <span>👁️ {product.views || 0}</span>
+                        <span>🔥 {product.purchases_last_7_days || 0}/7d</span>
+                        <span>Đã bán: {product.purchases || 0}</span>
+                        <span>Còn: {product.in_stock || '∞'}</span>
                       </div>
                       
                       <div className="flex space-x-2">
+                        <Button
+                          variant={product.is_mall_product ? "default" : "outline"}
+                          size="sm"
+                          disabled={isUpdating === product.id}
+                          onClick={() => toggleMallProduct(product.id, product.is_mall_product || false)}
+                        >
+                          {product.is_mall_product ? '⚡ Mall' : 'Set Mall'}
+                        </Button>
+                        <Button
+                          variant={product.is_sponsored ? "default" : "outline"}
+                          size="sm"
+                          disabled={isUpdating === product.id}
+                          onClick={() => toggleSponsored(product.id, product.is_sponsored || false)}
+                        >
+                          {product.is_sponsored ? '💎 Sponsored' : 'Set Ads'}
+                        </Button>
                         {product.file_url && (
                           <Button 
                             variant="outline" 

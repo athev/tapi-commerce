@@ -19,6 +19,22 @@ export interface Product {
   average_rating?: number;
   delivery_data?: any;
   created_at: string;
+  review_count?: number;
+  complaint_rate?: number;
+  status?: string;
+  slug?: string | null;
+  meta_title?: string | null;
+  meta_description?: string | null;
+  keywords?: string[] | null;
+  views?: number;
+  favorites_count?: number;
+  chat_initiated_count?: number;
+  purchases_last_7_days?: number;
+  purchases_last_30_days?: number;
+  is_mall_product?: boolean;
+  is_sponsored?: boolean;
+  quality_score?: number;
+  last_score_calculated_at?: string | null;
 }
 
 export interface Order {

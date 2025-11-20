@@ -1233,6 +1233,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrement_favorites_count: {
+        Args: { product_id: string }
+        Returns: undefined
+      }
       generate_slug: { Args: { input_text: string }; Returns: string }
       get_order_for_seller: {
         Args: { order_id: string; seller_id: string }
@@ -1249,6 +1253,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_chat_initiated: {
+        Args: { product_id: string }
+        Returns: undefined
+      }
+      increment_favorites_count: {
+        Args: { product_id: string }
+        Returns: undefined
+      }
+      increment_product_views: {
+        Args: { product_id: string }
+        Returns: undefined
+      }
+      update_purchases_30d: { Args: never; Returns: undefined }
+      update_purchases_7d: { Args: never; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "seller" | "end-user" | "accountant"

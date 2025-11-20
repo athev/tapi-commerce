@@ -97,20 +97,50 @@ const ProductGrid = ({
     // Apply other sorting methods
     sortedProducts = [...sortedProducts].sort((a, b) => {
       switch (sortBy) {
+        case 'recommended':
+          // Sort by quality score
+          return (b.quality_score || 0) - (a.quality_score || 0);
+        
+        case 'trending':
+          // Sort by 7-day purchases
+          return (b.purchases_last_7_days || 0) - (a.purchases_last_7_days || 0);
+        
         case 'newest':
           return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        
         case 'price_asc':
           return a.price - b.price;
+        
         case 'price_desc':
           return b.price - a.price;
+        
         case 'popular':
           return (b.purchases || 0) - (a.purchases || 0);
+        
         case 'rating':
           return (b.average_rating || 0) - (a.average_rating || 0);
+        
         default:
           return 0;
       }
     });
+    
+    // Apply diversity penalty only for homepage recommended view
+    if (sortBy === 'recommended' && !searchTerm) {
+      const withPenalty = sortedProducts.map((product, index) => {
+        if (index < 3) return { ...product, _displayScore: product.quality_score || 0 };
+        
+        const prev3 = sortedProducts.slice(Math.max(0, index - 3), index);
+        const sameSeller = prev3.every(p => p.seller_id === product.seller_id);
+        
+        return {
+          ...product,
+          _displayScore: sameSeller ? (product.quality_score || 0) * 0.7 : (product.quality_score || 0)
+        };
+      });
+      
+      sortedProducts = withPenalty.sort((a: any, b: any) => (b._displayScore || 0) - (a._displayScore || 0));
+    }
   }
 
   if (finalIsLoading) {
