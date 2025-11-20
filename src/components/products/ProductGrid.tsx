@@ -124,23 +124,6 @@ const ProductGrid = ({
           return 0;
       }
     });
-    
-    // Apply diversity penalty only for homepage recommended view
-    if (sortBy === 'recommended' && !searchTerm) {
-      const withPenalty = sortedProducts.map((product, index) => {
-        if (index < 3) return { ...product, _displayScore: product.quality_score || 0 };
-        
-        const prev3 = sortedProducts.slice(Math.max(0, index - 3), index);
-        const sameSeller = prev3.every(p => p.seller_id === product.seller_id);
-        
-        return {
-          ...product,
-          _displayScore: sameSeller ? (product.quality_score || 0) * 0.7 : (product.quality_score || 0)
-        };
-      });
-      
-      sortedProducts = withPenalty.sort((a: any, b: any) => (b._displayScore || 0) - (a._displayScore || 0));
-    }
   }
 
   if (finalIsLoading) {
