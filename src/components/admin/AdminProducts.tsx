@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Check, Trash, Download } from "lucide-react";
 
 const AdminProducts = () => {
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("all");
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
@@ -83,6 +84,7 @@ const AdminProducts = () => {
       if (error) throw error;
       toast.success(`Đã cập nhật ${data?.updated || 0} sản phẩm`);
       refetch();
+      queryClient.invalidateQueries({ queryKey: ['products'] });
     } catch (error: any) {
       console.error('Error recalculating scores:', error);
       toast.error('Có lỗi xảy ra khi tính toán');
