@@ -98,8 +98,15 @@ const ProductGrid = ({
     sortedProducts = [...sortedProducts].sort((a, b) => {
       switch (sortBy) {
         case 'recommended':
-          // Sort by quality score
-          return (b.quality_score || 0) - (a.quality_score || 0);
+          // Primary: Sort by quality score
+          const scoreDiff = (b.quality_score || 0) - (a.quality_score || 0);
+          
+          // Tiebreaker: If scores are very close (< 0.5 difference), use created_at (newest first)
+          if (Math.abs(scoreDiff) < 0.5) {
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          }
+          
+          return scoreDiff;
         
         case 'trending':
           // Sort by 7-day purchases
