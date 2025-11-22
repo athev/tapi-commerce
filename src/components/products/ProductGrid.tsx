@@ -6,6 +6,34 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { matchesSearchTerm, calculateRelevanceScore } from "@/lib/searchUtils";
 import { SortOption } from "./ProductToolbar";
 
+// Helper: Kiểm tra sản phẩm có ảnh thực không
+const hasRealImage = (product: Product): boolean => {
+  if (!product.image) return false;
+  const placeholderPatterns = [
+    '/placeholder.svg',
+    'placeholder.svg',
+    'placeholder',
+    '/lovable-uploads/bc39c71c', // Ảnh placeholder mặc định
+  ];
+  return !placeholderPatterns.some(pattern => 
+    product.image?.toLowerCase().includes(pattern.toLowerCase())
+  );
+};
+
+// Helper: Kiểm tra sản phẩm có phải demo/mẫu không
+const isDemoProduct = (product: Product): boolean => {
+  const demoPatterns = [
+    'resumedesign',
+    'demo',
+    'test',
+    'sample',
+    'mẫu',
+    'ví dụ'
+  ];
+  const sellerName = product.seller_name?.toLowerCase() || '';
+  return demoPatterns.some(pattern => sellerName.includes(pattern));
+};
+
 interface ProductGridProps {
   searchTerm?: string;
   category?: string;
@@ -98,10 +126,28 @@ const ProductGrid = ({
     sortedProducts = [...sortedProducts].sort((a, b) => {
       switch (sortBy) {
         case 'recommended':
-          // Primary: Sort by quality score
-          const scoreDiff = (b.quality_score || 0) - (a.quality_score || 0);
+          // Tính display score với penalty
+          const getDisplayScore = (product: Product) => {
+            let score = product.quality_score || 0;
+            
+            // Penalty -1000 cho sản phẩm không có ảnh thực
+            if (!hasRealImage(product)) {
+              score -= 1000;
+            }
+            
+            // Penalty -500 cho sản phẩm demo/mẫu
+            if (isDemoProduct(product)) {
+              score -= 500;
+            }
+            
+            return score;
+          };
           
-          // Tiebreaker: If scores are very close (< 0.5 difference), use created_at (newest first)
+          const scoreA = getDisplayScore(a);
+          const scoreB = getDisplayScore(b);
+          const scoreDiff = scoreB - scoreA;
+          
+          // Tiebreaker: Nếu điểm gần bằng nhau (< 0.5), sort theo created_at
           if (Math.abs(scoreDiff) < 0.5) {
             return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
           }
