@@ -67,6 +67,15 @@ const EnhancedProductCard = ({
               alt={title}
               className="object-cover w-full h-full transition-transform duration-300 group-hover:scale-110"
               loading="lazy"
+              onError={(e) => {
+                console.error('❌ Image failed to load:', {
+                  productId: id,
+                  productTitle: title,
+                  imageUrl: image,
+                  timestamp: new Date().toISOString()
+                });
+                e.currentTarget.src = '/placeholder.svg';
+              }}
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300" />
             
