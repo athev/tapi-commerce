@@ -8,12 +8,12 @@ import FlashSaleSection from "@/components/home/FlashSaleSection";
 import ProductGrid from "@/components/products/ProductGrid";
 import SellerCTA from "@/components/home/SellerCTA";
 import ProductToolbar, { SortOption, ViewMode } from "@/components/products/ProductToolbar";
-import FilterPanel from "@/components/products/FilterPanel";
+import FilterPanel, { FilterState } from "@/components/products/FilterPanel";
 import { QuickHelpSection } from "@/components/home/QuickHelpSection";
 const Index = () => {
   const [sortBy, setSortBy] = useState<SortOption>("recommended");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [filters, setFilters] = useState<any>(null);
+  const [filters, setFilters] = useState<FilterState | null>(null);
   return <div className="flex flex-col min-h-screen bg-background pb-16 lg:pb-0">
       <EnhancedNavbar />
       
@@ -57,7 +57,7 @@ const Index = () => {
                 <ProductToolbar sortBy={sortBy} onSortChange={setSortBy} viewMode={viewMode} onViewModeChange={setViewMode} onFilterChange={setFilters} totalProducts={0} />
 
                 <div className="mt-3 md:mt-6">
-                  <ProductGrid sortBy={sortBy} />
+                  <ProductGrid sortBy={sortBy} filters={filters} />
                 </div>
               </div>
             </div>
