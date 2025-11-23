@@ -5,6 +5,7 @@ import { mockProducts, Product } from "@/lib/supabase";
 import { Skeleton } from "@/components/ui/skeleton";
 import { matchesSearchTerm, calculateRelevanceScore } from "@/lib/searchUtils";
 import { SortOption } from "./ProductToolbar";
+import type { FilterState } from "./FilterPanel";
 
 // Helper: Kiểm tra sản phẩm có ảnh thực không
 const hasRealImage = (product: Product): boolean => {
@@ -42,6 +43,7 @@ interface ProductGridProps {
   products?: Product[];
   isLoading?: boolean;
   error?: Error | null;
+  filters?: FilterState | null;
 }
 
 const ProductGrid = ({ 
@@ -50,7 +52,8 @@ const ProductGrid = ({
   sortBy = "newest",
   products: externalProducts,
   isLoading: externalIsLoading,
-  error: externalError 
+  error: externalError,
+  filters
 }: ProductGridProps) => {
   const { data: products, isLoading, error } = useQuery({
     queryKey: ['products', searchTerm, category],
@@ -105,7 +108,30 @@ const ProductGrid = ({
   const filteredProducts = finalProducts?.filter(product => {
     const matchesSearch = matchesSearchTerm(product, searchTerm);
     const matchesCategory = category === "all" || product.category === category;
-    return matchesSearch && matchesCategory;
+    
+    const matchesPrice =
+      !filters ||
+      (product.price >= filters.priceRange[0] &&
+       product.price <= filters.priceRange[1]);
+
+    const matchesRating =
+      !filters?.rating || (product.average_rating || 0) >= filters.rating;
+
+    const matchesCategories =
+      !filters?.categories?.length ||
+      filters.categories.includes(product.category || "");
+
+    const matchesStock =
+      !filters?.inStock || (product.in_stock ?? 0) > 0;
+
+    return (
+      matchesSearch &&
+      matchesCategory &&
+      matchesPrice &&
+      matchesRating &&
+      matchesCategories &&
+      matchesStock
+    );
   });
 
   // Client-side sorting
@@ -234,14 +260,14 @@ const ProductGrid = ({
     <div>
       <div className="flex justify-between items-center mb-4 md:mb-6">
         <p className="text-xs md:text-sm text-muted-foreground">
-          Hiển thị {filteredProducts.length} sản phẩm
+          Hiển thị {sortedProducts.length} sản phẩm
           {searchTerm && ` cho "${searchTerm}"`}
           {category !== "all" && ` trong danh mục "${category}"`}
         </p>
       </div>
       
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3 lg:gap-4">
-        {filteredProducts.map((product) => (
+        {sortedProducts.map((product) => (
           <EnhancedProductCard 
             key={product.id} 
             id={product.id}
