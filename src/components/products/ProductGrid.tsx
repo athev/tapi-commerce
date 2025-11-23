@@ -14,6 +14,7 @@ const hasRealImage = (product: Product): boolean => {
     'placeholder.svg',
     'placeholder',
     '/lovable-uploads/bc39c71c', // Ảnh placeholder mặc định
+    'vpogvgilorgkeulvnpbb', // OLD Supabase URL (broken images)
   ];
   return !placeholderPatterns.some(pattern => 
     product.image?.toLowerCase().includes(pattern.toLowerCase())
