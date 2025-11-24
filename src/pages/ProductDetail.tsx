@@ -28,6 +28,7 @@ import LoginRequiredModal from '@/components/products/LoginRequiredModal';
 import TrustBadges from '@/components/products/TrustBadges';
 import UrgencyIndicators from '@/components/products/UrgencyIndicators';
 import ProductTabs from '@/components/products/ProductTabs';
+import ServiceRequestModal from '@/components/products/ServiceRequestModal';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { mockProducts } from '@/lib/supabase';
@@ -52,6 +53,7 @@ const ProductDetail = () => {
   const [hasPurchased, setHasPurchased] = useState(false);
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showServiceModal, setShowServiceModal] = useState(false);
   const [currentPrice, setCurrentPrice] = useState(0);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectedVariantName, setSelectedVariantName] = useState<string>('');
@@ -275,12 +277,13 @@ const ProductDetail = () => {
                 {(() => {
                   const labels = {
                     file_download: 'File tải về',
-                    shared_account: 'Tài khoản dùng chung',
-                    upgrade_account_no_pass: 'Nâng cấp tài khoản',
-                    upgrade_account_with_pass: 'Nâng cấp tài khoản',
-                    license_key_delivery: 'Mã kích hoạt'
-                  };
-                  return labels[product.product_type as keyof typeof labels] || 'File tải về';
+                  shared_account: 'Tài khoản dùng chung',
+                  upgrade_account_no_pass: 'Nâng cấp tài khoản',
+                  upgrade_account_with_pass: 'Nâng cấp tài khoản',
+                  license_key_delivery: 'Mã kích hoạt',
+                  service: 'Dịch vụ'
+                };
+                return labels[product.product_type as keyof typeof labels] || 'File tải về';
                 })()}
               </Badge>
               <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold leading-tight">
@@ -352,15 +355,22 @@ const ProductDetail = () => {
                   </CardContent>
                 </Card>
 
-                {/* CTA Buttons - Larger & More Prominent */}
-                <ProductCTAButtons
-                  currentPrice={currentPrice || product.price} 
-                  onBuyNow={handleBuyNow} 
-                  isProcessing={isProcessing} 
-                  hasPurchased={hasPurchased} 
-                  productType={product.product_type || 'file_download'}
-                  isLoggedIn={!!user}
-                />
+              {/* CTA Buttons - Larger & More Prominent */}
+              <ProductCTAButtons
+                currentPrice={currentPrice || product.price} 
+                onBuyNow={handleBuyNow}
+                onServiceRequest={() => {
+                  if (!user) {
+                    setShowLoginModal(true);
+                  } else {
+                    setShowServiceModal(true);
+                  }
+                }}
+                isProcessing={isProcessing} 
+                hasPurchased={hasPurchased} 
+                productType={product.product_type || 'file_download'}
+                isLoggedIn={!!user}
+              />
               </>}
           </div>
         </div>
@@ -419,9 +429,19 @@ const ProductDetail = () => {
       {/* Purchase Form (Progressive Disclosure) */}
       <ProductPurchaseForm isOpen={showPurchaseForm} onClose={() => setShowPurchaseForm(false)} productType={product.product_type || 'file_download'} product={product} currentPrice={currentPrice || product.price} selectedVariantId={selectedVariantId} selectedVariantName={selectedVariantName} onConfirm={handleConfirmPurchase} isProcessing={isProcessing} />
 
+      {/* Service Request Modal */}
+      {product && (
+        <ServiceRequestModal
+          open={showServiceModal}
+          onClose={() => setShowServiceModal(false)}
+          product={product}
+          onSuccess={(conversationId) => navigate(`/chat/${conversationId}`)}
+        />
+      )}
+
       {/* Sticky Bottom Button for Mobile */}
       {isMobile && <StickyBottomButton 
-        onBuyNow={handleBuyNow} 
+        onBuyNow={product.product_type === 'service' ? () => setShowServiceModal(true) : handleBuyNow}
         isProcessing={isProcessing} 
         hasPurchased={hasPurchased} 
         productType={product.product_type || 'file_download'} 
