@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface ProductCTAButtonsProps {
   currentPrice: number;
   onBuyNow: () => void;
+  onServiceRequest?: () => void;
   isProcessing: boolean;
   hasPurchased: boolean;
   productType: string;
@@ -15,7 +16,8 @@ interface ProductCTAButtonsProps {
 
 const ProductCTAButtons = ({ 
   currentPrice, 
-  onBuyNow, 
+  onBuyNow,
+  onServiceRequest,
   isProcessing,
   hasPurchased,
   productType,
@@ -26,6 +28,21 @@ const ProductCTAButtons = ({
   // Hide on mobile (sticky bottom bar handles it) or after purchase for file_download
   if (isMobile || (hasPurchased && productType === 'file_download')) {
     return null;
+  }
+
+  // Service products have different CTA
+  if (productType === 'service' && onServiceRequest) {
+    return (
+      <Button 
+        size="lg"
+        className="w-full h-14 text-lg font-bold bg-blue-600 hover:bg-blue-700 shadow-lg"
+        onClick={onServiceRequest}
+        disabled={isProcessing}
+      >
+        <Headphones className="h-5 w-5 mr-2" />
+        YÊU CẦU DỊCH VỤ
+      </Button>
+    );
   }
 
   const buttonContent = isProcessing ? (

@@ -2,7 +2,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { FileText, Users, Key, UserCheck, Download } from "lucide-react";
+import { FileText, Users, Key, UserCheck, Download, Headphones } from "lucide-react";
 
 interface ProductTypeSelectorProps {
   value: string;
@@ -41,6 +41,12 @@ const ProductTypeSelector = ({ value, onChange, error }: ProductTypeSelectorProp
       label: 'Nâng cấp tài khoản (có mật khẩu)',
       description: 'Thu thập email và mật khẩu để nâng cấp',
       icon: FileText
+    },
+    {
+      value: 'service',
+      label: 'Dịch vụ (Ticket-based)',
+      description: 'Báo giá sau khi kiểm tra yêu cầu, thanh toán qua escrow',
+      icon: Headphones
     }
   ];
 

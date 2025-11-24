@@ -871,6 +871,88 @@ export type Database = {
         }
         Relationships: []
       }
+      service_tickets: {
+        Row: {
+          accepted_at: string | null
+          buyer_id: string
+          completed_at: string | null
+          completion_notes: string | null
+          conversation_id: string | null
+          created_at: string | null
+          description: string
+          id: string
+          order_id: string | null
+          product_id: string
+          quoted_at: string | null
+          quoted_price: number | null
+          request_data: Json | null
+          seller_id: string
+          status: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          buyer_id: string
+          completed_at?: string | null
+          completion_notes?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          description: string
+          id?: string
+          order_id?: string | null
+          product_id: string
+          quoted_at?: string | null
+          quoted_price?: number | null
+          request_data?: Json | null
+          seller_id: string
+          status?: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          buyer_id?: string
+          completed_at?: string | null
+          completion_notes?: string | null
+          conversation_id?: string | null
+          created_at?: string | null
+          description?: string
+          id?: string
+          order_id?: string | null
+          product_id?: string
+          quoted_at?: string | null
+          quoted_price?: number | null
+          request_data?: Json | null
+          seller_id?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_tickets_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_tickets_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_tickets_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_settings: {
         Row: {
           category: string
