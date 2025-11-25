@@ -85,6 +85,12 @@ export const useProductUpload = () => {
         }
       }
 
+      // Validate file requirement for file_download products
+      if (formData.product_type === 'file_download' && !formData.file) {
+        toast.error('Sản phẩm loại "File tải về" cần có file đính kèm');
+        return false;
+      }
+
       // Upload product file if provided and product type supports it
       if (formData.file && formData.product_type === 'file_download') {
         const fileFileName = `${user.id}/${Date.now()}-${formData.file.name}`;

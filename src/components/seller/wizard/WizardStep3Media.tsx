@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ChevronLeft, ChevronRight, Info } from "lucide-react";
 import { WizardFormData } from "../ProductCreationWizard";
 import ProductImageUpload from "../ProductImageUpload";
 import ProductGalleryUpload from "../ProductGalleryUpload";
@@ -48,6 +49,17 @@ const WizardStep3Media = ({ formData, updateFormData, onNext, onBack }: WizardSt
           images={formData.galleryImages}
           onImagesChange={(galleryImages) => updateFormData({ galleryImages })}
         />
+
+        {formData.product_type === 'service' && (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              <strong>💡 Sản phẩm dịch vụ không yêu cầu upload file.</strong>
+              <br />
+              Bạn sẽ liên hệ trực tiếp với khách hàng qua chat để thực hiện dịch vụ.
+            </AlertDescription>
+          </Alert>
+        )}
 
         {formData.product_type === 'file_download' && (
           <ProductFileUpload
