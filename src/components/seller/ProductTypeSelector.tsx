@@ -45,7 +45,7 @@ const ProductTypeSelector = ({ value, onChange, error }: ProductTypeSelectorProp
     {
       value: 'service',
       label: 'Dịch vụ (Ticket-based)',
-      description: 'Báo giá sau khi kiểm tra yêu cầu, thanh toán qua escrow',
+      description: '✅ Không cần upload file. Báo giá sau khi kiểm tra yêu cầu.',
       icon: Headphones
     }
   ];

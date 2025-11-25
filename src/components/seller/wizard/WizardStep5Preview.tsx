@@ -43,11 +43,15 @@ const WizardStep5Preview = ({ formData, onBack }: WizardStep5Props) => {
     { label: "Có ảnh đại diện", checked: !!formData.image },
     { label: "Có mô tả đầy đủ", checked: formData.description.length >= 50 },
     { label: "Đã thiết lập giá", checked: !!formData.price },
-    { 
-      label: "Có file sản phẩm", 
-      checked: formData.product_type !== 'file_download' || !!formData.file,
-      optional: formData.product_type !== 'file_download'
-    },
+    // Only check for file if product type is file_download
+    ...(formData.product_type === 'file_download' 
+      ? [{ 
+          label: "Có file sản phẩm", 
+          checked: !!formData.file,
+          optional: false
+        }]
+      : []
+    ),
   ];
 
   const allChecked = checklist.filter(item => !item.optional).every(item => item.checked);
@@ -70,9 +74,18 @@ const WizardStep5Preview = ({ formData, onBack }: WizardStep5Props) => {
             )}
             
             <div>
-              <Badge variant="secondary" className="mb-2">
-                {formData.category}
-              </Badge>
+              <div className="flex gap-2 mb-2">
+                <Badge variant="secondary">
+                  {formData.category}
+                </Badge>
+                <Badge variant="outline">
+                  {formData.product_type === 'service' ? '🎧 Dịch vụ' : 
+                   formData.product_type === 'file_download' ? '📁 File tải về' : 
+                   formData.product_type === 'license_key_delivery' ? '🔑 License Key' :
+                   formData.product_type === 'shared_account' ? '👥 Tài khoản chung' :
+                   '📦 ' + formData.product_type}
+                </Badge>
+              </div>
               <h3 className="text-2xl font-bold mb-2">{formData.title}</h3>
               <p className="text-3xl font-bold text-destructive">
                 {formatPrice(formData.price)}
