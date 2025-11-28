@@ -17,3 +17,15 @@ verify_jwt = false
 
 [functions.product-scores-cron]
 verify_jwt = false
+
+[functions.create-service-ticket]
+verify_jwt = true
+
+[functions.send-service-quote]
+verify_jwt = true
+
+[functions.accept-service-quote]
+verify_jwt = true
+
+[functions.complete-service-ticket]
+verify_jwt = true

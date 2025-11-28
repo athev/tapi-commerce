@@ -11,6 +11,7 @@ import SellerPoliciesManager from "@/components/seller/SellerPoliciesManager";
 import SellerShopInfoEditor from "@/components/seller/SellerShopInfoEditor";
 import SellerVoucherManager from "@/components/seller/SellerVoucherManager";
 import VoucherAnalytics from "@/components/seller/VoucherAnalytics";
+import SellerServiceTickets from "@/components/seller/SellerServiceTickets";
 import EditProduct from "@/pages/EditProduct";
 import SellerTabsNavigation from "./SellerTabsNavigation";
 
@@ -85,6 +86,15 @@ const SellerDashboardContent = ({ currentTab }: SellerDashboardContentProps) => 
               <SellerPromotionsManager />
               <SellerPoliciesManager />
             </div>
+          </TabsContent>
+        </Tabs>
+      } />
+
+      <Route path="/service-tickets" element={
+        <Tabs value="service-tickets" className="space-y-6">
+          <SellerTabsNavigation />
+          <TabsContent value="service-tickets" className="space-y-6">
+            <SellerServiceTickets />
           </TabsContent>
         </Tabs>
       } />

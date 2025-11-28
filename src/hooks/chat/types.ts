@@ -4,7 +4,7 @@ export interface Message {
   conversation_id: string;
   sender_id: string;
   content: string;
-  message_type: 'text' | 'image' | 'emoji';
+  message_type: 'text' | 'image' | 'emoji' | 'service_quote';
   image_url?: string;
   is_read: boolean;
   created_at: string;
@@ -18,11 +18,21 @@ export interface Conversation {
   seller_id: string;
   product_id?: string;
   order_id?: string;
-  chat_type: 'product_consultation' | 'order_support';
+  chat_type: 'product_consultation' | 'order_support' | 'service_request';
   last_message_at: string;
   buyer_unread_count: number;
   seller_unread_count: number;
   created_at: string;
+  service_ticket?: {
+    id: string;
+    title: string;
+    description: string;
+    status: string;
+    quoted_price?: number;
+    quoted_at?: string;
+    accepted_at?: string;
+    completed_at?: string;
+  };
   product?: {
     id: string;
     title: string;

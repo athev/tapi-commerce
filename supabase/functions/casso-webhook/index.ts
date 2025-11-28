@@ -64,7 +64,8 @@ serve(async (req) => {
               title,
               price,
               seller_id,
-              seller_name
+              seller_name,
+              product_type
             )
           `)
           .eq('id', result.order.id)
@@ -124,6 +125,50 @@ serve(async (req) => {
         } else {
           console.log('⚠️ Skipping PI processing - conditions not met');
         }
+
+        // Check if this order is related to a service ticket
+        let serviceTicketUpdated = false;
+        try {
+          const { data: serviceTicket, error: ticketError } = await supabase
+            .from('service_tickets')
+            .select('*')
+            .eq('order_id', orderWithSeller.id)
+            .single();
+
+          if (serviceTicket && !ticketError) {
+            console.log('📋 Service ticket found, updating status to in_progress');
+            
+            // Update ticket status from 'accepted' to 'in_progress'
+            const { error: updateError } = await supabase
+              .from('service_tickets')
+              .update({ status: 'in_progress' })
+              .eq('id', serviceTicket.id);
+
+            if (updateError) {
+              console.error('❌ Failed to update service ticket:', updateError);
+            } else {
+              console.log('✅ Service ticket updated to in_progress');
+              serviceTicketUpdated = true;
+
+              // Send notification to seller
+              await supabase
+                .from('notifications')
+                .insert({
+                  user_id: serviceTicket.seller_id,
+                  type: 'service_payment',
+                  title: 'Đã nhận thanh toán dịch vụ',
+                  message: `Khách hàng đã thanh toán cho phiếu yêu cầu #${serviceTicket.id.slice(0, 8)}. Vui lòng bắt đầu thực hiện dịch vụ.`,
+                  action_url: `/chat/${serviceTicket.conversation_id}`,
+                  priority: 'high',
+                  metadata: { ticket_id: serviceTicket.id, order_id: orderWithSeller.id }
+                });
+              
+              console.log('✅ Notification sent to seller');
+            }
+          }
+        } catch (ticketCheckError) {
+          console.log('ℹ️ No service ticket found for this order (this is normal for regular orders)');
+        }
         
         // Create order support chat
         try {
@@ -137,7 +182,8 @@ serve(async (req) => {
             order_id: result.order.id,
             transaction_id: result.transaction_id,
             conversation_id: conversationId,
-            wallet_processed: walletProcessed
+            wallet_processed: walletProcessed,
+            service_ticket_updated: serviceTicketUpdated
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }
           })
@@ -151,6 +197,7 @@ serve(async (req) => {
             order_id: result.order.id,
             transaction_id: result.transaction_id,
             wallet_processed: walletProcessed,
+            service_ticket_updated: serviceTicketUpdated,
             chat_error: chatError.message
           }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }

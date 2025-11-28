@@ -11,10 +11,15 @@ import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import QuickQuestions from "./QuickQuestions";
 import OrderInfoCard from "./OrderInfoCard";
 import ProductInfoCard from "./ProductInfoCard";
 import OrderManagementActions from "./OrderManagementActions";
+import ServiceTicketCard from "./ServiceTicketCard";
+import ServiceQuoteMessage from "./ServiceQuoteMessage";
+import ServiceQuoteModal from "./ServiceQuoteModal";
 
 interface ChatWindowProps {
   conversationId: string;
@@ -23,6 +28,7 @@ interface ChatWindowProps {
 const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const { productId } = useParams();
   const [newMessage, setNewMessage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
@@ -31,7 +37,10 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   const [hasCheckedRedirect, setHasCheckedRedirect] = useState(false);
   const [isOrderInfoExpanded, setIsOrderInfoExpanded] = useState(false);
   const [isProductInfoExpanded, setIsProductInfoExpanded] = useState(false);
+  const [isServiceTicketExpanded, setIsServiceTicketExpanded] = useState(true);
   const [newMessageIndicator, setNewMessageIndicator] = useState(false);
+  const [serviceTicket, setServiceTicket] = useState<any>(null);
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -107,6 +116,30 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
     setCurrentConversation(conversationId);
   }, [conversationId, setCurrentConversation]);
 
+  // Fetch service ticket if chat_type is service_request
+  useEffect(() => {
+    const fetchServiceTicket = async () => {
+      if (currentConversation?.chat_type === 'service_request') {
+        try {
+          const { data, error } = await supabase
+            .from('service_tickets')
+            .select('*')
+            .eq('conversation_id', conversationId)
+            .single();
+          
+          if (error) throw error;
+          setServiceTicket(data);
+        } catch (error) {
+          console.error('Error fetching service ticket:', error);
+        }
+      }
+    };
+
+    if (currentConversation) {
+      fetchServiceTicket();
+    }
+  }, [currentConversation, conversationId]);
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -180,6 +213,65 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
 
   const handleQuestionSelect = (question: string) => {
     setNewMessage(question);
+  };
+
+  const handleAcceptQuote = async () => {
+    if (!serviceTicket) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('accept-service-quote', {
+        body: { ticketId: serviceTicket.id }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Đã chấp nhận báo giá",
+        description: "Vui lòng thanh toán để bắt đầu dịch vụ"
+      });
+
+      // Navigate to payment
+      if (data?.orderId) {
+        navigate(`/payment/${data.orderId}`);
+      }
+    } catch (error: any) {
+      console.error('Error accepting quote:', error);
+      toast({
+        title: "Có lỗi xảy ra",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCompleteService = async () => {
+    if (!serviceTicket) return;
+    
+    try {
+      const { error } = await supabase.functions.invoke('complete-service-ticket', {
+        body: { 
+          ticketId: serviceTicket.id,
+          completionNotes: "Khách hàng xác nhận hoàn thành dịch vụ"
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Đã xác nhận hoàn thành",
+        description: "Cảm ơn bạn đã sử dụng dịch vụ!"
+      });
+
+      // Refresh ticket
+      fetchConversations();
+    } catch (error: any) {
+      console.error('Error completing service:', error);
+      toast({
+        title: "Có lỗi xảy ra",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
 
   const getCurrentProduct = () => {
@@ -328,6 +420,12 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
                 )}
               </p>
             )}
+            
+            {currentConversation.chat_type === 'service_request' && serviceTicket && (
+              <p className="text-xs text-orange-600 truncate mt-1">
+                {serviceTicket.title}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -336,6 +434,32 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
       <div className="flex-1 flex flex-col min-h-0">
         {/* Compact Info Cards */}
         <div className="flex-shrink-0 border-b bg-gray-50">
+          {/* Service Ticket Card - Always shown first for service_request */}
+          {currentConversation.chat_type === 'service_request' && serviceTicket && (
+            <div className="p-2">
+              <Collapsible open={isServiceTicketExpanded} onOpenChange={setIsServiceTicketExpanded}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="w-full justify-between p-2 h-auto text-xs">
+                    <div className="flex items-center gap-1">
+                      <FileText className="h-3 w-3 text-orange-600" />
+                      <span className="font-medium">Phiếu yêu cầu #{serviceTicket.id.slice(0, 8)}</span>
+                    </div>
+                    {isServiceTicketExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <ServiceTicketCard
+                    ticket={serviceTicket}
+                    userRole={isBuyer ? 'buyer' : 'seller'}
+                    onQuote={() => setShowQuoteModal(true)}
+                    onAccept={handleAcceptQuote}
+                    onComplete={handleCompleteService}
+                  />
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
+          )}
+
           {/* Order Management for Sellers */}
           {currentConversation.chat_type === 'order_support' && currentConversation.order && isSeller && (
             <div className="p-2">
@@ -425,6 +549,25 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
               {messages.map((message: Message) => {
                 const isOwn = message.sender_id === user?.id;
                 const senderDisplayName = message.sender_name || 'Người dùng';
+                
+                // Handle service_quote message type
+                if (message.message_type === 'service_quote') {
+                  try {
+                    const quoteData = JSON.parse(message.content);
+                    return (
+                      <div key={message.id} className="my-4">
+                        <ServiceQuoteMessage
+                          quoteData={quoteData}
+                          userRole={isBuyer ? 'buyer' : 'seller'}
+                          ticketStatus={serviceTicket?.status || 'pending'}
+                          onAccept={handleAcceptQuote}
+                        />
+                      </div>
+                    );
+                  } catch (e) {
+                    console.error('Failed to parse service quote:', e);
+                  }
+                }
                 
                 return (
                   <div
@@ -534,6 +677,19 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
           />
         </div>
       </div>
+
+      {/* Service Quote Modal */}
+      {showQuoteModal && serviceTicket && (
+        <ServiceQuoteModal
+          open={showQuoteModal}
+          onClose={() => setShowQuoteModal(false)}
+          ticketId={serviceTicket.id}
+          onSuccess={() => {
+            fetchConversations();
+            setShowQuoteModal(false);
+          }}
+        />
+      )}
     </div>
   );
 };
