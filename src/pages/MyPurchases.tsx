@@ -18,6 +18,7 @@ import OrderConfirmButton from "@/components/buyer/OrderConfirmButton";
 import OrderDisputeButton from "@/components/buyer/OrderDisputeButton";
 import OrderDetailsModal from "@/components/orders/OrderDetailsModal";
 import OrderTimeline from "@/components/orders/OrderTimeline";
+import BuyerServiceTickets from "@/components/buyer/BuyerServiceTickets";
 import { formatPrice, formatSoldCount } from "@/utils/priceUtils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -182,6 +183,7 @@ const MyPurchases = () => {
           <Tabs defaultValue="purchases">
             <TabsList className="mb-8">
               <TabsTrigger value="purchases">Sản phẩm đã mua</TabsTrigger>
+              <TabsTrigger value="services">Yêu cầu dịch vụ</TabsTrigger>
               <TabsTrigger value="profile">Thông tin cá nhân</TabsTrigger>
             </TabsList>
             
@@ -356,6 +358,10 @@ const MyPurchases = () => {
                   </Button>
                 </div>
               )}
+            </TabsContent>
+
+            <TabsContent value="services">
+              <BuyerServiceTickets />
             </TabsContent>
             
             <TabsContent value="profile">

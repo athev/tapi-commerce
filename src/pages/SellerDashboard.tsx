@@ -23,6 +23,7 @@ const SellerDashboard = () => {
     if (path.includes('/wallet')) return 'wallet';
     if (path.includes('/add-product')) return 'add-product';
     if (path.includes('/shop-settings')) return 'shop-settings';
+    if (path.includes('/service-tickets')) return 'service-tickets';
     return 'overview';
   };
 
