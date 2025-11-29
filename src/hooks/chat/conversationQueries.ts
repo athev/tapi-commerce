@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export const fetchConversationsData = async (userId: string) => {
-  console.log('Fetching conversations for user:', userId);
+  console.log('🔍 [FETCH_CONVERSATIONS] Fetching conversations for user:', userId);
 
   const { data: conversationsData, error } = await supabase
     .from('conversations')
@@ -15,11 +15,27 @@ export const fetchConversationsData = async (userId: string) => {
     .order('last_message_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching conversations:', error);
+    console.error('❌ [FETCH_CONVERSATIONS] Error fetching conversations:', error);
     throw error;
   }
 
-  console.log('Raw conversations data:', conversationsData);
+  console.log('✅ [FETCH_CONVERSATIONS] Raw conversations data:', conversationsData);
+  console.log('📊 [FETCH_CONVERSATIONS] Total conversations found:', conversationsData?.length || 0);
+  
+  // Log each conversation details for debugging
+  conversationsData?.forEach((conv, index) => {
+    console.log(`📝 [FETCH_CONVERSATIONS] Conversation ${index + 1}:`, {
+      id: conv.id,
+      chat_type: conv.chat_type,
+      buyer_id: conv.buyer_id,
+      seller_id: conv.seller_id,
+      product_id: conv.product_id,
+      order_id: conv.order_id,
+      has_product: !!conv.products,
+      has_order: !!conv.orders
+    });
+  });
+
   return conversationsData;
 };
 
