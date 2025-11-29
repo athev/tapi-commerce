@@ -125,9 +125,9 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
             .from('service_tickets')
             .select('*')
             .eq('conversation_id', conversationId)
-            .single();
+            .maybeSingle();
           
-          if (error) throw error;
+          if (error && error.code !== 'PGRST116') throw error;
           setServiceTicket(data);
         } catch (error) {
           console.error('Error fetching service ticket:', error);
@@ -230,6 +230,17 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
         description: "Vui lòng thanh toán để bắt đầu dịch vụ"
       });
 
+      // Refresh service ticket data
+      const { data: updatedTicket } = await supabase
+        .from('service_tickets')
+        .select('*')
+        .eq('id', serviceTicket.id)
+        .maybeSingle();
+      
+      if (updatedTicket) {
+        setServiceTicket(updatedTicket);
+      }
+
       // Navigate to payment
       if (data?.orderId) {
         navigate(`/payment/${data.orderId}`);
@@ -262,7 +273,18 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
         description: "Cảm ơn bạn đã sử dụng dịch vụ!"
       });
 
-      // Refresh ticket
+      // Refresh service ticket data
+      const { data: updatedTicket } = await supabase
+        .from('service_tickets')
+        .select('*')
+        .eq('id', serviceTicket.id)
+        .maybeSingle();
+      
+      if (updatedTicket) {
+        setServiceTicket(updatedTicket);
+      }
+
+      // Also refresh conversations
       fetchConversations();
     } catch (error: any) {
       console.error('Error completing service:', error);

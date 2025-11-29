@@ -370,6 +370,10 @@ const ProductDetail = () => {
                 hasPurchased={hasPurchased} 
                 productType={product.product_type || 'file_download'}
                 isLoggedIn={!!user}
+                productId={product.id}
+                onViewChat={(conversationId) => {
+                  navigate(`/chat/${conversationId}`);
+                }}
               />
               </>}
           </div>
