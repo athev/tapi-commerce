@@ -39,6 +39,12 @@ const ConversationList = ({ onConversationSelect, selectedConversationId }: Conv
         label: `Đơn hàng #${conversation.order?.id.slice(0, 8)}`,
         color: 'bg-orange-100 text-orange-800'
       };
+    } else if (conversation.chat_type === 'service_request') {
+      return {
+        icon: <Package className="h-3 w-3" />,
+        label: 'Yêu cầu dịch vụ',
+        color: 'bg-purple-100 text-purple-800'
+      };
     } else {
       return {
         icon: <MessageCircle className="h-3 w-3" />,

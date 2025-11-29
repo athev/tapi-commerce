@@ -2,6 +2,8 @@
 import { Conversation } from './types';
 
 export const processConversations = (conversationsData: any[], profiles: any[], userId: string): Conversation[] => {
+  console.log('🔄 [PROCESS_CONVERSATIONS] Processing conversations:', conversationsData.length);
+  
   const profileMap = new Map();
   profiles.forEach(profile => {
     profileMap.set(profile.id, profile);
@@ -40,6 +42,30 @@ export const processConversations = (conversationsData: any[], profiles: any[], 
     // Separate by chat type
     const orderChats = groupConvs.filter(c => c.chat_type === 'order_support');
     const productChats = groupConvs.filter(c => c.chat_type === 'product_consultation');
+    const serviceChats = groupConvs.filter(c => c.chat_type === 'service_request');
+    
+    console.log(`📊 [PROCESS_CONVERSATIONS] Group ${pairKey}:`, {
+      orderChats: orderChats.length,
+      productChats: productChats.length,
+      serviceChats: serviceChats.length
+    });
+    
+    // Add service request conversations (each service gets its own conversation)
+    serviceChats.forEach(conv => {
+      const otherUserProfile = profileMap.get(conv.otherUserId);
+      console.log(`🛠️ [PROCESS_CONVERSATIONS] Adding service_request conversation:`, conv.id);
+      processedConversations.push({
+        ...conv,
+        chat_type: 'service_request' as const,
+        product: conv.products,
+        order: conv.orders,
+        other_user: otherUserProfile,
+        buyer_name: conv.buyerProfile?.full_name || 'Khách hàng',
+        seller_name: conv.sellerProfile?.full_name || conv.products?.seller_name || 'Người bán',
+        related_products: productChats.map(pc => pc.products).filter(Boolean),
+        related_orders: orderChats.map(oc => oc.orders).filter(Boolean)
+      });
+    });
     
     // Add order support conversations (each order gets its own conversation)
     orderChats.forEach(conv => {
@@ -81,6 +107,15 @@ export const processConversations = (conversationsData: any[], profiles: any[], 
     new Date(b.last_message_at).getTime() - new Date(a.last_message_at).getTime()
   );
 
-  console.log('Processed conversations with order support:', processedConversations);
+  console.log('✅ [PROCESS_CONVERSATIONS] Final processed conversations:', processedConversations.length);
+  processedConversations.forEach((conv, index) => {
+    console.log(`📝 [PROCESS_CONVERSATIONS] Conversation ${index + 1}:`, {
+      id: conv.id,
+      chat_type: conv.chat_type,
+      has_product: !!conv.product,
+      has_order: !!conv.order
+    });
+  });
+
   return processedConversations;
 };
