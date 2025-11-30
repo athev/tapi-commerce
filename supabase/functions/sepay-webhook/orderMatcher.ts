@@ -10,7 +10,7 @@ export async function findMatchingOrder(extractedId: string, supabase: any) {
     const { data: exactOrder } = await supabase
       .from('orders')
       .select(`
-        id, status, user_id, product_id, buyer_email, created_at,
+        id, status, user_id, product_id, buyer_email, created_at, bank_amount,
         products (id, title, price, seller_id, product_type, file_url)
       `)
       .eq('id', extractedId)
@@ -28,7 +28,7 @@ export async function findMatchingOrder(extractedId: string, supabase: any) {
   const { data: pendingOrders } = await supabase
     .from('orders')
     .select(`
-      id, status, user_id, product_id, buyer_email, created_at,
+      id, status, user_id, product_id, buyer_email, created_at, bank_amount,
       products (id, title, price, seller_id, product_type, file_url)
     `)
     .eq('status', 'pending')
@@ -48,7 +48,11 @@ export async function findMatchingOrder(extractedId: string, supabase: any) {
 }
 
 export function verifyPaymentAmount(transaction: any, order: any) {
-  const expectedAmount = order.products?.price || 0
+  // Use bank_amount if available (includes variant price + discount), otherwise fallback to product price
+  const expectedAmount = order.bank_amount || order.products?.price || 0
+  
+  console.log(`🔍 [VERIFY] Checking amount - bank_amount: ${order.bank_amount}, product_price: ${order.products?.price}, expected: ${expectedAmount}`)
+  
   const amountDifference = Math.abs(transaction.amount - expectedAmount)
   const tolerance = Math.max(1000, expectedAmount * 0.01) // 1% tolerance or 1000 VND minimum
   
