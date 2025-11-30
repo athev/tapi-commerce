@@ -1,5 +1,8 @@
 project_id = "navlxvufcajsozhvbulu"
 
+[functions.wallet-cron]
+verify_jwt = false
+
 [functions.sepay-webhook]
 verify_jwt = false
 
