@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Zap, ShoppingCart, Shield, Headphones, Lock, MessageSquare } from "lucide-react";
+import { Zap, ShoppingCart, Shield, Headphones, Lock, MessageSquare, AlertTriangle } from "lucide-react";
 import { formatPrice } from "@/utils/orderUtils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -16,6 +16,7 @@ interface ProductCTAButtonsProps {
   isLoggedIn: boolean;
   productId?: string;
   onViewChat?: (conversationId: string) => void;
+  inStock?: number;
 }
 
 const ProductCTAButtons = ({ 
@@ -27,9 +28,11 @@ const ProductCTAButtons = ({
   productType,
   isLoggedIn,
   productId,
-  onViewChat
+  onViewChat,
+  inStock
 }: ProductCTAButtonsProps) => {
   const isMobile = useIsMobile();
+  const isOutOfStock = inStock !== undefined && inStock <= 0;
   const [activeTicket, setActiveTicket] = useState<any>(null);
   const [checkingTicket, setCheckingTicket] = useState(false);
 
@@ -102,6 +105,11 @@ const ProductCTAButtons = ({
       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
       Đang xử lý...
     </>
+  ) : isOutOfStock ? (
+    <>
+      <AlertTriangle className="h-5 w-5 mr-2" />
+      HẾT HÀNG
+    </>
   ) : !isLoggedIn ? (
     <>
       <Lock className="h-5 w-5 mr-2" />
@@ -124,7 +132,7 @@ const ProductCTAButtons = ({
               size="lg"
               className="w-full h-14 text-lg font-bold bg-destructive hover:bg-destructive/90 shadow-lg disabled:opacity-70"
               onClick={onBuyNow}
-              disabled={isProcessing}
+              disabled={isProcessing || isOutOfStock}
             >
               {buttonContent}
             </Button>

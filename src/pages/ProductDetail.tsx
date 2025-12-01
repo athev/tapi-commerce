@@ -141,6 +141,16 @@ const ProductDetail = () => {
     }
   }, [slug, id, user, toast]);
   const handleBuyNow = () => {
+    // Check stock first
+    if (product.in_stock !== undefined && product.in_stock <= 0) {
+      toast({
+        title: "Hết hàng",
+        description: "Sản phẩm này đã hết hàng. Vui lòng chọn sản phẩm khác.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (!user) {
       setShowLoginModal(true);
       return;
@@ -374,6 +384,7 @@ const ProductDetail = () => {
                 onViewChat={(conversationId) => {
                   navigate(`/chat/${conversationId}`);
                 }}
+                inStock={product.in_stock}
               />
               </>}
           </div>
@@ -451,6 +462,7 @@ const ProductDetail = () => {
         productType={product.product_type || 'file_download'} 
         price={currentPrice || product.price}
         isLoggedIn={!!user}
+        inStock={product.in_stock}
       />}
 
       <MobileBottomNav />

@@ -84,9 +84,17 @@ const ProductPriceCard = ({
         <FavoriteButton productId={product.id} size="md" />
       </div>
 
-      {product?.in_stock && product.in_stock > 0 && <p className="text-xs text-muted-foreground">
-          Còn lại: <span className="font-semibold text-foreground">{product.in_stock}</span> sản phẩm
-        </p>}
+      {product?.in_stock !== undefined && (
+        product.in_stock > 0 ? (
+          <p className="text-xs text-muted-foreground">
+            Còn lại: <span className="font-semibold text-foreground">{product.in_stock}</span> sản phẩm
+          </p>
+        ) : (
+          <Badge variant="destructive" className="text-sm">
+            ⚠️ HẾT HÀNG
+          </Badge>
+        )
+      )}
 
       {/* Variants Selector - Only if variants exist */}
       {variants.length > 0 && <div className="bg-muted/30 rounded-lg p-2 space-y-1.5">

@@ -9,6 +9,7 @@ interface StickyBottomButtonProps {
   productType: string;
   price: number;
   isLoggedIn: boolean;
+  inStock?: number;
 }
 const StickyBottomButton = ({
   onBuyNow,
@@ -16,9 +17,11 @@ const StickyBottomButton = ({
   hasPurchased,
   productType,
   price,
-  isLoggedIn
+  isLoggedIn,
+  inStock
 }: StickyBottomButtonProps) => {
   const isMobile = useIsMobile();
+  const isOutOfStock = inStock !== undefined && inStock <= 0;
   if (!isMobile || hasPurchased && productType === 'file_download') {
     return null;
   }
@@ -37,10 +40,12 @@ const StickyBottomButton = ({
         </Button>
 
         {/* Buy Now Button - Larger */}
-        <Button onClick={onBuyNow} disabled={isProcessing} className="flex-[2] h-12 font-bold bg-destructive hover:bg-destructive/90 sm:text-base disabled:opacity-70 text-xs">
+        <Button onClick={onBuyNow} disabled={isProcessing || isOutOfStock} className="flex-[2] h-12 font-bold bg-destructive hover:bg-destructive/90 sm:text-base disabled:opacity-70 text-xs">
           {isProcessing ? <>
               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
               Xử lý...
+            </> : isOutOfStock ? <>
+              HẾT HÀNG
             </> : !isLoggedIn ? <>
               <Lock className="h-4 w-4 mr-2" />
               <span className="hidden sm:inline">ĐĂNG NHẬP</span>
