@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, GripVertical } from "lucide-react";
 import { ProductVariant } from "@/lib/productValidationSchemas";
 
@@ -30,6 +31,8 @@ const ProductVariantsManager = ({
       badge: null,
       sort_order: variants.length,
       is_active: true,
+      in_stock: 999,
+      description: null,
     };
     onVariantsChange([...variants, newVariant]);
     setEditingIndex(variants.length);
@@ -133,6 +136,32 @@ const ProductVariantsManager = ({
                   />
                 </div>
 
+                <div className="space-y-2">
+                  <Label>Số lượng tồn kho</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={tempVariant.in_stock ?? 999}
+                    onChange={(e) =>
+                      setTempVariant({ ...tempVariant, in_stock: parseInt(e.target.value) || 0 })
+                    }
+                    placeholder="999"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Mô tả phân loại (tùy chọn)</Label>
+                  <Textarea
+                    value={tempVariant.description || ""}
+                    onChange={(e) =>
+                      setTempVariant({ ...tempVariant, description: e.target.value || null })
+                    }
+                    placeholder="Mô tả thêm về gói này..."
+                    maxLength={500}
+                    rows={3}
+                  />
+                </div>
+
                 <div className="flex gap-2">
                   <Button onClick={() => updateVariant(index)} size="sm">
                     Lưu
@@ -153,7 +182,7 @@ const ProductVariantsManager = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <GripVertical className="h-5 w-5 text-muted-foreground" />
-                  <div>
+                  <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <p className="font-medium">{variant.variant_name}</p>
                       {variant.badge && (
@@ -175,6 +204,12 @@ const ProductVariantsManager = ({
                             -{variant.discount_percentage}%
                           </Badge>
                         </>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>Tồn kho: <span className="font-semibold text-foreground">{variant.in_stock ?? 999}</span></span>
+                      {variant.description && (
+                        <span className="line-clamp-1">• {variant.description}</span>
                       )}
                     </div>
                   </div>

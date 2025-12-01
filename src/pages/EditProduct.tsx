@@ -15,6 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import ProductVariantsManager from "@/components/seller/ProductVariantsManager";
+import { ProductVariant } from "@/lib/productValidationSchemas";
 
 const EditProduct = () => {
   const { productId } = useParams();
@@ -26,6 +28,7 @@ const EditProduct = () => {
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -58,6 +61,28 @@ const EditProduct = () => {
         
         setCurrentImage(product.image || '');
         setImagePreview(product.image || '');
+
+        // Fetch variants
+        const { data: variantsData } = await supabase
+          .from('product_variants')
+          .select('*')
+          .eq('product_id', productId)
+          .order('sort_order');
+
+        if (variantsData && variantsData.length > 0) {
+          setVariants(variantsData.map(v => ({
+            id: v.id,
+            variant_name: v.variant_name,
+            price: v.price,
+            original_price: v.original_price,
+            discount_percentage: v.discount_percentage,
+            badge: v.badge,
+            sort_order: v.sort_order ?? 0,
+            is_active: v.is_active ?? true,
+            in_stock: v.in_stock ?? 999,
+            description: v.description,
+          })));
+        }
 
         // Fetch categories
         const { data: categoriesData } = await supabase
@@ -120,6 +145,35 @@ const EditProduct = () => {
         .eq('id', productId);
 
       if (error) throw error;
+
+      // Update variants
+      if (variants.length > 0) {
+        // Delete old variants
+        await supabase
+          .from('product_variants')
+          .delete()
+          .eq('product_id', productId);
+
+        // Insert new variants
+        const variantsData = variants.map(v => ({
+          product_id: productId,
+          variant_name: v.variant_name,
+          price: v.price,
+          original_price: v.original_price,
+          discount_percentage: v.discount_percentage,
+          badge: v.badge,
+          sort_order: v.sort_order,
+          is_active: v.is_active,
+          in_stock: v.in_stock ?? 999,
+          description: v.description,
+        }));
+
+        const { error: variantsError } = await supabase
+          .from('product_variants')
+          .insert(variantsData);
+
+        if (variantsError) throw variantsError;
+      }
 
       toast.success("Cập nhật sản phẩm thành công!");
       navigate('/seller/products');
@@ -263,6 +317,12 @@ const EditProduct = () => {
                 className="min-h-[300px] resize-y"
               />
             </div>
+
+            <ProductVariantsManager
+              variants={variants}
+              onVariantsChange={setVariants}
+              basePrice={parseInt(formData.price) || 0}
+            />
 
             <div className="flex space-x-3">
               <Button type="submit" disabled={isSaving || isUploadingImage}>
