@@ -167,6 +167,8 @@ export const useProductUpload = () => {
           badge: variant.badge,
           sort_order: variant.sort_order,
           is_active: variant.is_active,
+          in_stock: variant.in_stock ?? 999,
+          description: variant.description,
         }));
 
         const { error: variantsError } = await supabase

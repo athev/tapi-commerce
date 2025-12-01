@@ -564,8 +564,10 @@ export type Database = {
         Row: {
           badge: string | null
           created_at: string | null
+          description: string | null
           discount_percentage: number | null
           id: string
+          in_stock: number | null
           is_active: boolean | null
           original_price: number | null
           price: number
@@ -577,8 +579,10 @@ export type Database = {
         Insert: {
           badge?: string | null
           created_at?: string | null
+          description?: string | null
           discount_percentage?: number | null
           id?: string
+          in_stock?: number | null
           is_active?: boolean | null
           original_price?: number | null
           price: number
@@ -590,8 +594,10 @@ export type Database = {
         Update: {
           badge?: string | null
           created_at?: string | null
+          description?: string | null
           discount_percentage?: number | null
           id?: string
+          in_stock?: number | null
           is_active?: boolean | null
           original_price?: number | null
           price?: number

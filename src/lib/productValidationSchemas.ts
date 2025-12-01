@@ -31,6 +31,8 @@ export const productVariantSchema = z.object({
   badge: z.string().max(20, "Badge không được quá 20 ký tự").optional().nullable(),
   sort_order: z.number().default(0),
   is_active: z.boolean().default(true),
+  in_stock: z.number().min(0, "Số lượng phải >= 0").default(999),
+  description: z.string().max(500, "Mô tả không được quá 500 ký tự").optional().nullable(),
 });
 
 // Image validation
