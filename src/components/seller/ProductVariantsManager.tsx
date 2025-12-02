@@ -14,16 +14,20 @@ interface ProductVariantsManagerProps {
   basePrice: number;
 }
 
+// Generate unique temporary ID for new variants
+const generateTempId = () => `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
 const ProductVariantsManager = ({
   variants,
   onVariantsChange,
   basePrice,
 }: ProductVariantsManagerProps) => {
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [tempVariant, setTempVariant] = useState<Partial<ProductVariant>>({});
 
   const addVariant = () => {
     const newVariant: ProductVariant = {
+      id: generateTempId(),
       variant_name: "",
       price: basePrice,
       original_price: null,
@@ -35,27 +39,27 @@ const ProductVariantsManager = ({
       description: null,
     };
     onVariantsChange([...variants, newVariant]);
-    setEditingIndex(variants.length);
+    setEditingId(newVariant.id!);
     setTempVariant(newVariant);
   };
 
-  const updateVariant = (index: number) => {
-    const updated = [...variants];
-    
+  const updateVariant = (variantId: string) => {
     // Calculate discount percentage if original price exists
     if (tempVariant.original_price && tempVariant.price) {
       const discount = ((tempVariant.original_price - tempVariant.price) / tempVariant.original_price) * 100;
       tempVariant.discount_percentage = Math.round(discount);
     }
     
-    updated[index] = { ...updated[index], ...tempVariant };
+    const updated = variants.map(v => 
+      v.id === variantId ? { ...v, ...tempVariant } : v
+    );
     onVariantsChange(updated);
-    setEditingIndex(null);
+    setEditingId(null);
     setTempVariant({});
   };
 
-  const removeVariant = (index: number) => {
-    const updated = variants.filter((_, i) => i !== index);
+  const removeVariant = (variantId: string) => {
+    const updated = variants.filter(v => v.id !== variantId);
     onVariantsChange(updated);
   };
 
@@ -70,9 +74,9 @@ const ProductVariantsManager = ({
         <CardTitle className="text-lg">Các gói sản phẩm</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {variants.map((variant, index) => (
-          <div key={index} className="border rounded-lg p-4 space-y-3">
-            {editingIndex === index ? (
+        {variants.map((variant) => (
+          <div key={variant.id || `variant-${variant.variant_name}`} className="border rounded-lg p-4 space-y-3">
+            {editingId === variant.id ? (
               <div className="space-y-3">
                 <div className="space-y-2">
                   <Label>Tên gói *</Label>
@@ -163,12 +167,12 @@ const ProductVariantsManager = ({
                 </div>
 
                 <div className="flex gap-2">
-                  <Button onClick={() => updateVariant(index)} size="sm">
+                  <Button onClick={() => updateVariant(variant.id!)} size="sm">
                     Lưu
                   </Button>
                   <Button
                     onClick={() => {
-                      setEditingIndex(null);
+                      setEditingId(null);
                       setTempVariant({});
                     }}
                     variant="outline"
@@ -217,7 +221,7 @@ const ProductVariantsManager = ({
                 <div className="flex gap-2">
                   <Button
                     onClick={() => {
-                      setEditingIndex(index);
+                      setEditingId(variant.id!);
                       setTempVariant(variant);
                     }}
                     variant="outline"
@@ -226,7 +230,7 @@ const ProductVariantsManager = ({
                     Sửa
                   </Button>
                   <Button
-                    onClick={() => removeVariant(index)}
+                    onClick={() => removeVariant(variant.id!)}
                     variant="destructive"
                     size="sm"
                   >
