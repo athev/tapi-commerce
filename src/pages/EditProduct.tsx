@@ -146,15 +146,21 @@ const EditProduct = () => {
 
       if (error) throw error;
 
-      // Update variants
-      if (variants.length > 0) {
-        // Delete old variants
-        await supabase
-          .from('product_variants')
-          .delete()
-          .eq('product_id', productId);
+      // Always delete old variants first
+      console.log(`Deleting old variants for product ${productId}`);
+      const { error: deleteError } = await supabase
+        .from('product_variants')
+        .delete()
+        .eq('product_id', productId);
 
-        // Insert new variants
+      if (deleteError) {
+        console.error('Error deleting variants:', deleteError);
+        throw deleteError;
+      }
+
+      // Insert new variants if any
+      if (variants.length > 0) {
+        console.log(`Inserting ${variants.length} new variants`);
         const variantsData = variants.map(v => ({
           product_id: productId,
           variant_name: v.variant_name,
@@ -172,7 +178,12 @@ const EditProduct = () => {
           .from('product_variants')
           .insert(variantsData);
 
-        if (variantsError) throw variantsError;
+        if (variantsError) {
+          console.error('Error inserting variants:', variantsError);
+          throw variantsError;
+        }
+      } else {
+        console.log('No variants to insert');
       }
 
       toast.success("Cập nhật sản phẩm thành công!");
