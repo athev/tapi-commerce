@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Menu, ShoppingCart, MessageCircle, LogOut, Settings, User, Bell, Package, Home, Search } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useUserRoles } from "@/hooks/useUserRoles";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +27,17 @@ const EnhancedNavbar = () => {
   const navigate = useNavigate();
   const { data: roles } = useUserRoles();
   
+  // Fetch site settings
+  const { data: logoSetting } = useSiteSettings('site_logo');
+  const { data: nameSetting } = useSiteSettings('site_name');
+  
   const hasSellerRole = roles?.includes('seller' as any) || roles?.includes('admin' as any);
+
+  // Extract values from settings
+  const logoUrl = logoSetting && !Array.isArray(logoSetting) ? logoSetting.value?.url : '';
+  const logoAlt = logoSetting && !Array.isArray(logoSetting) ? logoSetting.value?.alt : 'Logo';
+  const siteName = nameSetting && !Array.isArray(nameSetting) ? nameSetting.value?.text : 'Sàn Phẩm Số';
+  const siteShort = nameSetting && !Array.isArray(nameSetting) ? nameSetting.value?.short : 'SP';
 
   const handleSignOut = async () => {
     try {
@@ -101,13 +112,21 @@ const EnhancedNavbar = () => {
                 </SheetContent>
               </Sheet>
               
-              {/* Logo */}
+              {/* Logo - Dynamic from site_settings */}
               <Link to="/" className="flex items-center gap-2">
-                <div className="h-8 w-8 md:h-10 md:w-10 rounded-lg bg-primary flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-sm md:text-lg">SP</span>
-                </div>
+                {logoUrl ? (
+                  <img 
+                    src={logoUrl} 
+                    alt={logoAlt} 
+                    className="h-8 md:h-10 object-contain"
+                  />
+                ) : (
+                  <div className="h-8 w-8 md:h-10 md:w-10 rounded-lg bg-primary flex items-center justify-center">
+                    <span className="text-primary-foreground font-bold text-sm md:text-lg">{siteShort}</span>
+                  </div>
+                )}
                 <span className="font-bold text-lg md:text-xl text-foreground hidden md:inline-block">
-                  Sàn Phẩm Số
+                  {siteName}
                 </span>
               </Link>
             </div>
