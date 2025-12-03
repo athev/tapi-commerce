@@ -32,6 +32,14 @@ const getStockColor = (stock: number) => {
   return "text-red-600";
 };
 
+interface EnhancedProductCardProps extends ProductCardProps {
+  soldCount?: number;
+  complaintRate?: number;
+  averageRating?: number;
+  reviewCount?: number;
+  sellerOnline?: boolean;
+}
+
 const EnhancedProductCard = ({
   id,
   title,
@@ -45,17 +53,22 @@ const EnhancedProductCard = ({
   isNew,
   isHot,
   discount,
-}: ProductCardProps) => {
+  soldCount = 0,
+  complaintRate = 0,
+  averageRating,
+  reviewCount = 0,
+  sellerOnline = false,
+}: EnhancedProductCardProps) => {
   const { toggleFavorite, isFavorite } = useFavorites();
   const favorited = isFavorite(id);
   const discountedPrice = discount ? price.min * (1 - discount / 100) : price.min;
   
-  // Mock data with realistic values
-  const soldCount = Math.floor(Math.random() * 2000) + 100;
-  const complaintRate = Math.random() * 2; // 0-2%
-  const reviewCount = reviews || Math.floor(Math.random() * 200) + 50;
-  const stockCount = inStock || Math.floor(Math.random() * 50) + 5;
-  const sellerOnline = Math.random() > 0.3; // 70% online
+  // Use real data from props
+  const displayRating = averageRating ?? rating ?? 5;
+  const displayReviews = reviewCount || reviews || 0;
+  const displaySoldCount = soldCount;
+  const displayComplaintRate = complaintRate;
+  const displayStock = inStock ?? 999;
 
   return (
     <Card className="group bg-card border border-border rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
@@ -146,26 +159,30 @@ const EnhancedProductCard = ({
                 {Array(5).fill(0).map((_, i) => (
                   <Star 
                     key={i}
-                    className={`h-2.5 w-2.5 md:h-3 md:w-3 ${i < rating ? "fill-yellow-400 text-yellow-400" : "text-muted"}`}
+                    className={`h-2.5 w-2.5 md:h-3 md:w-3 ${i < Math.round(displayRating) ? "fill-yellow-400 text-yellow-400" : "text-muted"}`}
                   />
                 ))}
               </div>
-              <span className="font-semibold text-yellow-700">{rating.toFixed(1)}</span>
+              <span className="font-semibold text-yellow-700">{displayRating.toFixed(1)}</span>
             </div>
             <span className="text-muted-foreground">•</span>
-            <span className="text-muted-foreground">{reviewCount} đánh giá</span>
+            <span className="text-muted-foreground">
+              {displayReviews > 0 ? `${displayReviews} đánh giá` : "Chưa có đánh giá"}
+            </span>
             <span className="text-muted-foreground hidden md:inline">•</span>
-            <span className="text-muted-foreground hidden md:inline">Đã bán: {formatSoldCount(soldCount)}</span>
+            <span className="text-muted-foreground hidden md:inline">
+              {displaySoldCount > 0 ? `Đã bán: ${formatSoldCount(displaySoldCount)}` : "Mới"}
+            </span>
           </div>
 
           {/* Complaint Rate & Stock - Desktop only */}
           <div className="hidden md:flex items-center gap-1.5 flex-wrap text-[10px]">
-            <Badge variant="outline" className={cn("px-1.5 py-0.5 border font-medium", getComplaintRateColor(complaintRate))}>
-              {complaintRate < 1 ? <CheckCircle2 className="h-2.5 w-2.5 mr-0.5" /> : <AlertCircle className="h-2.5 w-2.5 mr-0.5" />}
-              Khiếu nại: {complaintRate.toFixed(1)}%
+            <Badge variant="outline" className={cn("px-1.5 py-0.5 border font-medium", getComplaintRateColor(displayComplaintRate))}>
+              {displayComplaintRate < 1 ? <CheckCircle2 className="h-2.5 w-2.5 mr-0.5" /> : <AlertCircle className="h-2.5 w-2.5 mr-0.5" />}
+              Khiếu nại: {displayComplaintRate.toFixed(1)}%
             </Badge>
-            <span className={cn("font-medium", getStockColor(stockCount))}>
-              Kho: {stockCount}
+            <span className={cn("font-medium", getStockColor(displayStock))}>
+              Kho: {displayStock}
             </span>
           </div>
 
@@ -181,7 +198,7 @@ const EnhancedProductCard = ({
                 </Badge>
               </>
             )}
-            {seller.verified && (
+            {seller?.verified && (
               <>
                 <span>•</span>
                 <Badge className="bg-blue-500/10 text-blue-700 border-blue-200 text-[8px] md:text-[9px] px-1 py-0 h-3.5">

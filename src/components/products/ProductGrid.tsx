@@ -278,15 +278,19 @@ const ProductGrid = ({
             }}
             image={product.image || '/placeholder.svg'}
             category={product.category}
-            rating={4}
-            reviews={product.purchases || 0}
+            rating={product.average_rating || 5}
+            reviews={product.review_count || 0}
+            averageRating={product.average_rating || 5}
+            reviewCount={product.review_count || 0}
+            soldCount={product.purchases || 0}
+            complaintRate={product.complaint_rate || 0}
             seller={{
               name: product.seller_name,
-              verified: true
+              verified: product.is_mall_product || false
             }}
-            inStock={product.in_stock || 999}
+            inStock={product.in_stock ?? 999}
             isNew={new Date(product.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
-            isHot={product.purchases && product.purchases > 50}
+            isHot={(product.purchases || 0) > 50}
           />
         ))}
       </div>
