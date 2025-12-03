@@ -32,17 +32,16 @@ interface SellerProfile {
   response_rate: number;
 }
 
-// Calculate SEO Score based on product metadata quality
+// Calculate SEO Score based on product metadata quality (v3 - no penalty for short titles)
 function calculateSEOScore(product: Product): number {
   let seoScore = 0;
   
-  // Title length (20-60 chars is optimal)
+  // Title length - ONLY BONUS for optimal length, NO PENALTY for short titles
   const titleLength = product.title?.length || 0;
   if (titleLength >= 20 && titleLength <= 60) {
-    seoScore += 20;
-  } else if (titleLength > 0) {
-    seoScore += 10;
+    seoScore += 20; // Bonus for optimal length
   }
+  // No else penalty - short titles get 0, not negative
   
   // Has meta_title
   if (product.meta_title && product.meta_title.length > 0) {
@@ -78,6 +77,15 @@ function calculateSEOScore(product: Product): number {
   return seoScore / 100; // Normalize to 0-1
 }
 
+// Calculate Sales Bonus Tiers (v3)
+function calculateSalesBonus(purchases: number): number {
+  let bonus = 0;
+  if (purchases >= 1) bonus += 5;   // First sale bonus
+  if (purchases >= 5) bonus += 5;   // 5+ sales bonus
+  if (purchases >= 10) bonus += 5;  // 10+ sales bonus
+  return bonus; // Returns 0, 5, 10, or 15
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -95,7 +103,7 @@ Deno.serve(async (req) => {
       }
     );
 
-    console.log('Starting quality score calculation with new algorithm...');
+    console.log('Starting quality score calculation with v3 algorithm...');
 
     // Fetch all active products with SEO fields
     const { data: products, error: productsError } = await supabaseClient
@@ -118,7 +126,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Processing ${products.length} products with new ranking algorithm...`);
+    console.log(`Processing ${products.length} products with v3 ranking algorithm...`);
 
     // Fetch seller profiles
     const sellerIds = [...new Set(products.map(p => p.seller_id))];
@@ -131,11 +139,11 @@ Deno.serve(async (req) => {
       sellers?.map(s => [s.id, s as SellerProfile]) || []
     );
 
-    // Calculate scores for each product using new algorithm
+    // Calculate scores for each product using v3 algorithm
     const updates = products.map((product: Product) => {
       const seller = sellerMap.get(product.seller_id);
       
-      // 1. VIEWS SCORE (15%) - Logarithmic scale up to 10000 views
+      // 1. VIEWS SCORE (10%) - Logarithmic scale up to 10000 views (reduced from 15%)
       const views = product.views || 0;
       const viewsScore = views > 0 
         ? Math.min(Math.log10(views + 1) / Math.log10(10000), 1) 
@@ -151,43 +159,45 @@ Deno.serve(async (req) => {
       const avgRating = product.average_rating || 5;
       const ratingScore = (avgRating - 1) / 4;
       
-      // 4. SALES SCORE (15%) - Logarithmic scale up to 1000 sales
+      // 4. SALES SCORE (20%) - LINEAR formula for better low-sales reward (increased from 15%)
       const purchases = product.purchases || 0;
-      const salesScore = purchases > 0 
-        ? Math.min(Math.log10(purchases + 1) / Math.log10(1000), 1) 
-        : 0;
+      const salesScore = Math.min(purchases / 50, 1); // Linear: 1 sale = 2%, 10 = 20%, 50+ = 100%
       
       // 5. COMPLAINT SCORE (10%) - Lower complaints = higher score
       const complaintRate = product.complaint_rate || 0;
       const complaintScore = Math.max(0, 1 - (complaintRate * 10));
       
-      // 6. STOCK SCORE (10%) - Out of stock = 0, scale up to 100 items
+      // 6. STOCK SCORE (5%) - Simplified: out of stock = 0, in stock = 1 (reduced from 10%)
       const inStock = product.in_stock || 0;
-      const stockScore = inStock === 0 ? 0 : Math.min(inStock / 100, 1);
+      const stockScore = inStock > 0 ? 1 : 0; // Binary: either in stock or not
       
-      // 7. SEO SCORE (10%) - New! Based on metadata quality
+      // 7. SEO SCORE (10%) - Based on metadata quality (no penalty for short titles)
       const seoScore = calculateSEOScore(product);
       
       // 8. FRESHNESS SCORE (5%) - Exponential decay over 90 days
       const daysSinceCreated = (Date.now() - new Date(product.created_at).getTime()) / (1000 * 60 * 60 * 24);
       const freshnessScore = Math.exp(-daysSinceCreated / 90);
       
-      // 9. SELLER QUALITY (5%) - Rating + response rate
+      // 9. SELLER QUALITY (10%) - Rating + response rate (increased from 5%)
       const sellerRating = seller?.seller_rating ? seller.seller_rating / 5 : 0.8;
       const responseRate = seller?.response_rate ? seller.response_rate / 100 : 0.95;
       const sellerQuality = (sellerRating * 0.7) + (responseRate * 0.3);
       
-      // Aggregate Quality Score with new weights
-      const qualityScore = 
-        (0.15 * viewsScore * 100) +      // Views: 15%
+      // Aggregate Quality Score with v3 weights
+      let qualityScore = 
+        (0.10 * viewsScore * 100) +      // Views: 10% (was 15%)
         (0.15 * reviewsScore * 100) +    // Reviews: 15%
         (0.15 * ratingScore * 100) +     // Rating: 15%
-        (0.15 * salesScore * 100) +      // Sales: 15%
+        (0.20 * salesScore * 100) +      // Sales: 20% (was 15%)
         (0.10 * complaintScore * 100) +  // Complaints: 10%
-        (0.10 * stockScore * 100) +      // Stock: 10%
+        (0.05 * stockScore * 100) +      // Stock: 5% (was 10%)
         (0.10 * seoScore * 100) +        // SEO: 10%
         (0.05 * freshnessScore * 100) +  // Freshness: 5%
-        (0.05 * sellerQuality * 100);    // Seller: 5%
+        (0.10 * sellerQuality * 100);    // Seller: 10% (was 5%)
+      
+      // Add Sales Bonus Tiers (v3 new feature)
+      const salesBonus = calculateSalesBonus(purchases);
+      qualityScore += salesBonus;
       
       // Business Rules Boosting
       let finalScore = qualityScore;
@@ -196,12 +206,13 @@ Deno.serve(async (req) => {
       if (seller && sellerRating > 0.9) finalScore *= 1.2; // +20% for 4.5+ star seller
       
       // Log detailed breakdown for debugging (sample)
-      if (Math.random() < 0.1) { // Log 10% of products
+      if (Math.random() < 0.2) { // Log 20% of products
         console.log(`Product ${product.id} (${product.title?.substring(0, 30)}...):`, {
           views: viewsScore.toFixed(2),
           reviews: reviewsScore.toFixed(2),
           rating: ratingScore.toFixed(2),
-          sales: salesScore.toFixed(2),
+          sales: `${salesScore.toFixed(2)} (${purchases} purchases)`,
+          salesBonus: salesBonus,
           complaints: complaintScore.toFixed(2),
           stock: stockScore.toFixed(2),
           seo: seoScore.toFixed(2),
@@ -245,14 +256,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`Successfully updated ${updatedCount} products with new ranking algorithm`);
+    console.log(`Successfully updated ${updatedCount} products with v3 ranking algorithm`);
 
     return new Response(
       JSON.stringify({ 
-        message: 'Quality scores calculated with new algorithm',
+        message: 'Quality scores calculated with v3 algorithm',
         updated: updatedCount,
         total: products.length,
-        algorithm: 'v2-seo-balanced'
+        algorithm: 'v3-sales-priority'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
