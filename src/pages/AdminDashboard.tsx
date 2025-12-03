@@ -54,7 +54,7 @@ const AdminDashboard = () => {
         <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-11 gap-1">
+          <TabsList className="grid w-full grid-cols-12 gap-1">
             <TabsTrigger value="stats">Thống kê</TabsTrigger>
             <TabsTrigger value="users">Người dùng</TabsTrigger>
             <TabsTrigger value="orders">Đơn hàng</TabsTrigger>
@@ -66,6 +66,7 @@ const AdminDashboard = () => {
             <TabsTrigger value="footer">Footer</TabsTrigger>
             <TabsTrigger value="manual-payments">TT thủ công</TabsTrigger>
             <TabsTrigger value="withdrawals">Rút tiền</TabsTrigger>
+            <TabsTrigger value="wallet-backfill">Backfill Ví</TabsTrigger>
           </TabsList>
 
           <TabsContent value="stats">
@@ -110,6 +111,10 @@ const AdminDashboard = () => {
 
           <TabsContent value="withdrawals">
             <AdminWithdrawals />
+          </TabsContent>
+
+          <TabsContent value="wallet-backfill">
+            <AdminWalletBackfill />
           </TabsContent>
         </Tabs>
       </div>
