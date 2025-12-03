@@ -567,6 +567,7 @@ export type Database = {
           description: string | null
           discount_percentage: number | null
           id: string
+          image_url: string | null
           in_stock: number | null
           is_active: boolean | null
           original_price: number | null
@@ -582,6 +583,7 @@ export type Database = {
           description?: string | null
           discount_percentage?: number | null
           id?: string
+          image_url?: string | null
           in_stock?: number | null
           is_active?: boolean | null
           original_price?: number | null
@@ -597,6 +599,7 @@ export type Database = {
           description?: string | null
           discount_percentage?: number | null
           id?: string
+          image_url?: string | null
           in_stock?: number | null
           is_active?: boolean | null
           original_price?: number | null

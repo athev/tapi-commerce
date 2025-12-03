@@ -33,6 +33,7 @@ export const productVariantSchema = z.object({
   is_active: z.boolean().default(true),
   in_stock: z.number().min(0, "Số lượng phải >= 0").default(999),
   description: z.string().max(500, "Mô tả không được quá 500 ký tự").optional().nullable(),
+  image_url: z.string().url().optional().nullable(),
 });
 
 // Image validation
