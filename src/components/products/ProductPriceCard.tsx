@@ -15,11 +15,12 @@ interface ProductVariant {
   discount_percentage?: number | null;
   badge?: string | null;
   in_stock?: number | null;
+  image_url?: string | null;
 }
 
 interface ProductPriceCardProps {
   product: any;
-  onPriceChange: (price: number, variantId: string | null, variantName?: string) => void;
+  onPriceChange: (price: number, variantId: string | null, variantName?: string, imageUrl?: string | null) => void;
 }
 
 const ProductPriceCard = ({
@@ -54,7 +55,7 @@ const ProductPriceCard = ({
         setOriginalPrice(firstAvailable.original_price || null);
         setDiscountPercentage(firstAvailable.discount_percentage || null);
         setSelectedVariantStock(firstAvailable.in_stock ?? null);
-        onPriceChange(firstAvailable.price, firstAvailable.id, firstAvailable.variant_name);
+        onPriceChange(firstAvailable.price, firstAvailable.id, firstAvailable.variant_name, firstAvailable.image_url);
       } else {
         // No variants, use base price
         setCurrentPrice(product.price);
@@ -73,7 +74,7 @@ const ProductPriceCard = ({
       setOriginalPrice(variant.original_price || null);
       setDiscountPercentage(variant.discount_percentage || null);
       setSelectedVariantStock(variant.in_stock ?? null);
-      onPriceChange(variant.price, variantId, variant.variant_name);
+      onPriceChange(variant.price, variantId, variant.variant_name, variant.image_url);
     }
   };
 

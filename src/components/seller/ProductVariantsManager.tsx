@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { Plus, Trash2, GripVertical, Upload, X, ImageIcon } from "lucide-react";
 import { ProductVariant } from "@/lib/productValidationSchemas";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProductVariantsManagerProps {
   variants: ProductVariant[];
@@ -24,6 +26,8 @@ const ProductVariantsManager = ({
 }: ProductVariantsManagerProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [tempVariant, setTempVariant] = useState<Partial<ProductVariant>>({});
+  const [uploading, setUploading] = useState(false);
+  const { toast } = useToast();
 
   const addVariant = () => {
     const newVariant: ProductVariant = {
@@ -37,6 +41,7 @@ const ProductVariantsManager = ({
       is_active: true,
       in_stock: 999,
       description: null,
+      image_url: null,
     };
     onVariantsChange([...variants, newVariant]);
     setEditingId(newVariant.id!);
@@ -68,6 +73,64 @@ const ProductVariantsManager = ({
     return num.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Lỗi",
+        description: "Ảnh không được quá 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      toast({
+        title: "Lỗi",
+        description: "Chỉ chấp nhận định dạng JPG, PNG, WEBP",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `variant-${Date.now()}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, file);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(data.path);
+
+      setTempVariant({ ...tempVariant, image_url: publicUrl });
+      toast({
+        title: "Thành công",
+        description: "Đã tải ảnh lên",
+      });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể tải ảnh lên",
+        variant: "destructive",
+      });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImage = () => {
+    setTempVariant({ ...tempVariant, image_url: null });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -87,6 +150,47 @@ const ProductVariantsManager = ({
                     }
                     placeholder="VD: Gói 1 tháng, Gói 1 năm"
                   />
+                </div>
+
+                {/* Image Upload Section */}
+                <div className="space-y-2">
+                  <Label>Ảnh biến thể (tùy chọn)</Label>
+                  {tempVariant.image_url ? (
+                    <div className="relative w-24 h-24 rounded-lg overflow-hidden border">
+                      <img
+                        src={tempVariant.image_url}
+                        alt="Variant"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/90"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                      <div className="flex flex-col items-center justify-center py-2">
+                        {uploading ? (
+                          <div className="text-sm text-muted-foreground">Đang tải...</div>
+                        ) : (
+                          <>
+                            <Upload className="h-6 w-6 text-muted-foreground mb-1" />
+                            <span className="text-xs text-muted-foreground">Tải ảnh lên</span>
+                          </>
+                        )}
+                      </div>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept="image/jpeg,image/png,image/webp"
+                        onChange={handleImageUpload}
+                        disabled={uploading}
+                      />
+                    </label>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -186,6 +290,20 @@ const ProductVariantsManager = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <GripVertical className="h-5 w-5 text-muted-foreground" />
+                  {/* Variant thumbnail */}
+                  {variant.image_url ? (
+                    <div className="w-12 h-12 rounded-md overflow-hidden border shrink-0">
+                      <img
+                        src={variant.image_url}
+                        alt={variant.variant_name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-12 h-12 rounded-md bg-muted flex items-center justify-center shrink-0">
+                      <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <p className="font-medium">{variant.variant_name}</p>

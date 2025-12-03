@@ -57,6 +57,7 @@ const ProductDetail = () => {
   const [currentPrice, setCurrentPrice] = useState(0);
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectedVariantName, setSelectedVariantName] = useState<string>('');
+  const [selectedVariantImage, setSelectedVariantImage] = useState<string | null>(null);
   useEffect(() => {
     // Simulate fetching product data from an API
     // Replace this with your actual data fetching logic
@@ -211,12 +212,13 @@ const ProductDetail = () => {
       setIsProcessing(false);
     }
   };
-  const handlePriceChange = (price: number, variantId: string | null, variantName?: string) => {
+  const handlePriceChange = (price: number, variantId: string | null, variantName?: string, imageUrl?: string | null) => {
     setCurrentPrice(price);
     setSelectedVariantId(variantId);
     if (variantName) {
       setSelectedVariantName(variantName);
     }
+    setSelectedVariantImage(imageUrl || null);
   };
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -272,7 +274,7 @@ const ProductDetail = () => {
           <div className="space-y-3 sm:space-y-4 min-w-0">
             <div className="w-full">
               <ProductImageGallery 
-                images={[product.image || '/placeholder.svg']} 
+                images={[selectedVariantImage || product.image || '/placeholder.svg']} 
                 title={product.title}
               />
             </div>
