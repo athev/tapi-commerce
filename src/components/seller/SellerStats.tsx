@@ -14,28 +14,35 @@ const SellerStats = () => {
     queryFn: async () => {
       if (!user) return null;
       
-      // Fetch products count and total sales
+      // Fetch products count
       const { data: products, error: productsError } = await supabase
         .from('products')
-        .select('id, price, purchases')
+        .select('id')
         .eq('seller_id', user.id);
       
       if (productsError) throw productsError;
 
-      // Fetch orders count
+      const productIds = products?.map(p => p.id) || [];
+
+      // Fetch paid orders for seller's products with bank_amount
       const { data: orders, error: ordersError } = await supabase
         .from('orders')
-        .select('id, product_id')
-        .in('product_id', products?.map(p => p.id) || []);
+        .select('id, bank_amount, product_id, status, products!inner(price, seller_id)')
+        .eq('products.seller_id', user.id);
       
       if (ordersError) throw ordersError;
 
       const totalProducts = products?.length || 0;
-      const totalRevenue = products?.reduce((sum, product) => 
-        sum + (product.price * (product.purchases || 0)), 0) || 0;
       const totalOrders = orders?.length || 0;
-      const totalSales = products?.reduce((sum, product) => 
-        sum + (product.purchases || 0), 0) || 0;
+      
+      // Calculate revenue from paid orders only
+      const paidOrders = orders?.filter(o => o.status === 'paid') || [];
+      const totalRevenue = paidOrders.reduce((sum, order) => {
+        const amount = order.bank_amount || (order.products as any)?.price || 0;
+        return sum + amount;
+      }, 0);
+      
+      const totalSales = paidOrders.length;
 
       return {
         totalProducts,
