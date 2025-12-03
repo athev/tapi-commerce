@@ -32,6 +32,9 @@ export async function processOrderCompletion(order: any, transaction: any, trans
   console.log(`📦 Processing automatic delivery...`)
   const deliveryResult = await processAutomaticDelivery(order, supabase)
   
+  // Increment product purchases count
+  await incrementProductPurchases(order, supabase)
+  
   // Increment voucher usage if applicable
   await incrementVoucherUsage(order, supabase)
   
@@ -56,20 +59,70 @@ export async function processOrderCompletion(order: any, transaction: any, trans
   }
 }
 
+async function incrementProductPurchases(order: any, supabase: any) {
+  try {
+    const productId = order.product_id || order.products?.id
+    if (!productId) {
+      console.log('⚠️ No product ID found for purchases increment')
+      return
+    }
+    
+    console.log(`📊 Incrementing purchases for product ${productId}...`)
+    
+    // Try RPC function first
+    const { error } = await supabase.rpc('increment_product_purchases', { 
+      p_product_id: productId 
+    })
+    
+    if (error) {
+      console.error('⚠️ RPC error, trying manual increment:', error)
+      // Fallback: manual increment
+      const { data: product } = await supabase
+        .from('products')
+        .select('purchases, purchases_last_7_days, purchases_last_30_days')
+        .eq('id', productId)
+        .single()
+        
+      if (product) {
+        await supabase
+          .from('products')
+          .update({ 
+            purchases: (product.purchases || 0) + 1,
+            purchases_last_7_days: (product.purchases_last_7_days || 0) + 1,
+            purchases_last_30_days: (product.purchases_last_30_days || 0) + 1
+          })
+          .eq('id', productId)
+      }
+    }
+    
+    console.log(`✅ Product purchases incremented`)
+  } catch (error) {
+    console.error('⚠️ Error incrementing purchases:', error)
+  }
+}
+
 async function incrementVoucherUsage(order: any, supabase: any) {
   try {
     if (order.voucher_id) {
       console.log(`🎟️ Incrementing voucher usage for voucher ${order.voucher_id}`)
       
-      const { error } = await supabase
+      const { data: voucher } = await supabase
         .from('vouchers')
-        .update({ used_count: supabase.sql`used_count + 1` })
+        .select('used_count')
         .eq('id', order.voucher_id)
+        .single()
       
-      if (error) {
-        console.error('⚠️ Error incrementing voucher usage:', error)
-      } else {
-        console.log(`✅ Voucher usage incremented`)
+      if (voucher) {
+        const { error } = await supabase
+          .from('vouchers')
+          .update({ used_count: (voucher.used_count || 0) + 1 })
+          .eq('id', order.voucher_id)
+        
+        if (error) {
+          console.error('⚠️ Error incrementing voucher usage:', error)
+        } else {
+          console.log(`✅ Voucher usage incremented`)
+        }
       }
     }
   } catch (error) {

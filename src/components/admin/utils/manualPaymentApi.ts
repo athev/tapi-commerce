@@ -121,6 +121,34 @@ export const confirmManualPayment = async (orderId: string) => {
       throw new Error('Không thể cập nhật đơn hàng - có thể do quyền truy cập');
     }
     
+    // Increment product purchases count
+    if (orderData.products?.id) {
+      const { error: rpcError } = await supabase.rpc('increment_product_purchases', { 
+        p_product_id: orderData.products.id 
+      });
+      
+      if (rpcError) {
+        console.error('Error incrementing purchases:', rpcError);
+        // Fallback: manual increment
+        const { data: product } = await supabase
+          .from('products')
+          .select('purchases, purchases_last_7_days, purchases_last_30_days')
+          .eq('id', orderData.products.id)
+          .single();
+          
+        if (product) {
+          await supabase
+            .from('products')
+            .update({ 
+              purchases: (product.purchases || 0) + 1,
+              purchases_last_7_days: (product.purchases_last_7_days || 0) + 1,
+              purchases_last_30_days: (product.purchases_last_30_days || 0) + 1
+            })
+            .eq('id', orderData.products.id);
+        }
+      }
+    }
+    
     await supabase
       .from('notifications')
       .insert({

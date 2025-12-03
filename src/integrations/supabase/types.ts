@@ -1352,6 +1352,10 @@ export type Database = {
         Args: { product_id: string }
         Returns: undefined
       }
+      increment_product_purchases: {
+        Args: { p_product_id: string }
+        Returns: undefined
+      }
       increment_product_views: {
         Args: { product_id: string }
         Returns: undefined
