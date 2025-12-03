@@ -30,10 +30,10 @@ const UpdateDeliveryStatusButton = ({
 
   const updateMutation = useMutation({
     mutationFn: async ({ status, notes }: { status: string; notes?: string }) => {
-      // Get order info first
+      // Get order info first including buyer_email
       const { data: order } = await supabase
         .from('orders')
-        .select('user_id, product_id')
+        .select('user_id, product_id, buyer_email')
         .eq('id', orderId)
         .single();
 
@@ -68,6 +68,28 @@ const UpdateDeliveryStatusButton = ({
             action_url: '/my-purchases',
             related_order_id: orderId
           });
+
+          // Send email notification to buyer
+          if (order.buyer_email) {
+            try {
+              console.log('[UpdateDeliveryStatus] Sending delivery email to:', order.buyer_email);
+              const { error: emailError } = await supabase.functions.invoke('send-delivery-email', {
+                body: {
+                  orderId,
+                  buyerEmail: order.buyer_email,
+                  productTitle: product?.title || 'Sản phẩm',
+                  deliveryNotes: notes
+                }
+              });
+              if (emailError) {
+                console.error('[UpdateDeliveryStatus] Email send failed:', emailError);
+              } else {
+                console.log('[UpdateDeliveryStatus] Delivery email sent successfully');
+              }
+            } catch (emailErr) {
+              console.error('[UpdateDeliveryStatus] Email send error:', emailErr);
+            }
+          }
         } else {
           // Generic notification for other status updates
           const statusLabels: Record<string, string> = {

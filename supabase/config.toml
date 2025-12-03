@@ -32,3 +32,6 @@ verify_jwt = true
 
 [functions.complete-service-ticket]
 verify_jwt = true
+
+[functions.send-delivery-email]
+verify_jwt = true
