@@ -65,6 +65,11 @@ export async function processOrderPayment(
   // Update order status and process delivery
   try {
     await updateOrderStatus(order, cassoFormatTransaction, transactionId, supabase)
+    
+    // ✅ FIX: Update order status in memory after DB update success
+    // This ensures walletService receives correct status for validation
+    order.status = 'paid';
+    
     await linkTransactionToOrder(transactionId, order.id, supabase)
     
     const completionResult = await processOrderCompletion(order, cassoFormatTransaction, transactionId, supabase)
