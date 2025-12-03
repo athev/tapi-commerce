@@ -349,8 +349,9 @@ const MyPurchases = () => {
 
                               {!isUsingMockData && (
                                 <>
-                                  {/* Review Button */}
+                                  {/* Review Button - only after order completed */}
                                   {purchase.status === 'paid' && 
+                                   purchase.delivery_status === 'completed' &&
                                    !existingReviews?.includes(purchase.id) && 
                                    !reviewedOrders.has(purchase.id) && (
                                     <Button

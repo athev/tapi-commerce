@@ -28,12 +28,12 @@ const OrderConfirmButton = ({
     mutationFn: async () => {
       console.log('[OrderConfirm] Starting confirmation for order:', orderId);
       
-      // Update order status to delivered with verification
-      console.log('[OrderConfirm] Updating order delivery_status to delivered');
+      // Update order status to completed (buyer confirms receipt)
+      console.log('[OrderConfirm] Updating order delivery_status to completed');
       const { data: updatedOrder, error: orderError } = await supabase
         .from('orders')
         .update({
-          delivery_status: 'delivered',
+          delivery_status: 'completed',
           updated_at: new Date().toISOString()
         })
         .eq('id', orderId)
@@ -57,9 +57,9 @@ const OrderConfirmButton = ({
       // Create notification for buyer
       await supabase.from('notifications').insert({
         user_id: updatedOrder.user_id,
-        type: 'order_confirmed',
-        title: 'Đã xác nhận nhận hàng',
-        message: 'Bạn đã xác nhận nhận hàng thành công. Cảm ơn bạn đã mua hàng!',
+        type: 'order_completed',
+        title: 'Đơn hàng hoàn thành',
+        message: 'Đơn hàng đã hoàn thành. Hãy đánh giá sản phẩm để nhận PI!',
         priority: 'normal',
         action_url: '/my-purchases',
         related_order_id: updatedOrder.id
@@ -69,9 +69,9 @@ const OrderConfirmButton = ({
       if (product) {
         await supabase.from('notifications').insert({
           user_id: product.seller_id,
-          type: 'buyer_confirmed_delivery',
-          title: 'Khách hàng đã xác nhận nhận hàng',
-          message: `Đơn hàng "${product.title}" đã được xác nhận bởi khách hàng.`,
+          type: 'order_completed',
+          title: 'Đơn hàng đã hoàn thành',
+          message: `Đơn hàng "${product.title}" đã được hoàn thành bởi khách hàng.`,
           priority: 'high',
           action_url: '/seller',
           related_order_id: updatedOrder.id
@@ -143,11 +143,8 @@ const OrderConfirmButton = ({
     }
   });
 
-  // Show button only for paid orders that are not delivered yet
-  const shouldShow = status === 'paid' && 
-                    deliveryStatus !== 'delivered' && 
-                    deliveryStatus !== 'completed' &&
-                    deliveryStatus !== 'failed';
+  // Show button only for paid orders where seller has marked as delivered
+  const shouldShow = status === 'paid' && deliveryStatus === 'delivered';
 
   if (!shouldShow) return null;
 
@@ -160,7 +157,7 @@ const OrderConfirmButton = ({
       className="bg-green-600 hover:bg-green-700"
     >
       <CheckCircle className="h-4 w-4 mr-2" />
-      {confirmOrderMutation.isPending ? 'Đang xử lý...' : 'Xác nhận hoàn thành'}
+      {confirmOrderMutation.isPending ? 'Đang xử lý...' : 'Hoàn thành đơn hàng'}
     </Button>
   );
 };
