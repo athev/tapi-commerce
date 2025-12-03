@@ -56,23 +56,37 @@ const UpdateDeliveryStatusButton = ({
           .eq('id', order.product_id)
           .single();
 
-        const statusLabels: Record<string, string> = {
-          'pending': 'Chờ xử lý',
-          'processing': 'Đang xử lý',
-          'delivered': 'Đã giao',
-          'completed': 'Hoàn thành',
-          'failed': 'Thất bại'
-        };
+        // Send different notification based on status
+        if (status === 'delivered') {
+          // Special notification for delivered status - prompt buyer to confirm completion
+          await supabase.from('notifications').insert({
+            user_id: order.user_id,
+            type: 'order_delivered',
+            title: 'Đơn hàng đã được giao',
+            message: `Đơn hàng "${product?.title || 'Sản phẩm'}" đã được giao. Vui lòng xác nhận hoàn thành để nhận sản phẩm và được cộng PI!`,
+            priority: 'high',
+            action_url: '/my-purchases',
+            related_order_id: orderId
+          });
+        } else {
+          // Generic notification for other status updates
+          const statusLabels: Record<string, string> = {
+            'pending': 'Chờ xử lý',
+            'processing': 'Đang xử lý',
+            'completed': 'Hoàn thành',
+            'failed': 'Thất bại'
+          };
 
-        await supabase.from('notifications').insert({
-          user_id: order.user_id,
-          type: 'delivery_status_updated',
-          title: 'Cập nhật trạng thái đơn hàng',
-          message: `Đơn hàng "${product?.title || 'Sản phẩm'}" đã được cập nhật: ${statusLabels[status] || status}`,
-          priority: 'normal',
-          action_url: '/my-purchases',
-          related_order_id: orderId
-        });
+          await supabase.from('notifications').insert({
+            user_id: order.user_id,
+            type: 'delivery_status_updated',
+            title: 'Cập nhật trạng thái đơn hàng',
+            message: `Đơn hàng "${product?.title || 'Sản phẩm'}" đã được cập nhật: ${statusLabels[status] || status}`,
+            priority: 'normal',
+            action_url: '/my-purchases',
+            related_order_id: orderId
+          });
+        }
       }
     },
     onSuccess: () => {
