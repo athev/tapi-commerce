@@ -7,6 +7,9 @@ const corsHeaders = {
 
 interface Product {
   id: string;
+  title: string;
+  description: string | null;
+  image: string | null;
   views: number;
   purchases: number;
   average_rating: number;
@@ -19,11 +22,60 @@ interface Product {
   seller_id: string;
   is_mall_product: boolean;
   is_sponsored: boolean;
+  meta_title: string | null;
+  meta_description: string | null;
+  keywords: string[] | null;
 }
 
 interface SellerProfile {
   seller_rating: number;
   response_rate: number;
+}
+
+// Calculate SEO Score based on product metadata quality
+function calculateSEOScore(product: Product): number {
+  let seoScore = 0;
+  
+  // Title length (20-60 chars is optimal)
+  const titleLength = product.title?.length || 0;
+  if (titleLength >= 20 && titleLength <= 60) {
+    seoScore += 20;
+  } else if (titleLength > 0) {
+    seoScore += 10;
+  }
+  
+  // Has meta_title
+  if (product.meta_title && product.meta_title.length > 0) {
+    seoScore += 15;
+  }
+  
+  // Has meta_description (100-160 chars is optimal)
+  const metaDescLength = product.meta_description?.length || 0;
+  if (metaDescLength >= 100 && metaDescLength <= 160) {
+    seoScore += 20;
+  } else if (metaDescLength > 0) {
+    seoScore += 10;
+  }
+  
+  // Has keywords (3-10 keywords is optimal)
+  const keywordCount = product.keywords?.length || 0;
+  if (keywordCount >= 3 && keywordCount <= 10) {
+    seoScore += 20;
+  } else if (keywordCount > 0) {
+    seoScore += 10;
+  }
+  
+  // Has quality product image (not placeholder)
+  if (product.image && !product.image.includes('placeholder')) {
+    seoScore += 15;
+  }
+  
+  // Has detailed description (>200 chars)
+  if ((product.description?.length || 0) > 200) {
+    seoScore += 10;
+  }
+  
+  return seoScore / 100; // Normalize to 0-1
 }
 
 Deno.serve(async (req) => {
@@ -43,15 +95,16 @@ Deno.serve(async (req) => {
       }
     );
 
-    console.log('Starting quality score calculation...');
+    console.log('Starting quality score calculation with new algorithm...');
 
-    // Fetch all active products
+    // Fetch all active products with SEO fields
     const { data: products, error: productsError } = await supabaseClient
       .from('products')
       .select(`
-        id, views, purchases, average_rating, review_count, complaint_rate,
-        purchases_last_7_days, purchases_last_30_days, in_stock, created_at,
-        seller_id, is_mall_product, is_sponsored
+        id, title, description, image, views, purchases, average_rating, review_count, 
+        complaint_rate, purchases_last_7_days, purchases_last_30_days, in_stock, 
+        created_at, seller_id, is_mall_product, is_sponsored,
+        meta_title, meta_description, keywords
       `)
       .eq('status', 'active');
 
@@ -65,7 +118,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`Processing ${products.length} products...`);
+    console.log(`Processing ${products.length} products with new ranking algorithm...`);
 
     // Fetch seller profiles
     const sellerIds = [...new Set(products.map(p => p.seller_id))];
@@ -78,53 +131,86 @@ Deno.serve(async (req) => {
       sellers?.map(s => [s.id, s as SellerProfile]) || []
     );
 
-    // Calculate scores for each product
+    // Calculate scores for each product using new algorithm
     const updates = products.map((product: Product) => {
       const seller = sellerMap.get(product.seller_id);
       
-      // 1. Conversion Rate (25%)
-      const conversionRate = product.views > 0 
-        ? Math.min((product.purchases / product.views) * 100, 100) 
+      // 1. VIEWS SCORE (15%) - Logarithmic scale up to 10000 views
+      const views = product.views || 0;
+      const viewsScore = views > 0 
+        ? Math.min(Math.log10(views + 1) / Math.log10(10000), 1) 
         : 0;
       
-      // 2. Rating Score (20%)
-      const ratingNormalized = (product.average_rating || 5) / 5;
-      const reviewWeight = product.review_count > 0 
-        ? Math.min(Math.log(product.review_count + 1) / Math.log(1000), 1) 
+      // 2. REVIEWS SCORE (15%) - Logarithmic scale up to 500 reviews
+      const reviewCount = product.review_count || 0;
+      const reviewsScore = reviewCount > 0 
+        ? Math.min(Math.log10(reviewCount + 1) / Math.log10(500), 1) 
         : 0;
-      const complaintFactor = 1 - (product.complaint_rate || 0);
-      const ratingScore = (ratingNormalized * 0.7) + (reviewWeight * 0.2) + (complaintFactor * 0.1);
       
-      // 3. Sales Velocity (15%)
-      const recentSales = (product.purchases_last_7_days * 4) + (product.purchases_last_30_days || 0);
-      const salesVelocity = Math.min(recentSales / 100, 1);
+      // 3. RATING SCORE (15%) - Scale 1-5 stars to 0-1
+      const avgRating = product.average_rating || 5;
+      const ratingScore = (avgRating - 1) / 4;
       
-      // 4. Seller Quality (15%)
+      // 4. SALES SCORE (15%) - Logarithmic scale up to 1000 sales
+      const purchases = product.purchases || 0;
+      const salesScore = purchases > 0 
+        ? Math.min(Math.log10(purchases + 1) / Math.log10(1000), 1) 
+        : 0;
+      
+      // 5. COMPLAINT SCORE (10%) - Lower complaints = higher score
+      const complaintRate = product.complaint_rate || 0;
+      const complaintScore = Math.max(0, 1 - (complaintRate * 10));
+      
+      // 6. STOCK SCORE (10%) - Out of stock = 0, scale up to 100 items
+      const inStock = product.in_stock || 0;
+      const stockScore = inStock === 0 ? 0 : Math.min(inStock / 100, 1);
+      
+      // 7. SEO SCORE (10%) - New! Based on metadata quality
+      const seoScore = calculateSEOScore(product);
+      
+      // 8. FRESHNESS SCORE (5%) - Exponential decay over 90 days
+      const daysSinceCreated = (Date.now() - new Date(product.created_at).getTime()) / (1000 * 60 * 60 * 24);
+      const freshnessScore = Math.exp(-daysSinceCreated / 90);
+      
+      // 9. SELLER QUALITY (5%) - Rating + response rate
       const sellerRating = seller?.seller_rating ? seller.seller_rating / 5 : 0.8;
       const responseRate = seller?.response_rate ? seller.response_rate / 100 : 0.95;
-      const sellerQuality = (sellerRating * 0.6) + (responseRate * 0.4);
+      const sellerQuality = (sellerRating * 0.7) + (responseRate * 0.3);
       
-      // 5. Freshness Score (10%)
-      const daysSinceCreated = (Date.now() - new Date(product.created_at).getTime()) / (1000 * 60 * 60 * 24);
-      const freshness = Math.exp(-daysSinceCreated / 30);
-      
-      // 6. Stock Health (5%)
-      const stockHealth = Math.min((product.in_stock || 0) / 50, 1);
-      
-      // Aggregate Quality Score
+      // Aggregate Quality Score with new weights
       const qualityScore = 
-        (0.25 * conversionRate) +
-        (0.20 * ratingScore * 100) +
-        (0.15 * salesVelocity * 100) +
-        (0.15 * sellerQuality * 100) +
-        (0.10 * freshness * 100) +
-        (0.05 * stockHealth * 100);
+        (0.15 * viewsScore * 100) +      // Views: 15%
+        (0.15 * reviewsScore * 100) +    // Reviews: 15%
+        (0.15 * ratingScore * 100) +     // Rating: 15%
+        (0.15 * salesScore * 100) +      // Sales: 15%
+        (0.10 * complaintScore * 100) +  // Complaints: 10%
+        (0.10 * stockScore * 100) +      // Stock: 10%
+        (0.10 * seoScore * 100) +        // SEO: 10%
+        (0.05 * freshnessScore * 100) +  // Freshness: 5%
+        (0.05 * sellerQuality * 100);    // Seller: 5%
       
       // Business Rules Boosting
       let finalScore = qualityScore;
-      if (product.is_mall_product) finalScore *= 1.3;
-      if (seller && sellerRating > 0.9) finalScore *= 1.2; // Verified high-rated seller
-      if (product.is_sponsored) finalScore *= 1.5;
+      if (product.is_mall_product) finalScore *= 1.3;  // +30% for Mall products
+      if (product.is_sponsored) finalScore *= 1.5;     // +50% for Sponsored
+      if (seller && sellerRating > 0.9) finalScore *= 1.2; // +20% for 4.5+ star seller
+      
+      // Log detailed breakdown for debugging (sample)
+      if (Math.random() < 0.1) { // Log 10% of products
+        console.log(`Product ${product.id} (${product.title?.substring(0, 30)}...):`, {
+          views: viewsScore.toFixed(2),
+          reviews: reviewsScore.toFixed(2),
+          rating: ratingScore.toFixed(2),
+          sales: salesScore.toFixed(2),
+          complaints: complaintScore.toFixed(2),
+          stock: stockScore.toFixed(2),
+          seo: seoScore.toFixed(2),
+          freshness: freshnessScore.toFixed(2),
+          seller: sellerQuality.toFixed(2),
+          base: qualityScore.toFixed(2),
+          final: finalScore.toFixed(2)
+        });
+      }
       
       return {
         id: product.id,
@@ -159,13 +245,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`Successfully updated ${updatedCount} products`);
+    console.log(`Successfully updated ${updatedCount} products with new ranking algorithm`);
 
     return new Response(
       JSON.stringify({ 
-        message: 'Quality scores calculated successfully',
+        message: 'Quality scores calculated with new algorithm',
         updated: updatedCount,
-        total: products.length
+        total: products.length,
+        algorithm: 'v2-seo-balanced'
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
