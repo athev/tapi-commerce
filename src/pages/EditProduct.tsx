@@ -62,11 +62,12 @@ const EditProduct = () => {
         setCurrentImage(product.image || '');
         setImagePreview(product.image || '');
 
-        // Fetch variants
+        // Fetch only active variants
         const { data: variantsData } = await supabase
           .from('product_variants')
           .select('*')
           .eq('product_id', productId)
+          .eq('is_active', true)
           .order('sort_order');
 
         if (variantsData && variantsData.length > 0) {
@@ -146,44 +147,78 @@ const EditProduct = () => {
 
       if (error) throw error;
 
-      // Always delete old variants first
-      console.log(`Deleting old variants for product ${productId}`);
-      const { error: deleteError } = await supabase
+      // === UPSERT + SOFT DELETE LOGIC FOR VARIANTS ===
+      
+      // 1. Get current variant IDs in form (real UUIDs only, not temp IDs)
+      const currentVariantIds = variants
+        .filter(v => v.id && !v.id.startsWith('temp-'))
+        .map(v => v.id);
+      
+      // 2. Get existing variants from DB
+      const { data: existingVariants } = await supabase
         .from('product_variants')
-        .delete()
-        .eq('product_id', productId);
-
-      if (deleteError) {
-        console.error('Error deleting variants:', deleteError);
-        throw deleteError;
-      }
-
-      // Insert new variants if any
-      if (variants.length > 0) {
-        console.log(`Inserting ${variants.length} new variants`);
-        const variantsData = variants.map(v => ({
-          product_id: productId,
-          variant_name: v.variant_name,
-          price: v.price,
-          original_price: v.original_price,
-          discount_percentage: v.discount_percentage,
-          badge: v.badge,
-          sort_order: v.sort_order,
-          is_active: v.is_active,
-          in_stock: v.in_stock ?? 999,
-          description: v.description,
-        }));
-
-        const { error: variantsError } = await supabase
+        .select('id')
+        .eq('product_id', productId)
+        .eq('is_active', true);
+      
+      const existingIds = existingVariants?.map(v => v.id) || [];
+      
+      // 3. Find variants to soft delete (in DB but not in form)
+      const idsToRemove = existingIds.filter(id => !currentVariantIds.includes(id));
+      
+      // 4. Soft delete removed variants
+      if (idsToRemove.length > 0) {
+        console.log(`Soft deleting ${idsToRemove.length} variants`);
+        const { error: softDeleteError } = await supabase
           .from('product_variants')
-          .insert(variantsData);
-
-        if (variantsError) {
-          console.error('Error inserting variants:', variantsError);
-          throw variantsError;
+          .update({ is_active: false })
+          .in('id', idsToRemove);
+        
+        if (softDeleteError) {
+          console.error('Error soft deleting variants:', softDeleteError);
+          throw softDeleteError;
         }
-      } else {
-        console.log('No variants to insert');
+      }
+      
+      // 5. Update existing variants and insert new ones
+      for (const variant of variants) {
+        const variantData = {
+          variant_name: variant.variant_name,
+          price: variant.price,
+          original_price: variant.original_price,
+          discount_percentage: variant.discount_percentage,
+          badge: variant.badge,
+          sort_order: variant.sort_order,
+          is_active: true,
+          in_stock: variant.in_stock ?? 999,
+          description: variant.description,
+        };
+        
+        if (variant.id && !variant.id.startsWith('temp-')) {
+          // UPDATE existing variant
+          const { error: updateError } = await supabase
+            .from('product_variants')
+            .update(variantData)
+            .eq('id', variant.id);
+          
+          if (updateError) {
+            console.error('Error updating variant:', updateError);
+            throw updateError;
+          }
+        } else {
+          // INSERT new variant
+          const { error: insertError } = await supabase
+            .from('product_variants')
+            .insert({
+              product_id: productId,
+              ...variantData,
+            });
+          
+          if (insertError) {
+            console.error('Error inserting variant:', insertError);
+            throw insertError;
+          }
+        }
       }
 
       toast.success("Cập nhật sản phẩm thành công!");
