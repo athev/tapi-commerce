@@ -47,11 +47,16 @@ const OrderDetailsModal = ({ open, onOpenChange, order }: OrderDetailsModalProps
               )}
               <div className="flex-1">
                 <h3 className="font-semibold">{product.title}</h3>
+                {order.variant?.variant_name && (
+                  <p className="text-sm text-muted-foreground">
+                    Phân loại: {order.variant.variant_name}
+                  </p>
+                )}
                 <p className="text-sm text-muted-foreground">
                   {getProductTypeLabel(product.product_type)}
                 </p>
                 <p className="text-lg font-bold text-primary mt-1">
-                  {formatPrice(product.price)}
+                  {formatPrice(order.bank_amount || order.variant?.price || product.price)}
                 </p>
               </div>
             </div>
@@ -100,10 +105,10 @@ const OrderDetailsModal = ({ open, onOpenChange, order }: OrderDetailsModalProps
             </div>
             <div className="p-4 bg-muted/50 rounded-lg space-y-2">
               {(() => {
-                const original = product.price || 0;
                 const discount = order.discount_amount || 0;
-                const computedFinal = Math.max(0, original - discount);
-                const finalAmount = order.bank_amount ?? computedFinal;
+                const finalAmount = order.bank_amount || order.variant?.price || product.price || 0;
+                // Original price = final amount + discount applied
+                const original = finalAmount + discount;
                 
                 return (
                   <>

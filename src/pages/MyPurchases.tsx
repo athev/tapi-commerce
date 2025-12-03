@@ -142,12 +142,25 @@ const MyPurchases = () => {
           })) as (Order & { product: Product })[];
         }
 
-        // Combine orders with product details
+        // Get variant details for orders with variant_id
+        const variantIds = ordersData.map(order => order.variant_id).filter(Boolean);
+        let variantsData: any[] = [];
+        if (variantIds.length > 0) {
+          const { data: variants } = await supabase
+            .from('product_variants')
+            .select('*')
+            .in('id', variantIds);
+          variantsData = variants || [];
+        }
+
+        // Combine orders with product and variant details
         const ordersWithProducts = ordersData.map(order => {
           const product = productsData?.find(p => p.id === order.product_id);
+          const variant = variantsData?.find(v => v.id === order.variant_id);
           return {
             ...order,
-            product: product || mockProducts[0]
+            product: product || mockProducts[0],
+            variant: variant || null
           };
         });
 
@@ -286,8 +299,13 @@ const MyPurchases = () => {
                               
                               <div className="text-right">
                                 <div className="price-main">
-                                  {formatPrice(purchase.product.price)}
+                                  {formatPrice(purchase.bank_amount || purchase.variant?.price || purchase.product.price)}
                                 </div>
+                                {purchase.variant && (
+                                  <p className="text-xs text-muted-foreground">
+                                    {purchase.variant.variant_name}
+                                  </p>
+                                )}
                               </div>
                             </div>
 
