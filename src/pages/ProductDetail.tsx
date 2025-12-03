@@ -426,6 +426,15 @@ const ProductDetail = () => {
           />
         </div>
 
+        {/* Product Reviews */}
+        <div className="mt-8 sm:mt-12">
+          <ProductReviews 
+            productId={product.id}
+            avgRating={product.average_rating || 5.0}
+            totalReviews={product.review_count || 0}
+          />
+        </div>
+
         {/* Related Products */}
         <div className="mt-8 sm:mt-12 overflow-hidden">
           <h2 className="text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 md:mb-6">Sản phẩm tương tự</h2>
