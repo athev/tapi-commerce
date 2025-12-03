@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Eye, User } from "lucide-react";
+import { Download, Eye, User, Star, Coins } from "lucide-react";
 import { Link } from "react-router-dom";
 import OrderSupportChatButton from "@/components/chat/OrderSupportChatButton";
 import OrderConfirmButton from "@/components/buyer/OrderConfirmButton";
@@ -19,6 +19,8 @@ import OrderDisputeButton from "@/components/buyer/OrderDisputeButton";
 import OrderDetailsModal from "@/components/orders/OrderDetailsModal";
 import OrderTimeline from "@/components/orders/OrderTimeline";
 import BuyerServiceTickets from "@/components/buyer/BuyerServiceTickets";
+import BuyerPIWallet from "@/components/buyer/BuyerPIWallet";
+import ReviewModal from "@/components/reviews/ReviewModal";
 import { formatPrice, formatSoldCount } from "@/utils/priceUtils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -38,6 +40,8 @@ const MyPurchases = () => {
   const { user, profile } = useAuth();
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
+  const [reviewOrder, setReviewOrder] = useState<any>(null);
+  const [reviewedOrders, setReviewedOrders] = useState<Set<string>>(new Set());
 
   // Mock data for development
   const mockOrders = [
@@ -78,6 +82,20 @@ const MyPurchases = () => {
       }
     }
   ];
+
+  // Fetch reviewed orders
+  const { data: existingReviews, refetch: refetchReviews } = useQuery({
+    queryKey: ['user-reviews', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data } = await supabase
+        .from('reviews')
+        .select('order_id')
+        .eq('user_id', user.id);
+      return data?.map(r => r.order_id) || [];
+    },
+    enabled: !!user
+  });
 
   const { data: purchases, isLoading } = useQuery({
     queryKey: ['user-purchases', user?.id],
@@ -184,6 +202,10 @@ const MyPurchases = () => {
             <TabsList className="mb-8">
               <TabsTrigger value="purchases">Sản phẩm đã mua</TabsTrigger>
               <TabsTrigger value="services">Yêu cầu dịch vụ</TabsTrigger>
+              <TabsTrigger value="pi-wallet" className="flex items-center gap-1.5">
+                <Coins className="h-4 w-4" />
+                Điểm PI
+              </TabsTrigger>
               <TabsTrigger value="profile">Thông tin cá nhân</TabsTrigger>
             </TabsList>
             
@@ -309,6 +331,27 @@ const MyPurchases = () => {
 
                               {!isUsingMockData && (
                                 <>
+                                  {/* Review Button */}
+                                  {purchase.status === 'paid' && 
+                                   !existingReviews?.includes(purchase.id) && 
+                                   !reviewedOrders.has(purchase.id) && (
+                                    <Button
+                                      variant="default"
+                                      size="sm"
+                                      onClick={() => setReviewOrder({
+                                        id: purchase.id,
+                                        product_id: purchase.product_id,
+                                        product_title: purchase.product.title,
+                                        product_image: purchase.product.image,
+                                        variant_name: (purchase as any).buyer_data?.variant_name
+                                      })}
+                                      className="bg-yellow-500 hover:bg-yellow-600"
+                                    >
+                                      <Star className="h-4 w-4 mr-2" />
+                                      Đánh giá
+                                    </Button>
+                                  )}
+
                                   <OrderConfirmButton 
                                     orderId={purchase.id}
                                     status={purchase.status}
@@ -362,6 +405,10 @@ const MyPurchases = () => {
 
             <TabsContent value="services">
               <BuyerServiceTickets />
+            </TabsContent>
+
+            <TabsContent value="pi-wallet">
+              <BuyerPIWallet />
             </TabsContent>
             
             <TabsContent value="profile">
@@ -426,6 +473,18 @@ const MyPurchases = () => {
           open={!!selectedOrder}
           onOpenChange={(open) => !open && setSelectedOrder(null)}
           order={selectedOrder}
+        />
+      )}
+
+      {reviewOrder && (
+        <ReviewModal
+          open={!!reviewOrder}
+          onOpenChange={(open) => !open && setReviewOrder(null)}
+          order={reviewOrder}
+          onSuccess={() => {
+            setReviewedOrders(prev => new Set([...prev, reviewOrder.id]));
+            refetchReviews();
+          }}
         />
       )}
     </div>

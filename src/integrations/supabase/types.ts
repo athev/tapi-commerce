@@ -14,6 +14,88 @@ export type Database = {
   }
   public: {
     Tables: {
+      buyer_pi_logs: {
+        Row: {
+          buyer_wallet_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          pi_amount: number
+          review_id: string | null
+          type: string
+          voucher_id: string | null
+        }
+        Insert: {
+          buyer_wallet_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          pi_amount: number
+          review_id?: string | null
+          type: string
+          voucher_id?: string | null
+        }
+        Update: {
+          buyer_wallet_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          pi_amount?: number
+          review_id?: string | null
+          type?: string
+          voucher_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "buyer_pi_logs_buyer_wallet_id_fkey"
+            columns: ["buyer_wallet_id"]
+            isOneToOne: false
+            referencedRelation: "buyer_wallets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_pi_logs_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "buyer_pi_logs_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      buyer_wallets: {
+        Row: {
+          created_at: string | null
+          id: string
+          pi_balance: number
+          total_earned: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          pi_balance?: number
+          total_earned?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          pi_balance?: number
+          total_earned?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       cart_items: {
         Row: {
           created_at: string | null
@@ -777,6 +859,72 @@ export type Database = {
           total_products?: number | null
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string | null
+          helpful_count: number | null
+          id: string
+          images: string[] | null
+          order_id: string
+          pi_rewarded: boolean | null
+          product_id: string
+          rating: number
+          seller_response: string | null
+          seller_response_at: string | null
+          updated_at: string | null
+          user_id: string
+          variant_name: string | null
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string | null
+          helpful_count?: number | null
+          id?: string
+          images?: string[] | null
+          order_id: string
+          pi_rewarded?: boolean | null
+          product_id: string
+          rating: number
+          seller_response?: string | null
+          seller_response_at?: string | null
+          updated_at?: string | null
+          user_id: string
+          variant_name?: string | null
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string | null
+          helpful_count?: number | null
+          id?: string
+          images?: string[] | null
+          order_id?: string
+          pi_rewarded?: boolean | null
+          product_id?: string
+          rating?: number
+          seller_response?: string | null
+          seller_response_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+          variant_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       seller_applications: {
         Row: {
