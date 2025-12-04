@@ -24,7 +24,8 @@ const ProductFormContent = () => {
     image: null,
     file: null,
     product_type: 'file_download',
-    delivery_data: {}
+    delivery_data: {},
+    warranty_period: 'none',
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof ProductFormData, string>>>({});
@@ -128,7 +129,8 @@ const ProductFormContent = () => {
         image: null,
         file: null,
         product_type: 'file_download',
-        delivery_data: {}
+        delivery_data: {},
+        warranty_period: 'none',
       });
       setErrors({});
     }

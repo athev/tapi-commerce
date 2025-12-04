@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, Sparkles, Save } from "lucide-react";
 import { WizardFormData } from "../ProductCreationWizard";
-import { useProductUpload } from "@/hooks/useProductUpload";
+import { useProductUpload, ProductFormData } from "@/hooks/useProductUpload";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2 } from "lucide-react";
+import { getWarrantyPeriodText } from "@/utils/warrantyUtils";
 
 interface WizardStep5Props {
   formData: WizardFormData;
@@ -26,9 +27,10 @@ const WizardStep5Preview = ({ formData, onBack }: WizardStep5Props) => {
   };
 
   const handlePublish = async () => {
-    const productData = {
+    const productData: ProductFormData = {
       ...formData,
       delivery_data: formData.delivery_data || {},
+      warranty_period: formData.warranty_period || 'none',
     };
     await submitProduct(productData);
   };
@@ -74,7 +76,7 @@ const WizardStep5Preview = ({ formData, onBack }: WizardStep5Props) => {
             )}
             
             <div>
-              <div className="flex gap-2 mb-2">
+              <div className="flex flex-wrap gap-2 mb-2">
                 <Badge variant="secondary">
                   {formData.category}
                 </Badge>
@@ -85,6 +87,11 @@ const WizardStep5Preview = ({ formData, onBack }: WizardStep5Props) => {
                    formData.product_type === 'shared_account' ? '👥 Tài khoản chung' :
                    '📦 ' + formData.product_type}
                 </Badge>
+                {formData.warranty_period && formData.warranty_period !== 'none' && (
+                  <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                    🛡️ Bảo hành {getWarrantyPeriodText(formData.warranty_period)}
+                  </Badge>
+                )}
               </div>
               <h3 className="text-2xl font-bold mb-2">{formData.title}</h3>
               <p className="text-3xl font-bold text-destructive">

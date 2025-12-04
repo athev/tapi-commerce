@@ -734,6 +734,7 @@ export type Database = {
           status: string | null
           title: string
           views: number | null
+          warranty_period: string | null
         }
         Insert: {
           average_rating?: number | null
@@ -767,6 +768,7 @@ export type Database = {
           status?: string | null
           title: string
           views?: number | null
+          warranty_period?: string | null
         }
         Update: {
           average_rating?: number | null
@@ -800,6 +802,7 @@ export type Database = {
           status?: string | null
           title?: string
           views?: number | null
+          warranty_period?: string | null
         }
         Relationships: []
       }
@@ -1404,6 +1407,88 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warranty_claims: {
+        Row: {
+          buyer_id: string
+          claim_type: string
+          conversation_id: string | null
+          created_at: string | null
+          deadline_at: string
+          description: string
+          extended_deadline_at: string | null
+          id: string
+          order_id: string
+          product_id: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          seller_id: string
+          status: string
+          title: string
+          updated_at: string | null
+          warranty_expires_at: string
+        }
+        Insert: {
+          buyer_id: string
+          claim_type?: string
+          conversation_id?: string | null
+          created_at?: string | null
+          deadline_at?: string
+          description: string
+          extended_deadline_at?: string | null
+          id?: string
+          order_id: string
+          product_id: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          seller_id: string
+          status?: string
+          title: string
+          updated_at?: string | null
+          warranty_expires_at: string
+        }
+        Update: {
+          buyer_id?: string
+          claim_type?: string
+          conversation_id?: string | null
+          created_at?: string | null
+          deadline_at?: string
+          description?: string
+          extended_deadline_at?: string | null
+          id?: string
+          order_id?: string
+          product_id?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          seller_id?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+          warranty_expires_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warranty_claims_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranty_claims_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranty_claims_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
