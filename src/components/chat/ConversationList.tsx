@@ -1,20 +1,16 @@
-
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { MessageCircle, Package, ShoppingCart } from "lucide-react";
+import { MessageCircle, Package } from "lucide-react";
 import { useChat, Conversation } from "@/hooks/useChat";
 import { useAuth } from "@/context/AuthContext";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
+import ChatEmptyState from "@/components/chat/ChatEmptyState";
 
 interface ConversationListProps {
   onConversationSelect: (id: string) => void;
   selectedConversationId?: string;
 }
-
-import ChatEmptyState from "@/components/chat/ChatEmptyState";
 
 const ConversationList = ({ onConversationSelect, selectedConversationId }: ConversationListProps) => {
   const { user } = useAuth();
@@ -65,106 +61,98 @@ const ConversationList = ({ onConversationSelect, selectedConversationId }: Conv
 
   if (loading) {
     return (
-      <Card className="h-full">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      <div className="h-full flex flex-col">
+        <div className="p-4 border-b">
+          <h2 className="font-semibold flex items-center gap-2">
             <MessageCircle className="h-5 w-5" />
             Tin nhắn
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-500">Đang tải...</p>
-        </CardContent>
-      </Card>
+          </h2>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-muted-foreground">Đang tải...</p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className="h-full flex flex-col">
-      <CardHeader className="shrink-0">
-        <CardTitle className="flex items-center gap-2">
+    <div className="h-full flex flex-col">
+      {/* Header - Hidden on mobile since we have it in parent */}
+      <div className="hidden lg:block p-4 border-b">
+        <h2 className="font-semibold flex items-center gap-2">
           <MessageCircle className="h-5 w-5" />
           Tin nhắn ({conversations.length})
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-0 flex-1 overflow-y-auto">
+        </h2>
+      </div>
+      
+      {/* Conversation List */}
+      <div className="flex-1 overflow-y-auto">
         {conversations.length === 0 ? (
           <div className="p-6">
             <ChatEmptyState type="no-conversations" />
           </div>
         ) : (
-          <div className="space-y-0">
+          <div className="divide-y divide-border">
             {conversations.map((conversation) => {
               const unreadCount = getUnreadCount(conversation);
               const displayName = getDisplayName(conversation);
               const chatTypeInfo = getChatTypeInfo(conversation);
+              const isSelected = selectedConversationId === conversation.id;
               
               return (
                 <div
                   key={conversation.id}
                   onClick={() => onConversationSelect(conversation.id)}
-                  className={`p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors ${
-                    selectedConversationId === conversation.id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
-                  }`}
+                  className={`
+                    p-3 cursor-pointer transition-colors
+                    ${isSelected 
+                      ? 'bg-primary/10 border-l-4 border-l-primary' 
+                      : 'hover:bg-muted/50'
+                    }
+                  `}
                 >
-                  <div className="flex items-start space-x-3">
-                    <Avatar className="mt-1">
-                      <AvatarFallback>
+                  <div className="flex items-start gap-3">
+                    <Avatar className="h-12 w-12 flex-shrink-0">
+                      <AvatarFallback className="bg-primary/10 text-primary">
                         {displayName?.charAt(0) || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-medium truncate">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className={`font-medium truncate ${unreadCount > 0 ? 'text-foreground' : 'text-foreground/80'}`}>
                           {displayName}
-                          {conversation.buyer_id !== user?.id && 
-                            <span className="text-sm font-normal text-green-600 ml-2">(Cửa hàng)</span>
-                          }
-                          {conversation.buyer_id === user?.id && 
-                            <span className="text-sm font-normal text-blue-600 ml-2">(Khách hàng)</span>
-                          }
                         </h3>
                         {unreadCount > 0 && (
-                          <Badge variant="destructive" className="ml-2">
+                          <Badge className="bg-primary text-primary-foreground text-xs px-2 py-0.5">
                             {unreadCount}
                           </Badge>
                         )}
                       </div>
                       
-                      {/* Chat type and status */}
-                      <div className="flex items-center gap-2 mb-2">
-                        <Badge variant="outline" className={`text-xs ${chatTypeInfo.color}`}>
+                      {/* Chat type badge */}
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge variant="secondary" className={`text-xs ${chatTypeInfo.color}`}>
                           {chatTypeInfo.icon}
                           <span className="ml-1">{chatTypeInfo.label}</span>
                         </Badge>
                         
                         {conversation.chat_type === 'order_support' && conversation.order && (
-                          <Badge variant="outline" className={`text-xs ${getOrderStatus(conversation.order.status).color}`}>
+                          <Badge variant="secondary" className={`text-xs ${getOrderStatus(conversation.order.status).color}`}>
                             {getOrderStatus(conversation.order.status).label}
                           </Badge>
                         )}
                       </div>
                       
-                      {/* Product/Order info */}
+                      {/* Product info */}
                       {conversation.product && (
-                        <p className="text-sm text-gray-600 truncate mb-1">
-                          {conversation.chat_type === 'order_support' ? '📦 ' : '💬 '}
+                        <p className="text-sm text-muted-foreground truncate mt-1">
                           {conversation.product.title}
                         </p>
                       )}
                       
-                      {/* Related items summary */}
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
-                        {conversation.related_products && conversation.related_products.length > 0 && (
-                          <span>+{conversation.related_products.length} sản phẩm</span>
-                        )}
-                        {conversation.related_orders && conversation.related_orders.length > 0 && (
-                          <span>+{conversation.related_orders.length} đơn hàng</span>
-                        )}
-                      </div>
-                      
-                      <p className="text-xs text-gray-500 mt-1">
+                      {/* Time */}
+                      <p className="text-xs text-muted-foreground mt-1">
                         {formatDistanceToNow(new Date(conversation.last_message_at), { 
                           addSuffix: true, 
                           locale: vi 
@@ -177,8 +165,8 @@ const ConversationList = ({ onConversationSelect, selectedConversationId }: Conv
             })}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
