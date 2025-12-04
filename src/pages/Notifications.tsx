@@ -2,9 +2,8 @@ import { useState } from "react";
 import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { NotificationItem } from "@/components/notifications/NotificationItem";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bell, Volume2, VolumeX } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Bell, Volume2, VolumeX } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { Card } from "@/components/ui/card";
@@ -40,11 +39,21 @@ const Notifications = () => {
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4">
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Thông báo</h1>
-          <p className="text-muted-foreground mt-1">
-            Quản lý tất cả thông báo của bạn
-          </p>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="shrink-0"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">Thông báo</h1>
+            <p className="text-muted-foreground mt-1">
+              Quản lý tất cả thông báo của bạn
+            </p>
+          </div>
         </div>
         
         <div className="flex gap-2">
