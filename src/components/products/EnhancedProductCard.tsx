@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Star, ShoppingCart, Heart, CheckCircle2, AlertCircle, Shield } from "lucide-react";
+import { ShoppingCart, Heart, Shield, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -18,18 +18,6 @@ const formatPrice = (price: number) => {
 const formatSoldCount = (count: number) => {
   if (count >= 1000) return `${(count / 1000).toFixed(1)}k`;
   return count.toString();
-};
-
-const getComplaintRateColor = (rate: number) => {
-  if (rate < 1) return "text-green-600 bg-green-50 border-green-200";
-  if (rate < 3) return "text-yellow-600 bg-yellow-50 border-yellow-200";
-  return "text-red-600 bg-red-50 border-red-200";
-};
-
-const getStockColor = (stock: number) => {
-  if (stock > 10) return "text-green-600";
-  if (stock >= 5) return "text-yellow-600";
-  return "text-red-600";
 };
 
 // Helper: Convert warranty_period to display text
@@ -107,8 +95,6 @@ const EnhancedProductCard = ({
   const displayRating = averageRating ?? rating ?? 5;
   const displayReviews = reviewCount || reviews || 0;
   const displaySoldCount = soldCount;
-  const displayComplaintRate = complaintRate;
-  const displayStock = inStock ?? 999;
   const warrantyText = getWarrantyText(warrantyPeriod || '');
 
   return (
@@ -133,7 +119,7 @@ const EnhancedProductCard = ({
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300" />
             
-            {/* Top badges */}
+            {/* Top left badges - Discount */}
             <div className="absolute top-1 md:top-2 left-1 md:left-2 flex flex-wrap gap-0.5 md:gap-1 max-w-[80%] z-10">
               {discount && (
                 <Badge className="bg-destructive text-destructive-foreground font-bold text-[10px] md:text-sm px-1 md:px-2 py-0.5 md:py-1">
@@ -147,7 +133,7 @@ const EnhancedProductCard = ({
               )}
             </div>
 
-            {/* Bottom badges overlay - Warranty badge */}
+            {/* Bottom badges overlay - Warranty & Digital product badges */}
             <div className="absolute bottom-1 left-1 flex flex-wrap gap-0.5 max-w-[95%] z-10">
               {warrantyText && (
                 <Badge className={cn(
@@ -158,11 +144,11 @@ const EnhancedProductCard = ({
                   {warrantyPeriod === 'lifetime' ? 'BH Trọn đời' : `BH ${warrantyText}`}
                 </Badge>
               )}
-              {hasVoucher && (
-                <Badge className="bg-orange-500 text-white text-[8px] px-1 py-0 h-4">
-                  VOUCHER
-                </Badge>
-              )}
+              {/* Digital product badge - Instant delivery */}
+              <Badge className="bg-green-500 text-white text-[8px] px-1 py-0 h-4 flex items-center gap-0.5">
+                <Zap className="h-2.5 w-2.5" />
+                Giao ngay
+              </Badge>
             </div>
           </div>
         </Link>
@@ -194,40 +180,8 @@ const EnhancedProductCard = ({
 
       <CardContent className="p-2 md:p-3">
         <div className="space-y-1 md:space-y-1.5">
-          {/* Digital Product Badges Row */}
-          <div className="flex items-center gap-1 flex-wrap">
-            {seller.verified && (
-              <Badge className="bg-red-500 text-white text-[8px] md:text-[9px] px-1 py-0 h-4">
-                Mall
-              </Badge>
-            )}
-            {favoritesCount > 100 && (
-              <Badge className="bg-red-50 text-red-600 border border-red-200 text-[8px] md:text-[9px] px-1 py-0 h-4">
-                Yêu thích
-              </Badge>
-            )}
-            {/* Discount badge */}
-            {discount && discount > 0 && (
-              <Badge className="bg-red-500 text-white text-[8px] md:text-[9px] px-1 py-0 h-4 font-bold">
-                -{discount}%
-              </Badge>
-            )}
-            {/* Sales count badge */}
-            {displaySoldCount > 0 && (
-              <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200 text-[8px] md:text-[9px] px-1 py-0 h-4">
-                {formatSoldCount(displaySoldCount)} đã bán
-              </Badge>
-            )}
-            {/* Rating badge */}
-            {displayReviews > 0 && (
-              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 text-[8px] md:text-[9px] px-1 py-0 h-4">
-                ⭐ {displayRating.toFixed(1)}
-              </Badge>
-            )}
-          </div>
-
-          {/* Category Badge */}
-          <Badge variant="outline" className="text-[9px] md:text-[10px] px-1 md:px-1.5 py-0 md:py-0.5">
+          {/* Category Badge - Prominent */}
+          <Badge className="bg-primary/10 text-primary border-primary/20 text-[9px] md:text-[10px] px-1.5 py-0.5 font-medium">
             {category}
           </Badge>
           
@@ -238,66 +192,7 @@ const EnhancedProductCard = ({
             </h3>
           </Link>
 
-          {/* Rating, Reviews, Sold - Desktop details */}
-          <div className="hidden md:flex items-center gap-1 flex-wrap text-[9px] md:text-xs">
-            <div className="flex items-center gap-0.5">
-              <div className="flex">
-                {Array(5).fill(0).map((_, i) => (
-                  <Star 
-                    key={i}
-                    className={`h-2.5 w-2.5 md:h-3 md:w-3 ${i < Math.round(displayRating) ? "fill-yellow-400 text-yellow-400" : "text-muted"}`}
-                  />
-                ))}
-              </div>
-              <span className="font-semibold text-yellow-700">{displayRating.toFixed(1)}</span>
-            </div>
-            <span className="text-muted-foreground">•</span>
-            <span className="text-muted-foreground">
-              {displayReviews > 0 ? `${displayReviews} đánh giá` : "Chưa có đánh giá"}
-            </span>
-            <span className="text-muted-foreground">•</span>
-            <span className="text-muted-foreground">
-              {displaySoldCount > 0 ? `Đã bán: ${formatSoldCount(displaySoldCount)}` : "Mới"}
-            </span>
-          </div>
-
-          {/* Complaint Rate & Stock - Desktop only */}
-          <div className="hidden md:flex items-center gap-1.5 flex-wrap text-[10px]">
-            <Badge variant="outline" className={cn("px-1.5 py-0.5 border font-medium", getComplaintRateColor(displayComplaintRate))}>
-              {displayComplaintRate < 1 ? <CheckCircle2 className="h-2.5 w-2.5 mr-0.5" /> : <AlertCircle className="h-2.5 w-2.5 mr-0.5" />}
-              Khiếu nại: {displayComplaintRate.toFixed(1)}%
-            </Badge>
-            <span className={cn("font-medium", getStockColor(displayStock))}>
-              Kho: {displayStock}
-            </span>
-          </div>
-
-          {/* Seller Info */}
-          <div className="flex items-center gap-1 text-[9px] md:text-[10px] text-muted-foreground">
-            <span className="truncate max-w-[120px]">{seller.name}</span>
-            {sellerOnline && (
-              <>
-                <span>•</span>
-                <Badge className="bg-green-500/10 text-green-700 border-green-200 text-[8px] md:text-[9px] px-1 py-0 h-3.5">
-                  <span className="w-1 h-1 bg-green-500 rounded-full mr-0.5 animate-pulse" />
-                  Online
-                </Badge>
-              </>
-            )}
-            {seller?.verified && (
-              <>
-                <span>•</span>
-                <Badge className="bg-blue-500/10 text-blue-700 border-blue-200 text-[8px] md:text-[9px] px-1 py-0 h-3.5">
-                  ✓
-                </Badge>
-              </>
-            )}
-          </div>
-        </div>
-      </CardContent>
-
-      <CardFooter className="p-2 md:p-3 pt-0 flex flex-col gap-1 md:gap-2">
-        <div className="w-full">
+          {/* Price */}
           <div className="flex items-baseline gap-1 md:gap-2">
             <span className="font-bold text-sm md:text-lg text-destructive">
               {formatPrice(discountedPrice)}
@@ -308,8 +203,32 @@ const EnhancedProductCard = ({
               </span>
             )}
           </div>
+
+          {/* Shopee-style stats line */}
+          <div className="flex items-center gap-1.5 text-[10px] md:text-xs text-muted-foreground">
+            {displayReviews > 0 ? (
+              <>
+                <span className="text-yellow-600 font-medium">⭐ {displayRating.toFixed(1)}</span>
+                <span className="text-muted-foreground/50">|</span>
+                <span>Đã bán {formatSoldCount(displaySoldCount)}</span>
+              </>
+            ) : (
+              <>
+                <span>Chưa có đánh giá</span>
+                <span className="text-muted-foreground/50">|</span>
+                <span>{displaySoldCount > 0 ? `Đã bán ${formatSoldCount(displaySoldCount)}` : 'Mới'}</span>
+              </>
+            )}
+          </div>
+
+          {/* Seller Info - Simplified */}
+          <div className="text-[9px] md:text-[10px] text-muted-foreground truncate">
+            {seller.name}
+          </div>
         </div>
-        
+      </CardContent>
+
+      <CardFooter className="p-2 md:p-3 pt-0">
         <Button 
           size="sm" 
           className="w-full h-7 md:h-8 text-xs md:text-sm bg-primary hover:bg-primary/90 text-primary-foreground"
