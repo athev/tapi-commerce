@@ -63,7 +63,14 @@ const ProductGrid = ({
       try {
         let query = supabase
           .from('products')
-          .select('*')
+          .select(`
+            *,
+            profiles:seller_id (
+              full_name,
+              avatar,
+              is_online
+            )
+          `)
           .eq('status', 'active');
         
         // Filter by category on server-side
@@ -267,7 +274,7 @@ const ProductGrid = ({
       </div>
       
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3 lg:gap-4">
-        {sortedProducts.map((product) => (
+        {sortedProducts.map((product: any) => (
           <EnhancedProductCard 
             key={product.id} 
             id={product.id}
@@ -285,12 +292,15 @@ const ProductGrid = ({
             soldCount={product.purchases || 0}
             complaintRate={product.complaint_rate || 0}
             seller={{
-              name: product.seller_name,
+              name: product.profiles?.full_name || product.seller_name,
               verified: product.is_mall_product || false
             }}
+            sellerOnline={product.profiles?.is_online || false}
             inStock={product.in_stock ?? 999}
             isNew={new Date(product.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)}
             isHot={(product.purchases || 0) > 50}
+            warrantyPeriod={product.warranty_period}
+            favoritesCount={product.favorites_count || 0}
           />
         ))}
       </div>
