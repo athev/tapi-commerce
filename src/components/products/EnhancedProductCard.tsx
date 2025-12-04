@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Star, ShoppingCart, Heart, CheckCircle2, AlertCircle, Truck, MapPin, Shield } from "lucide-react";
+import { Star, ShoppingCart, Heart, CheckCircle2, AlertCircle, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -52,6 +52,20 @@ const getWarrantyText = (warrantyPeriod: string): string | null => {
   return null;
 };
 
+// Helper: Get warranty badge style based on tier
+const getWarrantyBadgeStyle = (warrantyPeriod: string): string => {
+  if (warrantyPeriod === 'lifetime') {
+    // PREMIUM TIER - Gold gradient for lifetime warranty
+    return "bg-gradient-to-r from-amber-400 to-yellow-500 text-white font-bold shadow-sm";
+  }
+  if (warrantyPeriod === '6_months' || warrantyPeriod === '3_months') {
+    // HIGH TIER - Dark green
+    return "bg-emerald-600 text-white";
+  }
+  // STANDARD TIER - Light green
+  return "bg-emerald-500 text-white";
+};
+
 interface EnhancedProductCardProps extends ProductCardProps {
   soldCount?: number;
   complaintRate?: number;
@@ -61,8 +75,6 @@ interface EnhancedProductCardProps extends ProductCardProps {
   warrantyPeriod?: string;
   favoritesCount?: number;
   hasVoucher?: boolean;
-  location?: string;
-  deliveryEstimate?: string;
 }
 
 const EnhancedProductCard = ({
@@ -86,8 +98,6 @@ const EnhancedProductCard = ({
   warrantyPeriod,
   favoritesCount = 0,
   hasVoucher = false,
-  location = "Việt Nam",
-  deliveryEstimate = "1-3 ngày",
 }: EnhancedProductCardProps) => {
   const { toggleFavorite, isFavorite } = useFavorites();
   const favorited = isFavorite(id);
@@ -137,12 +147,15 @@ const EnhancedProductCard = ({
               )}
             </div>
 
-            {/* Bottom badges overlay - Shopee style */}
+            {/* Bottom badges overlay - Warranty badge */}
             <div className="absolute bottom-1 left-1 flex flex-wrap gap-0.5 max-w-[95%] z-10">
               {warrantyText && (
-                <Badge className="bg-emerald-500 text-white text-[8px] px-1 py-0 h-4 flex items-center gap-0.5">
+                <Badge className={cn(
+                  "text-[8px] px-1.5 py-0 h-4 flex items-center gap-0.5",
+                  getWarrantyBadgeStyle(warrantyPeriod || '')
+                )}>
                   <Shield className="h-2.5 w-2.5" />
-                  {warrantyText}
+                  {warrantyPeriod === 'lifetime' ? 'BH Trọn đời' : `BH ${warrantyText}`}
                 </Badge>
               )}
               {hasVoucher && (
@@ -181,7 +194,7 @@ const EnhancedProductCard = ({
 
       <CardContent className="p-2 md:p-3">
         <div className="space-y-1 md:space-y-1.5">
-          {/* Shopee-style badges row */}
+          {/* Digital Product Badges Row */}
           <div className="flex items-center gap-1 flex-wrap">
             {seller.verified && (
               <Badge className="bg-red-500 text-white text-[8px] md:text-[9px] px-1 py-0 h-4">
@@ -193,9 +206,24 @@ const EnhancedProductCard = ({
                 Yêu thích
               </Badge>
             )}
-            <Badge variant="outline" className="text-[8px] md:text-[9px] px-1 py-0 h-4 bg-primary/10 text-primary border-primary/20">
-              Free ship
-            </Badge>
+            {/* Discount badge */}
+            {discount && discount > 0 && (
+              <Badge className="bg-red-500 text-white text-[8px] md:text-[9px] px-1 py-0 h-4 font-bold">
+                -{discount}%
+              </Badge>
+            )}
+            {/* Sales count badge */}
+            {displaySoldCount > 0 && (
+              <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200 text-[8px] md:text-[9px] px-1 py-0 h-4">
+                {formatSoldCount(displaySoldCount)} đã bán
+              </Badge>
+            )}
+            {/* Rating badge */}
+            {displayReviews > 0 && (
+              <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200 text-[8px] md:text-[9px] px-1 py-0 h-4">
+                ⭐ {displayRating.toFixed(1)}
+              </Badge>
+            )}
           </div>
 
           {/* Category Badge */}
@@ -210,8 +238,8 @@ const EnhancedProductCard = ({
             </h3>
           </Link>
 
-          {/* Rating, Reviews, Sold */}
-          <div className="flex items-center gap-1 flex-wrap text-[9px] md:text-xs">
+          {/* Rating, Reviews, Sold - Desktop details */}
+          <div className="hidden md:flex items-center gap-1 flex-wrap text-[9px] md:text-xs">
             <div className="flex items-center gap-0.5">
               <div className="flex">
                 {Array(5).fill(0).map((_, i) => (
@@ -227,22 +255,9 @@ const EnhancedProductCard = ({
             <span className="text-muted-foreground">
               {displayReviews > 0 ? `${displayReviews} đánh giá` : "Chưa có đánh giá"}
             </span>
-            <span className="text-muted-foreground hidden md:inline">•</span>
-            <span className="text-muted-foreground hidden md:inline">
+            <span className="text-muted-foreground">•</span>
+            <span className="text-muted-foreground">
               {displaySoldCount > 0 ? `Đã bán: ${formatSoldCount(displaySoldCount)}` : "Mới"}
-            </span>
-          </div>
-
-          {/* Delivery & Location row - Mobile */}
-          <div className="flex md:hidden items-center gap-1.5 text-[8px] text-muted-foreground">
-            <span className="flex items-center gap-0.5">
-              <Truck className="h-2.5 w-2.5" />
-              {deliveryEstimate}
-            </span>
-            <span>•</span>
-            <span className="flex items-center gap-0.5">
-              <MapPin className="h-2.5 w-2.5" />
-              {location}
             </span>
           </div>
 
