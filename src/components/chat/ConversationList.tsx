@@ -80,14 +80,14 @@ const ConversationList = ({ onConversationSelect, selectedConversationId }: Conv
   }
 
   return (
-    <Card className="h-full">
-      <CardHeader>
+    <Card className="h-full flex flex-col">
+      <CardHeader className="shrink-0">
         <CardTitle className="flex items-center gap-2">
           <MessageCircle className="h-5 w-5" />
           Tin nhắn ({conversations.length})
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className="p-0 flex-1 overflow-y-auto">
         {conversations.length === 0 ? (
           <div className="p-6">
             <ChatEmptyState type="no-conversations" />
