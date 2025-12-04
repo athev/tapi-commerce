@@ -387,7 +387,7 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   console.log('ChatWindow - Related products:', relatedProducts);
 
   return (
-    <div className="h-[600px] lg:h-[calc(100vh-120px)] flex flex-col bg-white rounded-lg border shadow-sm relative">
+    <div className="h-full flex flex-col bg-background rounded-lg relative">
       {/* New Message Indicator */}
       {newMessageIndicator && (
         <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top-2 duration-300">
@@ -403,15 +403,6 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
       {/* Header - Compact */}
       <div className="flex-shrink-0 border-b p-3">
         <div className="flex items-center space-x-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/chat')}
-            className="md:hidden"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          
           <Avatar className="h-8 w-8">
             <AvatarFallback className="text-sm">
               {headerDisplayName?.charAt(0) || 'U'}
