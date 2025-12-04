@@ -14,10 +14,15 @@ import { supabase } from "@/integrations/supabase/client";
 import MobileChatHeader from "./MobileChatHeader";
 import ProductCardInChat from "./ProductCardInChat";
 import ChatActionPanel from "./ChatActionPanel";
+import SellerChatActionPanel from "./SellerChatActionPanel";
 import ProductsBottomSheet from "./ProductsBottomSheet";
 import VouchersBottomSheet from "./VouchersBottomSheet";
+import SendProductSheet from "./SendProductSheet";
+import SendVoucherSheet from "./SendVoucherSheet";
 import QuickBuyModal from "./QuickBuyModal";
 import ServiceQuoteMessage from "./ServiceQuoteMessage";
+import ProductRecommendationMessage from "./ProductRecommendationMessage";
+import VoucherShareMessage from "./VoucherShareMessage";
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 
@@ -42,6 +47,10 @@ const MobileChatView = ({ conversationId, onBack }: MobileChatViewProps) => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImage, setLightboxImage] = useState("");
   const [serviceTicket, setServiceTicket] = useState<any>(null);
+  
+  // Seller-specific states
+  const [showSendProductSheet, setShowSendProductSheet] = useState(false);
+  const [showSendVoucherSheet, setShowSendVoucherSheet] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -170,6 +179,49 @@ const MobileChatView = ({ conversationId, onBack }: MobileChatViewProps) => {
     }
   };
 
+  // Seller send product
+  const handleSendProduct = async (product: any, message?: string) => {
+    const content = JSON.stringify({
+      productId: product.id,
+      title: product.title,
+      image: product.image,
+      price: product.price,
+      message: message
+    });
+    await sendMessage(conversationId, content, "product_recommendation");
+    setIsActionPanelOpen(false);
+  };
+
+  // Seller send voucher
+  const handleSendVoucher = async (voucher: any, message?: string) => {
+    const content = JSON.stringify({
+      voucherId: voucher.id,
+      code: voucher.code,
+      discountType: voucher.discount_type,
+      discountValue: voucher.discount_value,
+      minPurchase: voucher.min_purchase_amount,
+      maxDiscount: voucher.max_discount_amount,
+      validUntil: voucher.valid_until,
+      message: message
+    });
+    await sendMessage(conversationId, content, "voucher_share");
+    setIsActionPanelOpen(false);
+  };
+
+  // Handle buy from product recommendation message
+  const handleBuyFromRecommendation = async (productId: string) => {
+    const { data: product } = await supabase
+      .from('products')
+      .select('*')
+      .eq('id', productId)
+      .single();
+    
+    if (product) {
+      setSelectedProduct(product);
+      setShowQuickBuyModal(true);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
@@ -221,6 +273,7 @@ const MobileChatView = ({ conversationId, onBack }: MobileChatViewProps) => {
             {messages.map((message: Message) => {
               const isOwn = message.sender_id === user?.id;
               
+              // Service Quote Message
               if (message.message_type === 'service_quote') {
                 try {
                   const quoteData = JSON.parse(message.content);
@@ -235,6 +288,31 @@ const MobileChatView = ({ conversationId, onBack }: MobileChatViewProps) => {
                     </div>
                   );
                 } catch (e) {}
+              }
+
+              // Product Recommendation Message
+              if (message.message_type === 'product_recommendation') {
+                return (
+                  <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} my-3`}>
+                    <ProductRecommendationMessage
+                      content={message.content}
+                      isOwnMessage={isOwn}
+                      onBuyNow={isBuyer ? handleBuyFromRecommendation : undefined}
+                    />
+                  </div>
+                );
+              }
+
+              // Voucher Share Message
+              if (message.message_type === 'voucher_share') {
+                return (
+                  <div key={message.id} className={`flex ${isOwn ? 'justify-end' : 'justify-start'} my-3`}>
+                    <VoucherShareMessage
+                      content={message.content}
+                      isOwnMessage={isOwn}
+                    />
+                  </div>
+                );
               }
               
               return (
@@ -286,16 +364,25 @@ const MobileChatView = ({ conversationId, onBack }: MobileChatViewProps) => {
         </ScrollArea>
       </div>
 
-      {/* Action Panel */}
+      {/* Action Panel - Different for buyer vs seller */}
       {isActionPanelOpen && (
-        <ChatActionPanel
-          onOpenGallery={() => fileInputRef.current?.click()}
-          onOpenCamera={() => fileInputRef.current?.click()}
-          onOpenProducts={() => setShowProductsSheet(true)}
-          onOpenVouchers={() => setShowVouchersSheet(true)}
-          onQuickBuy={() => handleQuickBuy()}
-          hasCurrentProduct={!!currentProduct && isBuyer}
-        />
+        isBuyer ? (
+          <ChatActionPanel
+            onOpenGallery={() => fileInputRef.current?.click()}
+            onOpenCamera={() => fileInputRef.current?.click()}
+            onOpenProducts={() => setShowProductsSheet(true)}
+            onOpenVouchers={() => setShowVouchersSheet(true)}
+            onQuickBuy={() => handleQuickBuy()}
+            hasCurrentProduct={!!currentProduct}
+          />
+        ) : (
+          <SellerChatActionPanel
+            onGalleryClick={() => fileInputRef.current?.click()}
+            onCameraClick={() => fileInputRef.current?.click()}
+            onSendProductClick={() => setShowSendProductSheet(true)}
+            onSendVoucherClick={() => setShowSendVoucherSheet(true)}
+          />
+        )
       )}
 
       {/* Message Input */}
@@ -349,7 +436,7 @@ const MobileChatView = ({ conversationId, onBack }: MobileChatViewProps) => {
         />
       </div>
 
-      {/* Bottom Sheets & Modals */}
+      {/* Buyer Bottom Sheets & Modals */}
       <ProductsBottomSheet
         isOpen={showProductsSheet}
         onClose={() => setShowProductsSheet(false)}
@@ -373,6 +460,21 @@ const MobileChatView = ({ conversationId, onBack }: MobileChatViewProps) => {
         isOpen={showQuickBuyModal}
         onClose={() => setShowQuickBuyModal(false)}
         product={selectedProduct}
+      />
+
+      {/* Seller Bottom Sheets */}
+      <SendProductSheet
+        isOpen={showSendProductSheet}
+        onClose={() => setShowSendProductSheet(false)}
+        sellerId={sellerId}
+        onSendProduct={handleSendProduct}
+      />
+
+      <SendVoucherSheet
+        isOpen={showSendVoucherSheet}
+        onClose={() => setShowSendVoucherSheet(false)}
+        sellerId={sellerId}
+        onSendVoucher={handleSendVoucher}
       />
 
       <Lightbox
