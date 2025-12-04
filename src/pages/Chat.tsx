@@ -8,7 +8,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { MessageCircle } from "lucide-react";
 import EnhancedNavbar from "@/components/layout/EnhancedNavbar";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
-import Footer from "@/components/layout/Footer";
 import ChatEmptyState from "@/components/chat/ChatEmptyState";
 
 const Chat = () => {
@@ -70,7 +69,6 @@ const Chat = () => {
       </main>
       
       <MobileBottomNav />
-      <Footer />
     </div>
   );
 };
