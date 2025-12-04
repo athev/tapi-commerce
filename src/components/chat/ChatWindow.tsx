@@ -20,6 +20,8 @@ import OrderManagementActions from "./OrderManagementActions";
 import ServiceTicketCard from "./ServiceTicketCard";
 import ServiceQuoteMessage from "./ServiceQuoteMessage";
 import ServiceQuoteModal from "./ServiceQuoteModal";
+import Lightbox from "yet-another-react-lightbox";
+import "yet-another-react-lightbox/styles.css";
 
 interface ChatWindowProps {
   conversationId: string;
@@ -41,6 +43,8 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
   const [newMessageIndicator, setNewMessageIndicator] = useState(false);
   const [serviceTicket, setServiceTicket] = useState<any>(null);
   const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImage, setLightboxImage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -621,7 +625,11 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
                           <img
                             src={message.image_url}
                             alt="Sent image"
-                            className="max-w-full rounded-lg"
+                            className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => {
+                              setLightboxImage(message.image_url!);
+                              setLightboxOpen(true);
+                            }}
                           />
                         ) : (
                           <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
@@ -717,6 +725,13 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
           }}
         />
       )}
+
+      {/* Image Lightbox */}
+      <Lightbox
+        open={lightboxOpen}
+        close={() => setLightboxOpen(false)}
+        slides={[{ src: lightboxImage }]}
+      />
     </div>
   );
 };
