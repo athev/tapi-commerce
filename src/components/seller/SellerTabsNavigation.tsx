@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
@@ -8,12 +7,13 @@ import {
   Plus, 
   Wallet,
   Settings,
-  Ticket
+  Ticket,
+  Shield
 } from "lucide-react";
 
 const SellerTabsNavigation = () => {
   return (
-    <TabsList className="grid w-full grid-cols-8">
+    <TabsList className="grid w-full grid-cols-9">
       <TabsTrigger value="overview" asChild>
         <Link to="/seller" className="flex items-center space-x-2">
           <BarChart3 className="h-4 w-4" />
@@ -54,6 +54,12 @@ const SellerTabsNavigation = () => {
         <Link to="/seller/service-tickets" className="flex items-center space-x-2">
           <Ticket className="h-4 w-4" />
           <span>Dịch vụ</span>
+        </Link>
+      </TabsTrigger>
+      <TabsTrigger value="warranty" asChild>
+        <Link to="/seller/warranty" className="flex items-center space-x-2">
+          <Shield className="h-4 w-4" />
+          <span>Bảo hành</span>
         </Link>
       </TabsTrigger>
       <TabsTrigger value="shop-settings" asChild>

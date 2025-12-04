@@ -1,4 +1,3 @@
-
 import { Routes, Route } from "react-router-dom";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import SellerStats from "@/components/seller/SellerStats";
@@ -12,6 +11,7 @@ import SellerShopInfoEditor from "@/components/seller/SellerShopInfoEditor";
 import SellerVoucherManager from "@/components/seller/SellerVoucherManager";
 import VoucherAnalytics from "@/components/seller/VoucherAnalytics";
 import SellerServiceTickets from "@/components/seller/SellerServiceTickets";
+import SellerWarrantyClaims from "@/components/seller/SellerWarrantyClaims";
 import EditProduct from "@/pages/EditProduct";
 import SellerTabsNavigation from "./SellerTabsNavigation";
 
@@ -95,6 +95,15 @@ const SellerDashboardContent = ({ currentTab }: SellerDashboardContentProps) => 
           <SellerTabsNavigation />
           <TabsContent value="service-tickets" className="space-y-6">
             <SellerServiceTickets />
+          </TabsContent>
+        </Tabs>
+      } />
+
+      <Route path="/warranty" element={
+        <Tabs value="warranty" className="space-y-6">
+          <SellerTabsNavigation />
+          <TabsContent value="warranty" className="space-y-6">
+            <SellerWarrantyClaims />
           </TabsContent>
         </Tabs>
       } />
