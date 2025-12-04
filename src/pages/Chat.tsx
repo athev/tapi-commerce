@@ -4,11 +4,12 @@ import { useParams, useNavigate } from "react-router-dom";
 import ConversationList from "@/components/chat/ConversationList";
 import ChatWindow from "@/components/chat/ChatWindow";
 import ChatSellerPanel from "@/components/chat/ChatSellerPanel";
+import MobileChatView from "@/components/chat/MobileChatView";
 import { useAuth } from "@/context/AuthContext";
 import { useChat } from "@/hooks/useChat";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { MessageCircle, ArrowLeft } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import EnhancedNavbar from "@/components/layout/EnhancedNavbar";
 import ChatEmptyState from "@/components/chat/ChatEmptyState";
 
@@ -17,6 +18,7 @@ const Chat = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { conversations } = useChat();
+  const isMobile = useIsMobile();
   const [selectedConversation, setSelectedConversation] = useState<string | undefined>(conversationId);
 
   // Sync URL param with state
@@ -62,26 +64,45 @@ const Chat = () => {
     );
   }
 
+  // Mobile Layout - Shopee style
+  if (isMobile) {
+    if (selectedConversation) {
+      return (
+        <MobileChatView
+          conversationId={selectedConversation}
+          onBack={handleBackToList}
+        />
+      );
+    }
+
+    return (
+      <div className="h-screen flex flex-col bg-background">
+        {/* Mobile Header */}
+        <div className="border-b p-4 flex items-center gap-3 bg-background sticky top-0 z-10">
+          <MessageCircle className="h-6 w-6 text-primary" />
+          <h1 className="text-lg font-semibold">Tin nhắn</h1>
+        </div>
+        
+        {/* Conversation List */}
+        <div className="flex-1 overflow-hidden">
+          <ConversationList
+            onConversationSelect={handleConversationSelect}
+            selectedConversationId={selectedConversation}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop Layout - Facebook Messenger style (3 columns)
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Navbar - Only show on desktop or when no conversation selected on mobile */}
-      <div className="hidden lg:block">
-        <EnhancedNavbar />
-      </div>
+      <EnhancedNavbar />
       
-      {/* Main Chat Container - Facebook Messenger style */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Conversation List */}
-        <div className={`
-          w-full lg:w-[320px] xl:w-[360px] 
-          border-r border-border 
-          flex-shrink-0 
-          bg-background
-          ${selectedConversation ? 'hidden lg:flex' : 'flex'}
-          flex-col
-        `}>
-          {/* Mobile Header for Conversation List */}
-          <div className="lg:hidden border-b p-3 flex items-center gap-2">
+        <div className="w-[320px] xl:w-[360px] border-r border-border flex-shrink-0 bg-background flex flex-col">
+          <div className="border-b p-3 flex items-center gap-2">
             <MessageCircle className="h-5 w-5 text-primary" />
             <span className="font-semibold">Tin nhắn</span>
           </div>
@@ -94,27 +115,7 @@ const Chat = () => {
         </div>
 
         {/* Middle Panel - Chat Window */}
-        <div className={`
-          flex-1 
-          flex flex-col
-          min-w-0
-          ${!selectedConversation ? 'hidden lg:flex' : 'flex'}
-        `}>
-          {/* Mobile Header with Back Button */}
-          {selectedConversation && (
-            <div className="lg:hidden border-b p-2 flex items-center gap-2 bg-background">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleBackToList}
-                className="gap-1"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Quay lại
-              </Button>
-            </div>
-          )}
-          
+        <div className="flex-1 flex flex-col min-w-0">
           {selectedConversation ? (
             <div className="flex-1 overflow-hidden">
               <ChatWindow conversationId={selectedConversation} />
@@ -126,7 +127,7 @@ const Chat = () => {
           )}
         </div>
 
-        {/* Right Panel - Seller Info (Desktop only) */}
+        {/* Right Panel - Seller Info (Desktop only, xl+) */}
         {selectedConversation && sellerId && isBuyer && (
           <div className="hidden xl:flex w-[280px] border-l border-border flex-shrink-0 bg-background">
             <ChatSellerPanel 
