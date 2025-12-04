@@ -3,11 +3,13 @@ import { useRealtimeNotifications } from "@/hooks/useRealtimeNotifications";
 import { NotificationItem } from "@/components/notifications/NotificationItem";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Bell, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, Bell, Loader2, Volume2, VolumeX } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useNotificationSound } from "@/hooks/useNotificationSound";
 import { Card } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Notifications = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead, isLoading } = useRealtimeNotifications();
@@ -15,6 +17,16 @@ const Notifications = () => {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
   const isMobile = useIsMobile();
+  const queryClient = useQueryClient();
+
+  const handleRefresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['notifications'] });
+  };
+
+  const { containerRef, isRefreshing, pullDistance, threshold, handlers } = usePullToRefresh({
+    onRefresh: handleRefresh,
+    threshold: 80,
+  });
 
   const filteredNotifications = filter === 'unread' 
     ? notifications.filter(n => !n.is_read)
@@ -40,8 +52,10 @@ const Notifications = () => {
 
   // Mobile Layout
   if (isMobile) {
+    const pullProgress = Math.min(pullDistance / threshold, 1);
+    
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background flex flex-col">
         {/* Sticky Mobile Header */}
         <div className="sticky top-0 bg-background z-10 border-b">
           <div className="flex items-center justify-between px-4 py-3">
@@ -78,8 +92,38 @@ const Notifications = () => {
           </Tabs>
         </div>
 
-        {/* Notification List */}
-        <div className="pb-20">
+        {/* Pull to Refresh Indicator */}
+        <div 
+          className="flex justify-center items-center overflow-hidden transition-all duration-200"
+          style={{ 
+            height: pullDistance > 0 || isRefreshing ? Math.max(pullDistance, isRefreshing ? 48 : 0) : 0,
+            opacity: pullProgress
+          }}
+        >
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+            <Loader2 
+              className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`}
+              style={{ 
+                transform: isRefreshing ? 'none' : `rotate(${pullProgress * 360}deg)`,
+                transition: isRefreshing ? 'none' : 'transform 0.1s'
+              }}
+            />
+            <span>
+              {isRefreshing 
+                ? 'Đang tải...' 
+                : pullProgress >= 1 
+                  ? 'Thả để làm mới' 
+                  : 'Kéo xuống để làm mới'}
+            </span>
+          </div>
+        </div>
+
+        {/* Notification List with Pull to Refresh */}
+        <div 
+          ref={containerRef}
+          className="flex-1 overflow-y-auto pb-20"
+          {...handlers}
+        >
           {filteredNotifications.length > 0 ? (
             <div className="divide-y">
               {filteredNotifications.map((notification) => (
