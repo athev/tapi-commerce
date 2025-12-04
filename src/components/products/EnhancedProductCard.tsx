@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Star, ShoppingCart, Eye, Heart, CheckCircle2, AlertCircle } from "lucide-react";
+import { Star, ShoppingCart, Heart, CheckCircle2, AlertCircle, Truck, MapPin, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -32,12 +32,37 @@ const getStockColor = (stock: number) => {
   return "text-red-600";
 };
 
+// Helper: Convert warranty_period to display text
+const getWarrantyText = (warrantyPeriod: string): string | null => {
+  if (!warrantyPeriod || warrantyPeriod === 'none') return null;
+  if (warrantyPeriod === 'lifetime') return 'Trọn đời';
+  if (warrantyPeriod === '7_days') return '7 ngày';
+  if (warrantyPeriod === '14_days') return '14 ngày';
+  if (warrantyPeriod === '1_month') return '1 tháng';
+  if (warrantyPeriod === '3_months') return '3 tháng';
+  if (warrantyPeriod === '6_months') return '6 tháng';
+  
+  // Custom format: X_days or X_months
+  const daysMatch = warrantyPeriod.match(/^(\d+)_days$/);
+  if (daysMatch) return `${daysMatch[1]} ngày`;
+  
+  const monthsMatch = warrantyPeriod.match(/^(\d+)_months$/);
+  if (monthsMatch) return `${monthsMatch[1]} tháng`;
+  
+  return null;
+};
+
 interface EnhancedProductCardProps extends ProductCardProps {
   soldCount?: number;
   complaintRate?: number;
   averageRating?: number;
   reviewCount?: number;
   sellerOnline?: boolean;
+  warrantyPeriod?: string;
+  favoritesCount?: number;
+  hasVoucher?: boolean;
+  location?: string;
+  deliveryEstimate?: string;
 }
 
 const EnhancedProductCard = ({
@@ -58,6 +83,11 @@ const EnhancedProductCard = ({
   averageRating,
   reviewCount = 0,
   sellerOnline = false,
+  warrantyPeriod,
+  favoritesCount = 0,
+  hasVoucher = false,
+  location = "Việt Nam",
+  deliveryEstimate = "1-3 ngày",
 }: EnhancedProductCardProps) => {
   const { toggleFavorite, isFavorite } = useFavorites();
   const favorited = isFavorite(id);
@@ -69,6 +99,7 @@ const EnhancedProductCard = ({
   const displaySoldCount = soldCount;
   const displayComplaintRate = complaintRate;
   const displayStock = inStock ?? 999;
+  const warrantyText = getWarrantyText(warrantyPeriod || '');
 
   return (
     <Card className="group bg-card border border-border rounded-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
@@ -92,7 +123,7 @@ const EnhancedProductCard = ({
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300" />
             
-            {/* Badges - Simplified for mobile */}
+            {/* Top badges */}
             <div className="absolute top-1 md:top-2 left-1 md:left-2 flex flex-wrap gap-0.5 md:gap-1 max-w-[80%] z-10">
               {discount && (
                 <Badge className="bg-destructive text-destructive-foreground font-bold text-[10px] md:text-sm px-1 md:px-2 py-0.5 md:py-1">
@@ -104,9 +135,19 @@ const EnhancedProductCard = ({
                   🔥
                 </Badge>
               )}
-              {seller.verified && (
-                <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold text-[9px] md:text-xs px-1 md:px-2 py-0.5 md:py-1">
-                  Mall
+            </div>
+
+            {/* Bottom badges overlay - Shopee style */}
+            <div className="absolute bottom-1 left-1 flex flex-wrap gap-0.5 max-w-[95%] z-10">
+              {warrantyText && (
+                <Badge className="bg-emerald-500 text-white text-[8px] px-1 py-0 h-4 flex items-center gap-0.5">
+                  <Shield className="h-2.5 w-2.5" />
+                  {warrantyText}
+                </Badge>
+              )}
+              {hasVoucher && (
+                <Badge className="bg-orange-500 text-white text-[8px] px-1 py-0 h-4">
+                  VOUCHER
                 </Badge>
               )}
             </div>
@@ -140,6 +181,23 @@ const EnhancedProductCard = ({
 
       <CardContent className="p-2 md:p-3">
         <div className="space-y-1 md:space-y-1.5">
+          {/* Shopee-style badges row */}
+          <div className="flex items-center gap-1 flex-wrap">
+            {seller.verified && (
+              <Badge className="bg-red-500 text-white text-[8px] md:text-[9px] px-1 py-0 h-4">
+                Mall
+              </Badge>
+            )}
+            {favoritesCount > 100 && (
+              <Badge className="bg-red-50 text-red-600 border border-red-200 text-[8px] md:text-[9px] px-1 py-0 h-4">
+                Yêu thích
+              </Badge>
+            )}
+            <Badge variant="outline" className="text-[8px] md:text-[9px] px-1 py-0 h-4 bg-primary/10 text-primary border-primary/20">
+              Free ship
+            </Badge>
+          </div>
+
           {/* Category Badge */}
           <Badge variant="outline" className="text-[9px] md:text-[10px] px-1 md:px-1.5 py-0 md:py-0.5">
             {category}
@@ -175,6 +233,19 @@ const EnhancedProductCard = ({
             </span>
           </div>
 
+          {/* Delivery & Location row - Mobile */}
+          <div className="flex md:hidden items-center gap-1.5 text-[8px] text-muted-foreground">
+            <span className="flex items-center gap-0.5">
+              <Truck className="h-2.5 w-2.5" />
+              {deliveryEstimate}
+            </span>
+            <span>•</span>
+            <span className="flex items-center gap-0.5">
+              <MapPin className="h-2.5 w-2.5" />
+              {location}
+            </span>
+          </div>
+
           {/* Complaint Rate & Stock - Desktop only */}
           <div className="hidden md:flex items-center gap-1.5 flex-wrap text-[10px]">
             <Badge variant="outline" className={cn("px-1.5 py-0.5 border font-medium", getComplaintRateColor(displayComplaintRate))}>
@@ -206,13 +277,6 @@ const EnhancedProductCard = ({
                 </Badge>
               </>
             )}
-          </div>
-
-          {/* Trust Badges - Desktop */}
-          <div className="hidden md:flex items-center gap-1 flex-wrap">
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary border-primary/20">
-              Free ship
-            </Badge>
           </div>
         </div>
       </CardContent>
