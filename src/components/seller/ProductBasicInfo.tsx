@@ -2,7 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProductFormData } from "@/hooks/useProductUpload";
-import { WARRANTY_OPTIONS } from "@/utils/warrantyUtils";
+import WarrantyPeriodInput from "./WarrantyPeriodInput";
 
 interface ProductBasicInfoProps {
   formData: ProductFormData;
@@ -96,26 +96,11 @@ const ProductBasicInfo = ({ formData, onInputChange, onSelectChange, errors }: P
         </p>
       </div>
 
-      <div className="space-y-2 md:col-span-2">
-        <Label htmlFor="warranty_period">Thời hạn bảo hành</Label>
-        <Select 
-          value={formData.warranty_period || 'none'} 
-          onValueChange={(value) => onSelectChange('warranty_period', value)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Chọn thời hạn bảo hành" />
-          </SelectTrigger>
-          <SelectContent>
-            {WARRANTY_OPTIONS.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <p className="text-xs text-muted-foreground">
-          Thời gian bảo hành tính từ ngày thanh toán thành công. Người bán phải xử lý yêu cầu bảo hành trong 24 giờ.
-        </p>
+      <div className="md:col-span-2">
+        <WarrantyPeriodInput
+          value={formData.warranty_period || 'none'}
+          onChange={(value) => onSelectChange('warranty_period', value)}
+        />
       </div>
     </div>
   );
