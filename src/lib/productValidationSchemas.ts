@@ -7,6 +7,7 @@ export const productBasicInfoSchema = z.object({
     .max(100, "Tên sản phẩm không được quá 100 ký tự"),
   category: z.string().min(1, "Vui lòng chọn danh mục"),
   product_type: z.string().min(1, "Vui lòng chọn loại sản phẩm"),
+  warranty_period: z.string().default('none'),
 });
 
 // Pricing validation
