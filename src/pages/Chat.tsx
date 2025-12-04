@@ -9,7 +9,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useChat } from "@/hooks/useChat";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent } from "@/components/ui/card";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import EnhancedNavbar from "@/components/layout/EnhancedNavbar";
 import ChatEmptyState from "@/components/chat/ChatEmptyState";
 
@@ -77,8 +78,16 @@ const Chat = () => {
 
     return (
       <div className="h-screen flex flex-col bg-background">
-        {/* Mobile Header */}
+        {/* Mobile Header with Back Button */}
         <div className="border-b p-4 flex items-center gap-3 bg-background sticky top-0 z-10">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => navigate('/')}
+            className="shrink-0"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
           <MessageCircle className="h-6 w-6 text-primary" />
           <h1 className="text-lg font-semibold">Tin nhắn</h1>
         </div>
