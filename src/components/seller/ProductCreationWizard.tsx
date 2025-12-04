@@ -15,6 +15,7 @@ export interface WizardFormData {
   title: string;
   category: string;
   product_type: string;
+  warranty_period: string;
   
   // Step 2
   price: string;
@@ -45,6 +46,7 @@ const ProductCreationWizard = () => {
     title: "",
     category: "",
     product_type: "file_download",
+    warranty_period: "none",
     price: "",
     variants: [],
     image: null,

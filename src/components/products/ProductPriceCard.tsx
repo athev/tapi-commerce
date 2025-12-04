@@ -6,6 +6,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from "@/utils/orderUtils";
 import { FavoriteButton } from "@/components/products/FavoriteButton";
+import WarrantyBadge from "@/components/warranty/WarrantyBadge";
 
 interface ProductVariant {
   id: string;
@@ -105,6 +106,11 @@ const ProductPriceCard = ({
         </div>
         <FavoriteButton productId={product.id} size="md" />
       </div>
+
+      {/* Warranty Badge */}
+      {product?.warranty_period && product.warranty_period !== 'none' && (
+        <WarrantyBadge warrantyPeriod={product.warranty_period} size="md" />
+      )}
 
       {/* Stock Display - based on selected variant or product */}
       {displayStock !== undefined && displayStock !== null && (

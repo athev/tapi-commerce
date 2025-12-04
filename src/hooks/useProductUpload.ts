@@ -18,6 +18,7 @@ export interface ProductFormData {
   product_type: string;
   delivery_data: Record<string, any>;
   variants?: ProductVariant[];
+  warranty_period: string;
 }
 
 export const useProductUpload = () => {
@@ -121,6 +122,7 @@ export const useProductUpload = () => {
         product_type: formData.product_type,
         delivery_data: formData.delivery_data,
         status: 'active',
+        warranty_period: formData.warranty_period || 'none',
       };
 
       console.log('Inserting product data:', productData);

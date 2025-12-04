@@ -1,8 +1,8 @@
-
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ProductFormData } from "@/hooks/useProductUpload";
+import { WARRANTY_OPTIONS } from "@/utils/warrantyUtils";
 
 interface ProductBasicInfoProps {
   formData: ProductFormData;
@@ -21,11 +21,11 @@ const ProductBasicInfo = ({ formData, onInputChange, onSelectChange, errors }: P
           name="title" 
           value={formData.title}
           onChange={onInputChange}
-          className={errors?.title ? "border-red-500" : ""}
+          className={errors?.title ? "border-destructive" : ""}
           placeholder="Nhập tên sản phẩm..."
         />
         {errors?.title && (
-          <p className="text-sm text-red-500">{errors.title}</p>
+          <p className="text-sm text-destructive">{errors.title}</p>
         )}
       </div>
       
@@ -35,7 +35,7 @@ const ProductBasicInfo = ({ formData, onInputChange, onSelectChange, errors }: P
           value={formData.category} 
           onValueChange={(value) => onSelectChange('category', value)}
         >
-          <SelectTrigger className={errors?.category ? "border-red-500" : ""}>
+          <SelectTrigger className={errors?.category ? "border-destructive" : ""}>
             <SelectValue placeholder="Chọn danh mục" />
           </SelectTrigger>
           <SelectContent>
@@ -47,7 +47,7 @@ const ProductBasicInfo = ({ formData, onInputChange, onSelectChange, errors }: P
           </SelectContent>
         </Select>
         {errors?.category && (
-          <p className="text-sm text-red-500">{errors.category}</p>
+          <p className="text-sm text-destructive">{errors.category}</p>
         )}
       </div>
       
@@ -61,13 +61,13 @@ const ProductBasicInfo = ({ formData, onInputChange, onSelectChange, errors }: P
           step="1000"
           value={formData.price}
           onChange={onInputChange}
-          className={errors?.price ? "border-red-500" : ""}
+          className={errors?.price ? "border-destructive" : ""}
           placeholder="0"
         />
         {errors?.price && (
-          <p className="text-sm text-red-500">{errors.price}</p>
+          <p className="text-sm text-destructive">{errors.price}</p>
         )}
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted-foreground">
           Giá hiển thị: {formData.price ? new Intl.NumberFormat('vi-VN', { 
             style: 'currency', 
             currency: 'VND',
@@ -85,14 +85,36 @@ const ProductBasicInfo = ({ formData, onInputChange, onSelectChange, errors }: P
           min="0"
           value={formData.inStock}
           onChange={onInputChange}
-          className={errors?.inStock ? "border-red-500" : ""}
+          className={errors?.inStock ? "border-destructive" : ""}
           placeholder="Để trống nếu không giới hạn"
         />
         {errors?.inStock && (
-          <p className="text-sm text-red-500">{errors.inStock}</p>
+          <p className="text-sm text-destructive">{errors.inStock}</p>
         )}
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted-foreground">
           Để trống nếu sản phẩm số không giới hạn số lượng
+        </p>
+      </div>
+
+      <div className="space-y-2 md:col-span-2">
+        <Label htmlFor="warranty_period">Thời hạn bảo hành</Label>
+        <Select 
+          value={formData.warranty_period || 'none'} 
+          onValueChange={(value) => onSelectChange('warranty_period', value)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Chọn thời hạn bảo hành" />
+          </SelectTrigger>
+          <SelectContent>
+            {WARRANTY_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">
+          Thời gian bảo hành tính từ ngày thanh toán thành công. Người bán phải xử lý yêu cầu bảo hành trong 24 giờ.
         </p>
       </div>
     </div>

@@ -9,6 +9,7 @@ import { WizardFormData } from "../ProductCreationWizard";
 import { productBasicInfoSchema } from "@/lib/productValidationSchemas";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { WARRANTY_OPTIONS } from "@/utils/warrantyUtils";
 import {
   Select,
   SelectContent,
@@ -109,6 +110,28 @@ const WizardStep1BasicInfo = ({ formData, updateFormData, onNext }: WizardStep1P
           onChange={(value) => updateFormData({ product_type: value })}
           error={errors.product_type}
         />
+
+        <div className="space-y-2">
+          <Label htmlFor="warranty_period">Thời hạn bảo hành</Label>
+          <Select
+            value={formData.warranty_period || 'none'}
+            onValueChange={(value) => updateFormData({ warranty_period: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Chọn thời hạn bảo hành" />
+            </SelectTrigger>
+            <SelectContent>
+              {WARRANTY_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Thời gian bảo hành tính từ ngày thanh toán. Người bán phải xử lý yêu cầu bảo hành trong 24 giờ.
+          </p>
+        </div>
 
         <div className="flex justify-end pt-4">
           <Button onClick={validateAndNext} size="lg">
