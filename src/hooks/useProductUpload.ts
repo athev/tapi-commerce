@@ -26,6 +26,12 @@ export const useProductUpload = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const sanitizeFileName = (fileName: string): string => {
+    const extension = fileName.split('.').pop()?.toLowerCase() || '';
+    const safeName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+    return `${safeName}.${extension}`;
+  };
+
   const uploadFile = async (file: File, bucket: string, path: string) => {
     console.log(`Uploading file to ${bucket}/${path}:`, file.name);
     
@@ -71,7 +77,7 @@ export const useProductUpload = () => {
 
       // Upload main image
       if (formData.image) {
-        const imageFileName = `${user.id}/${Date.now()}-${formData.image.name}`;
+        const imageFileName = `${user.id}/${sanitizeFileName(formData.image.name)}`;
         imageUrl = await uploadFile(formData.image, 'product-images', imageFileName);
         console.log('Image uploaded successfully:', imageUrl);
       }
@@ -79,7 +85,7 @@ export const useProductUpload = () => {
       // Upload gallery images
       if (formData.galleryImages && formData.galleryImages.length > 0) {
         for (const galleryImage of formData.galleryImages) {
-          const galleryFileName = `${user.id}/${Date.now()}-${galleryImage.name}`;
+          const galleryFileName = `${user.id}/${sanitizeFileName(galleryImage.name)}`;
           const galleryUrl = await uploadFile(galleryImage, 'product-images', galleryFileName);
           galleryUrls.push(galleryUrl);
           console.log('Gallery image uploaded:', galleryUrl);
@@ -94,7 +100,7 @@ export const useProductUpload = () => {
 
       // Upload product file if provided and product type supports it
       if (formData.file && formData.product_type === 'file_download') {
-        const fileFileName = `${user.id}/${Date.now()}-${formData.file.name}`;
+        const fileFileName = `${user.id}/${sanitizeFileName(formData.file.name)}`;
         fileUrl = await uploadFile(formData.file, 'product-files', fileFileName);
         console.log('Product file uploaded successfully:', fileUrl);
       }
