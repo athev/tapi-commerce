@@ -165,7 +165,7 @@ export const useChat = () => {
   };
 
   // Send message
-  const sendMessage = async (conversationId: string, content: string, messageType: 'text' | 'image' = 'text', imageUrl?: string) => {
+  const sendMessage = async (conversationId: string, content: string, messageType: 'text' | 'image' | 'product_recommendation' | 'voucher_share' = 'text', imageUrl?: string) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');

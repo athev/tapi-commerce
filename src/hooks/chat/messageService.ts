@@ -56,7 +56,7 @@ export const processMessages = (messagesData: any[], profiles: any[]): Message[]
     
     return {
       ...msg,
-      message_type: (msg.message_type as 'text' | 'image' | 'emoji') || 'text',
+      message_type: (msg.message_type as 'text' | 'image' | 'emoji' | 'service_quote' | 'product_recommendation' | 'voucher_share') || 'text',
       sender_name: senderProfile?.full_name || 'Người dùng',
       sender_role: senderProfile?.role || 'end-user'
     };
@@ -70,7 +70,7 @@ export const sendMessageToDb = async (
   conversationId: string,
   senderId: string,
   content: string,
-  messageType: 'text' | 'image' = 'text',
+  messageType: 'text' | 'image' | 'product_recommendation' | 'voucher_share' = 'text',
   imageUrl?: string
 ) => {
   console.log('📧 [MESSAGE] Sending message:', { 
