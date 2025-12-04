@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import ProductVariantsManager from "@/components/seller/ProductVariantsManager";
+import WarrantyPeriodInput from "@/components/seller/WarrantyPeriodInput";
 import { ProductVariant } from "@/lib/productValidationSchemas";
 
 const EditProduct = () => {
@@ -35,6 +36,7 @@ const EditProduct = () => {
     price: "",
     category: "",
     in_stock: "",
+    warranty_period: "none",
   });
 
   useEffect(() => {
@@ -57,6 +59,7 @@ const EditProduct = () => {
           price: product.price?.toString() || "",
           category: product.category || "",
           in_stock: product.in_stock?.toString() || "",
+          warranty_period: product.warranty_period || "none",
         });
         
         setCurrentImage(product.image || '');
@@ -142,6 +145,7 @@ const EditProduct = () => {
           category: formData.category,
           in_stock: parseInt(formData.in_stock),
           image: imageUrl,
+          warranty_period: formData.warranty_period,
         })
         .eq('id', productId);
 
@@ -351,6 +355,11 @@ const EditProduct = () => {
                 placeholder="Nhập số lượng"
               />
             </div>
+
+            <WarrantyPeriodInput
+              value={formData.warranty_period}
+              onChange={(value) => setFormData({ ...formData, warranty_period: value })}
+            />
 
             <div className="space-y-2">
               <Label htmlFor="description">Mô tả sản phẩm</Label>
