@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Order, Product, mockProducts } from "@/lib/supabase";
 import { useAuth } from "@/context";
+import { useIsMobile } from "@/hooks/use-mobile";
 import EnhancedNavbar from "@/components/layout/EnhancedNavbar";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import Footer from "@/components/layout/Footer";
@@ -21,7 +22,8 @@ import OrderTimeline from "@/components/orders/OrderTimeline";
 import BuyerServiceTickets from "@/components/buyer/BuyerServiceTickets";
 import BuyerPIWallet from "@/components/buyer/BuyerPIWallet";
 import ReviewModal from "@/components/reviews/ReviewModal";
-import { formatPrice, formatSoldCount } from "@/utils/priceUtils";
+import MobileProfilePage from "@/components/profile/MobileProfilePage";
+import { formatPrice } from "@/utils/priceUtils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const formatDate = (dateString: string) => {
@@ -38,6 +40,7 @@ const formatDate = (dateString: string) => {
 
 const MyPurchases = () => {
   const { user, profile } = useAuth();
+  const isMobile = useIsMobile();
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isUsingMockData, setIsUsingMockData] = useState(false);
   const [reviewOrder, setReviewOrder] = useState<any>(null);
@@ -135,7 +138,6 @@ const MyPurchases = () => {
 
         if (productError) {
           console.error('Error fetching products:', productError);
-          // Don't use mock data if we have real orders
           return ordersData.map(order => ({
             ...order,
             product: mockProducts[0]
@@ -180,7 +182,6 @@ const MyPurchases = () => {
     if (product.file_url) {
       window.open(product.file_url, '_blank');
     } else {
-      // For demo purposes, show a mock download
       const link = document.createElement('a');
       link.href = 'data:text/plain;charset=utf-8,Sample Digital Product Content';
       link.download = `${product.title}.txt`;
@@ -188,6 +189,30 @@ const MyPurchases = () => {
     }
   };
 
+  // Mobile loading state
+  if (isLoading && isMobile) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Mobile view - Shopee style
+  if (isMobile) {
+    return (
+      <>
+        <MobileProfilePage 
+          orders={purchases || []}
+          reviewedOrders={existingReviews || []}
+          onRefetchReviews={refetchReviews}
+        />
+        <MobileBottomNav />
+      </>
+    );
+  }
+
+  // Desktop loading state
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -203,6 +228,7 @@ const MyPurchases = () => {
     );
   }
 
+  // Desktop view - existing layout
   return (
     <div className="flex flex-col min-h-screen">
       <EnhancedNavbar />
@@ -262,14 +288,13 @@ const MyPurchases = () => {
                     <Card key={purchase.id} className="hover:shadow-lg transition-shadow">
                       <CardContent className="p-6">
                         <div className="flex flex-col md:flex-row gap-6">
-                          {/* Product Image - Enhanced */}
+                          {/* Product Image */}
                           <div className="relative w-full md:w-40 h-40 bg-muted rounded-lg overflow-hidden shrink-0">
                             <img 
                               src={purchase.product.image || '/placeholder.svg'} 
                               alt={purchase.product.title}
                               className="w-full h-full object-cover"
                             />
-                            {/* Status overlay */}
                             <div className="absolute top-2 right-2">
                               <Badge className={
                                 purchase.status === 'paid' ? 'bg-success hover:bg-success' : 
@@ -281,9 +306,8 @@ const MyPurchases = () => {
                             </div>
                           </div>
                           
-                          {/* Product Info - Better organized */}
+                          {/* Product Info */}
                           <div className="flex-1 content-spacing">
-                            {/* Header Row */}
                             <div className="flex justify-between items-start">
                               <div className="flex-1">
                                 <Link 
@@ -309,7 +333,6 @@ const MyPurchases = () => {
                               </div>
                             </div>
 
-                            {/* Order Timeline */}
                             <OrderTimeline 
                               status={purchase.status}
                               deliveryStatus={purchase.delivery_status}
@@ -349,7 +372,6 @@ const MyPurchases = () => {
 
                               {!isUsingMockData && (
                                 <>
-                                  {/* Review Button - only after order completed */}
                                   {purchase.status === 'paid' && 
                                    purchase.delivery_status === 'completed' &&
                                    !existingReviews?.includes(purchase.id) && 
