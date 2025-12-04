@@ -194,8 +194,13 @@ const ChatWindow = ({ conversationId }: ChatWindowProps) => {
       setIsUploading(true);
       const imageUrl = await uploadImage(file);
       await sendMessage(conversationId, "Đã gửi một hình ảnh", "image", imageUrl);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error uploading image:", error);
+      toast({
+        title: "Không thể gửi hình ảnh",
+        description: error?.message || "Vui lòng thử lại sau",
+        variant: "destructive"
+      });
     } finally {
       setIsUploading(false);
       if (fileInputRef.current) {
