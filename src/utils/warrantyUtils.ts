@@ -1,26 +1,37 @@
 import { addDays, addMonths, differenceInDays, isPast, isFuture, format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
-export type WarrantyPeriod = 'none' | '7_days' | '1_month' | '3_months' | 'lifetime';
+export type WarrantyPeriod = 'none' | 'lifetime' | string; // string for custom like "14_days", "6_months"
 
-export const WARRANTY_OPTIONS = [
-  { value: 'none', label: '❌ Không bảo hành', description: 'Sản phẩm không có bảo hành' },
-  { value: '7_days', label: '🛡️ 7 ngày', description: 'Bảo hành 7 ngày kể từ ngày thanh toán' },
-  { value: '1_month', label: '🛡️ 1 tháng', description: 'Bảo hành 1 tháng kể từ ngày thanh toán' },
-  { value: '3_months', label: '🛡️ 3 tháng', description: 'Bảo hành 3 tháng kể từ ngày thanh toán' },
-  { value: 'lifetime', label: '♾️ Trọn đời', description: 'Bảo hành không giới hạn thời gian' },
-] as const;
+/**
+ * Parse warranty period string to extract amount and unit
+ */
+export function parseWarrantyPeriod(period: string | null | undefined): { amount: number; unit: 'days' | 'months' } | null {
+  if (!period || period === 'none' || period === 'lifetime') return null;
+  
+  // Parse formats like "7_days", "1_month", "1_months", "3_months", "14_days"
+  const match = period.match(/^(\d+)_(days?|months?)$/);
+  if (match) {
+    return {
+      amount: parseInt(match[1], 10),
+      unit: match[2].startsWith('month') ? 'months' : 'days'
+    };
+  }
+  
+  return null;
+}
 
 /**
  * Get warranty label from period value
  */
 export function getWarrantyLabel(period: string | null | undefined): string {
   if (!period || period === 'none') return 'Không bảo hành';
+  if (period === 'lifetime') return 'Trọn đời';
   
-  const option = WARRANTY_OPTIONS.find(opt => opt.value === period);
-  if (option) {
-    // Remove emoji prefix for cleaner display
-    return option.label.replace(/^[^\s]+\s/, '');
+  const parsed = parseWarrantyPeriod(period);
+  if (parsed) {
+    const unitText = parsed.unit === 'months' ? 'tháng' : 'ngày';
+    return `${parsed.amount} ${unitText}`;
   }
   
   return 'Không bảo hành';
@@ -30,13 +41,16 @@ export function getWarrantyLabel(period: string | null | undefined): string {
  * Get warranty period in a human-readable format
  */
 export function getWarrantyPeriodText(period: string | null | undefined): string {
-  switch (period) {
-    case '7_days': return '7 ngày';
-    case '1_month': return '1 tháng';
-    case '3_months': return '3 tháng';
-    case 'lifetime': return 'Trọn đời';
-    default: return '';
+  if (!period || period === 'none') return '';
+  if (period === 'lifetime') return 'Trọn đời';
+  
+  const parsed = parseWarrantyPeriod(period);
+  if (parsed) {
+    const unitText = parsed.unit === 'months' ? 'tháng' : 'ngày';
+    return `${parsed.amount} ${unitText}`;
   }
+  
+  return '';
 }
 
 /**
@@ -50,19 +64,21 @@ export function calculateWarrantyExpiry(
   
   const paymentDate = new Date(paidAt);
   
-  switch (warrantyPeriod) {
-    case '7_days':
-      return addDays(paymentDate, 7);
-    case '1_month':
-      return addMonths(paymentDate, 1);
-    case '3_months':
-      return addMonths(paymentDate, 3);
-    case 'lifetime':
-      // Return a very far future date for lifetime warranty
-      return addDays(paymentDate, 36500); // ~100 years
-    default:
-      return null;
+  if (warrantyPeriod === 'lifetime') {
+    // Return a very far future date for lifetime warranty
+    return addDays(paymentDate, 36500); // ~100 years
   }
+  
+  const parsed = parseWarrantyPeriod(warrantyPeriod);
+  if (parsed) {
+    if (parsed.unit === 'months') {
+      return addMonths(paymentDate, parsed.amount);
+    } else {
+      return addDays(paymentDate, parsed.amount);
+    }
+  }
+  
+  return null;
 }
 
 /**
