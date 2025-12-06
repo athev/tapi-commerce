@@ -32,6 +32,14 @@ interface ProductReviewsProps {
   totalReviews?: number;
 }
 
+// Ẩn danh hóa tên người dùng theo style Shopee
+const anonymizeName = (name: string | undefined): string => {
+  if (!name || name.length < 2) return "Người dùng";
+  const firstChar = name.charAt(0);
+  const lastChar = name.charAt(name.length - 1);
+  return `${firstChar}*****${lastChar}`;
+};
+
 const ProductReviews = ({ productId, avgRating = 5.0, totalReviews = 0 }: ProductReviewsProps) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -236,7 +244,7 @@ const ProductReviews = ({ productId, avgRating = 5.0, totalReviews = 0 }: Produc
                       {/* User Info */}
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium">
-                          {review.profiles?.full_name || 'Người dùng'}
+                          {anonymizeName(review.profiles?.full_name)}
                         </span>
                         <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
                           Đã mua hàng
