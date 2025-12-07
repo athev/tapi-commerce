@@ -32,12 +32,17 @@ interface ProductReviewsProps {
   totalReviews?: number;
 }
 
-// Ẩn danh hóa tên người dùng theo style Shopee
-const anonymizeName = (name: string | undefined): string => {
+// Ẩn danh hóa tên người dùng theo style Shopee với số ngẫu nhiên dựa trên review ID
+const anonymizeName = (name: string | undefined, reviewId: string): string => {
   if (!name || name.length < 2) return "Người dùng";
-  const firstChar = name.charAt(0);
-  const lastChar = name.charAt(name.length - 1);
-  return `${firstChar}*****${lastChar}`;
+  
+  // Tạo số ngẫu nhiên nhất quán từ review ID
+  const hash = reviewId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const randomSuffix = (hash % 900) + 100; // Số từ 100-999
+  
+  const firstChar = name.charAt(0).toUpperCase();
+  const lastChar = name.charAt(name.length - 1).toLowerCase();
+  return `${firstChar}*****${lastChar}${randomSuffix}`;
 };
 
 const ProductReviews = ({ productId, avgRating = 5.0, totalReviews = 0 }: ProductReviewsProps) => {
@@ -244,7 +249,7 @@ const ProductReviews = ({ productId, avgRating = 5.0, totalReviews = 0 }: Produc
                       {/* User Info */}
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-medium">
-                          {anonymizeName(review.profiles?.full_name)}
+                          {anonymizeName(review.profiles?.full_name, review.id)}
                         </span>
                         <Badge variant="secondary" className="text-xs bg-primary/10 text-primary">
                           Đã mua hàng
