@@ -12,7 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Eye, User, Star, Coins } from "lucide-react";
+import { Download, Eye, User, Star, Coins, Shield, Copy, CheckCircle, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import OrderSupportChatButton from "@/components/chat/OrderSupportChatButton";
 import OrderConfirmButton from "@/components/buyer/OrderConfirmButton";
@@ -25,6 +25,9 @@ import ReviewModal from "@/components/reviews/ReviewModal";
 import MobileProfilePage from "@/components/profile/MobileProfilePage";
 import { formatPrice } from "@/utils/priceUtils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getWarrantyStatus, formatWarrantyExpiry } from "@/utils/warrantyUtils";
+import WarrantyClaimModal from "@/components/warranty/WarrantyClaimModal";
+import { toast } from "sonner";
 
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
@@ -45,6 +48,7 @@ const MyPurchases = () => {
   const [isUsingMockData, setIsUsingMockData] = useState(false);
   const [reviewOrder, setReviewOrder] = useState<any>(null);
   const [reviewedOrders, setReviewedOrders] = useState<Set<string>>(new Set());
+  const [warrantyOrder, setWarrantyOrder] = useState<any>(null);
 
   // Mock data for development
   const mockOrders = [
@@ -339,6 +343,79 @@ const MyPurchases = () => {
                               createdAt={purchase.created_at}
                               paidAt={purchase.payment_verified_at}
                             />
+
+                            {/* Delivery Notes / Key Info - Only for completed orders */}
+                            {purchase.delivery_status === 'completed' && purchase.delivery_notes && (
+                              <div className="mt-4 p-3 border border-dashed border-muted-foreground/30 rounded-lg bg-muted/20">
+                                <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">
+                                  Thông tin đơn hàng / Key
+                                </p>
+                                <div className="flex items-start justify-between gap-2">
+                                  <p className="text-sm font-mono whitespace-pre-wrap flex-1 break-all">
+                                    {purchase.delivery_notes}
+                                  </p>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    className="shrink-0 h-8 w-8"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(purchase.delivery_notes);
+                                      toast.success("Đã sao chép thông tin");
+                                    }}
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Warranty Status - Only for completed orders with warranty */}
+                            {purchase.delivery_status === 'completed' && purchase.product?.warranty_period && purchase.product.warranty_period !== 'none' && (() => {
+                              const warrantyStatus = getWarrantyStatus(purchase.payment_verified_at, purchase.product.warranty_period);
+                              const expiryDate = warrantyStatus.expiryDate;
+                              
+                              return (
+                                <div className={`mt-3 p-3 rounded-lg border ${
+                                  warrantyStatus.isActive 
+                                    ? 'bg-green-50 border-green-200' 
+                                    : 'bg-muted/50 border-muted-foreground/20'
+                                }`}>
+                                  <div className="flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-2">
+                                      {warrantyStatus.isActive ? (
+                                        <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+                                      ) : (
+                                        <AlertCircle className="h-5 w-5 text-muted-foreground shrink-0" />
+                                      )}
+                                      <div>
+                                        <p className={`text-sm font-medium ${warrantyStatus.isActive ? 'text-green-700' : 'text-muted-foreground'}`}>
+                                          {warrantyStatus.isActive 
+                                            ? warrantyStatus.remainingDays === -1 
+                                              ? 'Bảo hành trọn đời'
+                                              : `Còn hạn: ${warrantyStatus.remainingDays} ngày`
+                                            : 'Hết hạn bảo hành'
+                                          }
+                                        </p>
+                                        {expiryDate && warrantyStatus.remainingDays !== -1 && (
+                                          <p className={`text-xs ${warrantyStatus.isActive ? 'text-green-600' : 'text-muted-foreground'}`}>
+                                            Hết hạn: {formatWarrantyExpiry(expiryDate)}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm"
+                                      disabled={!warrantyStatus.isActive}
+                                      onClick={() => setWarrantyOrder(purchase)}
+                                    >
+                                      <Shield className="h-4 w-4 mr-2" />
+                                      Yêu cầu bảo hành
+                                    </Button>
+                                  </div>
+                                </div>
+                              );
+                            })()}
                             
                             {/* Actions Row */}
                             <div className="flex flex-wrap gap-3 pt-3 border-t">
@@ -526,6 +603,15 @@ const MyPurchases = () => {
             setReviewedOrders(prev => new Set([...prev, reviewOrder.id]));
             refetchReviews();
           }}
+        />
+      )}
+
+      {warrantyOrder && (
+        <WarrantyClaimModal
+          open={!!warrantyOrder}
+          onOpenChange={(open) => !open && setWarrantyOrder(null)}
+          order={warrantyOrder}
+          product={warrantyOrder.product}
         />
       )}
     </div>
