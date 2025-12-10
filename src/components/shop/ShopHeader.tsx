@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Store, MessageCircle, UserPlus, CheckCircle } from "lucide-react";
+import { Store, MessageCircle, UserPlus, Heart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface ShopHeaderProps {
@@ -10,10 +10,8 @@ interface ShopHeaderProps {
     full_name: string;
     avatar?: string;
     shop_banner?: string;
-    shop_description?: string;
     slug?: string;
-    is_online?: boolean;
-    created_at: string;
+    seller_rating?: number;
   };
   followersCount?: number;
 }
@@ -30,8 +28,8 @@ const ShopHeader = ({ seller, followersCount = 0 }: ShopHeaderProps) => {
 
   return (
     <div className="relative">
-      {/* Banner Section */}
-      <div className="relative w-full h-40 md:h-52 lg:h-64 overflow-hidden">
+      {/* Banner Section - Shorter height */}
+      <div className="relative w-full h-24 md:h-32 overflow-hidden">
         {seller.shop_banner ? (
           <img
             src={seller.shop_banner}
@@ -41,84 +39,67 @@ const ShopHeader = ({ seller, followersCount = 0 }: ShopHeaderProps) => {
         ) : (
           <div className="w-full h-full bg-gradient-to-r from-primary via-primary/80 to-primary/60" />
         )}
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
       </div>
 
-      {/* Floating Shop Info Card */}
-      <div className="relative mx-4 md:mx-8 -mt-16 md:-mt-20">
-        <div className="bg-card rounded-xl shadow-xl border p-4 md:p-6">
-          <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-            {/* Avatar with Online Badge */}
-            <div className="relative flex-shrink-0 mx-auto md:mx-0">
-              <Avatar className="h-20 w-20 md:h-28 md:w-28 border-4 border-background shadow-lg">
+      {/* Shop Info - Compact layout */}
+      <div className="bg-card border-b">
+        <div className="px-4 py-3">
+          <div className="flex items-start gap-3">
+            {/* Avatar with Badge */}
+            <div className="relative flex-shrink-0 -mt-8">
+              <Avatar className="h-16 w-16 border-2 border-background shadow-md">
                 <AvatarImage src={seller.avatar} alt={seller.full_name} />
-                <AvatarFallback className="text-2xl md:text-3xl bg-primary/10">
-                  <Store className="h-8 w-8 md:h-12 md:w-12 text-primary" />
+                <AvatarFallback className="bg-primary/10">
+                  <Store className="h-6 w-6 text-primary" />
                 </AvatarFallback>
               </Avatar>
-              {/* Online Status Indicator */}
-              {seller.is_online && (
-                <div className="absolute bottom-1 right-1 md:bottom-2 md:right-2">
-                  <div className="w-4 h-4 md:w-5 md:h-5 bg-green-500 rounded-full border-2 border-background" />
-                </div>
-              )}
+              {/* Yêu thích badge */}
+              <Badge 
+                className="absolute -bottom-1 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[9px] px-1.5 py-0 whitespace-nowrap"
+              >
+                <Heart className="h-2.5 w-2.5 mr-0.5 fill-current" />
+                Yêu thích
+              </Badge>
             </div>
 
-            {/* Shop Info */}
-            <div className="flex-1 text-center md:text-left">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-                <div>
-                  <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
-                    <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground">
-                      {seller.full_name}
-                    </h1>
-                    <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Verified
-                    </Badge>
-                  </div>
-                  
-                  {seller.shop_description && (
-                    <p className="text-sm md:text-base text-muted-foreground max-w-xl line-clamp-2">
-                      {seller.shop_description}
-                    </p>
-                  )}
-                  
-                  {seller.is_online && (
-                    <span className="inline-flex items-center gap-1.5 text-xs text-green-600 mt-2">
-                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                      Online
-                    </span>
-                  )}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex items-center justify-center md:justify-end gap-2 md:gap-3 mt-2 md:mt-0">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1 md:flex-none"
-                  >
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Theo dõi</span>
-                    <span className="sm:hidden">Follow</span>
-                    {followersCount > 0 && (
-                      <Badge variant="secondary" className="ml-2 bg-muted">
-                        {formatFollowers(followersCount)}
-                      </Badge>
-                    )}
-                  </Button>
-                  
-                  <Button 
-                    onClick={() => navigate(`/chat?seller=${seller.slug || seller.id}`)}
-                    className="flex-1 md:flex-none"
-                  >
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    Chat Ngay
-                  </Button>
-                </div>
+            {/* Shop Name & Stats */}
+            <div className="flex-1 min-w-0 pt-1">
+              <h1 className="text-base font-bold text-foreground truncate">
+                {seller.full_name}
+              </h1>
+              <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                <span className="flex items-center gap-0.5">
+                  <span className="text-yellow-500">★</span>
+                  <span className="font-medium text-foreground">
+                    {(seller.seller_rating || 5).toFixed(1)}
+                  </span>
+                </span>
+                <span className="text-border">|</span>
+                <span>{formatFollowers(followersCount)} Theo dõi</span>
               </div>
             </div>
+          </div>
+
+          {/* Action Buttons - Full width */}
+          <div className="flex gap-2 mt-3">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="flex-1 h-9"
+            >
+              <UserPlus className="h-4 w-4 mr-1.5" />
+              Theo dõi
+            </Button>
+            
+            <Button 
+              size="sm"
+              onClick={() => navigate(`/chat?seller=${seller.slug || seller.id}`)}
+              className="flex-1 h-9"
+            >
+              <MessageCircle className="h-4 w-4 mr-1.5" />
+              Chat
+            </Button>
           </div>
         </div>
       </div>
