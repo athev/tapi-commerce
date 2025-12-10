@@ -12,6 +12,7 @@ import ShopVouchersSection from "@/components/shop/ShopVouchersSection";
 import ShopFeaturedCarousel from "@/components/shop/ShopFeaturedCarousel";
 import ShopProfileTab from "@/components/shop/ShopProfileTab";
 import ShopProductGrid from "@/components/shop/ShopProductGrid";
+import ShopPromoBanner from "@/components/shop/ShopPromoBanner";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -113,6 +114,9 @@ const ShopPage = () => {
       <main className="flex-1 pb-20 md:pb-0">
         {/* Shop Header */}
         <ShopHeader seller={seller} />
+        
+        {/* Promo Banner */}
+        <ShopPromoBanner sellerId={seller.id} />
         
         {/* Stats Bar */}
         <ShopStatsBar 

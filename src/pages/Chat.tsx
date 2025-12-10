@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import ConversationList from "@/components/chat/ConversationList";
 import ChatWindow from "@/components/chat/ChatWindow";
 import ChatSellerPanel from "@/components/chat/ChatSellerPanel";
@@ -9,18 +8,58 @@ import { useAuth } from "@/context/AuthContext";
 import { useChat } from "@/hooks/useChat";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Card, CardContent } from "@/components/ui/card";
-import { MessageCircle, ArrowLeft } from "lucide-react";
+import { MessageCircle, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import EnhancedNavbar from "@/components/layout/EnhancedNavbar";
 import ChatEmptyState from "@/components/chat/ChatEmptyState";
 
 const Chat = () => {
   const { conversationId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { conversations } = useChat();
+  const { conversations, createOrGetConversation, fetchConversations } = useChat();
   const isMobile = useIsMobile();
   const [selectedConversation, setSelectedConversation] = useState<string | undefined>(conversationId);
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
+
+  // Handle seller query param - create conversation when coming from shop page
+  useEffect(() => {
+    const sellerId = searchParams.get('seller');
+    if (sellerId && user && !isCreatingChat) {
+      // Don't create chat with yourself
+      if (sellerId === user.id) {
+        navigate('/chat');
+        return;
+      }
+      
+      const createChatWithSeller = async () => {
+        setIsCreatingChat(true);
+        try {
+          console.log('Creating chat with seller from query param:', sellerId);
+          const newConversationId = await createOrGetConversation(
+            sellerId,
+            undefined,
+            undefined,
+            'product_consultation'
+          );
+          
+          if (newConversationId) {
+            await fetchConversations();
+            navigate(`/chat/${newConversationId}`, { replace: true });
+            setSelectedConversation(newConversationId);
+          }
+        } catch (error) {
+          console.error('Error creating conversation with seller:', error);
+          navigate('/chat', { replace: true });
+        } finally {
+          setIsCreatingChat(false);
+        }
+      };
+      
+      createChatWithSeller();
+    }
+  }, [searchParams, user]);
 
   // Sync URL param with state
   useEffect(() => {
@@ -60,6 +99,21 @@ const Chat = () => {
               </p>
             </CardContent>
           </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading when creating chat from seller param
+  if (isCreatingChat) {
+    return (
+      <div className="h-screen flex flex-col">
+        <EnhancedNavbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+            <p className="text-muted-foreground">Đang tạo cuộc trò chuyện...</p>
+          </div>
         </div>
       </div>
     );

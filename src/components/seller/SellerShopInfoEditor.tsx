@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Store, Loader2 } from "lucide-react";
+import { Camera, Store, Loader2, ImagePlus, X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ const SellerShopInfoEditor = () => {
   const { user, profile, refreshProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
   const profileData = profile as any;
   const [formData, setFormData] = useState({
     full_name: profileData?.full_name || "",
@@ -22,6 +23,7 @@ const SellerShopInfoEditor = () => {
     address: profileData?.address || "",
   });
   const [avatarUrl, setAvatarUrl] = useState(profileData?.avatar || "");
+  const [bannerUrl, setBannerUrl] = useState(profileData?.shop_banner || "");
 
   useEffect(() => {
     if (profile) {
@@ -33,8 +35,16 @@ const SellerShopInfoEditor = () => {
         address: profileData.address || "",
       });
       setAvatarUrl(profileData.avatar || "");
+      setBannerUrl(profileData.shop_banner || "");
     }
   }, [profile]);
+
+  const sanitizeFileName = (originalName: string): string => {
+    const ext = originalName.split('.').pop() || 'jpg';
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 8);
+    return `${timestamp}-${randomStr}.${ext}`;
+  };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -47,10 +57,9 @@ const SellerShopInfoEditor = () => {
 
     setIsUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      const fileName = `${user.id}/${sanitizeFileName(file.name)}`;
 
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('shop-avatars')
         .upload(fileName, file, { upsert: true });
 
@@ -61,13 +70,50 @@ const SellerShopInfoEditor = () => {
         .getPublicUrl(fileName);
 
       setAvatarUrl(publicUrl);
-      toast.success("Upload ảnh thành công!");
+      toast.success("Upload ảnh đại diện thành công!");
     } catch (error: any) {
       console.error('Error uploading avatar:', error);
       toast.error("Lỗi khi upload ảnh. Vui lòng thử lại.");
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File quá lớn. Vui lòng chọn file dưới 10MB.");
+      return;
+    }
+
+    setIsUploadingBanner(true);
+    try {
+      const fileName = `${user.id}/banner-${sanitizeFileName(file.name)}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('shop-avatars')
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('shop-avatars')
+        .getPublicUrl(fileName);
+
+      setBannerUrl(publicUrl);
+      toast.success("Upload banner thành công!");
+    } catch (error: any) {
+      console.error('Error uploading banner:', error);
+      toast.error("Lỗi khi upload banner. Vui lòng thử lại.");
+    } finally {
+      setIsUploadingBanner(false);
+    }
+  };
+
+  const handleRemoveBanner = () => {
+    setBannerUrl("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -84,6 +130,7 @@ const SellerShopInfoEditor = () => {
           phone: formData.phone,
           address: formData.address,
           avatar: avatarUrl,
+          shop_banner: bannerUrl,
         })
         .eq('id', user.id);
 
@@ -109,6 +156,76 @@ const SellerShopInfoEditor = () => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Shop Banner Upload */}
+          <div className="space-y-2">
+            <Label>Banner gian hàng</Label>
+            <div className="relative">
+              {bannerUrl ? (
+                <div className="relative w-full h-32 md:h-40 rounded-lg overflow-hidden bg-muted">
+                  <img 
+                    src={bannerUrl} 
+                    alt="Shop banner" 
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 h-8 w-8"
+                    onClick={handleRemoveBanner}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <Label 
+                    htmlFor="banner-upload" 
+                    className="absolute bottom-2 right-2 cursor-pointer"
+                  >
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-background/90 rounded-md text-sm hover:bg-background">
+                      {isUploadingBanner ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Camera className="h-4 w-4" />
+                      )}
+                      <span>{isUploadingBanner ? "Đang upload..." : "Thay đổi"}</span>
+                    </div>
+                  </Label>
+                </div>
+              ) : (
+                <Label 
+                  htmlFor="banner-upload" 
+                  className="cursor-pointer block"
+                >
+                  <div className="w-full h-32 md:h-40 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center hover:bg-muted/50 transition-colors">
+                    {isUploadingBanner ? (
+                      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    ) : (
+                      <>
+                        <ImagePlus className="h-8 w-8 text-muted-foreground mb-2" />
+                        <span className="text-sm text-muted-foreground">
+                          Thêm banner gian hàng
+                        </span>
+                        <span className="text-xs text-muted-foreground mt-1">
+                          Kích thước khuyến nghị: 1200x300px
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </Label>
+              )}
+              <Input
+                id="banner-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleBannerUpload}
+                disabled={isUploadingBanner}
+                className="hidden"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              JPG, PNG hoặc GIF. Tối đa 10MB. Banner sẽ hiển thị ở đầu trang gian hàng của bạn.
+            </p>
+          </div>
+
           {/* Avatar Upload */}
           <div className="flex items-center space-x-4">
             <Avatar className="h-24 w-24">
@@ -190,7 +307,7 @@ const SellerShopInfoEditor = () => {
             />
           </div>
 
-          <Button type="submit" disabled={isLoading || isUploading}>
+          <Button type="submit" disabled={isLoading || isUploading || isUploadingBanner}>
             {isLoading ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
