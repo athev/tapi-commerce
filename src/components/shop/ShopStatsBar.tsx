@@ -3,17 +3,14 @@ interface ShopStatsBarProps {
   rating?: number;
   responseRate?: number;
 }
-
-const ShopStatsBar = ({ 
-  productsCount, 
+const ShopStatsBar = ({
+  productsCount,
   rating = 5,
-  responseRate = 98 
+  responseRate = 98
 }: ShopStatsBarProps) => {
-  
-  return (
-    <div className="mx-3 my-2">
-      <div className="bg-card rounded-lg border shadow-sm">
-        <div className="grid grid-cols-3 divide-x divide-border">
+  return <div className="mx-3 my-2">
+      <div className="bg-card rounded-lg border shadow-sm px-0 py-0 my-0 mx-[6px]">
+        <div className="grid grid-cols-3 divide-x divide-border mx-[4px] px-[2px] py-0 my-0">
           <div className="flex flex-col items-center justify-center py-2">
             <span className="text-sm font-bold text-foreground">
               {productsCount}
@@ -42,8 +39,6 @@ const ShopStatsBar = ({
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default ShopStatsBar;
