@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Helmet } from 'react-helmet-async';
 import { supabase } from "@/integrations/supabase/client";
 import EnhancedNavbar from "@/components/layout/EnhancedNavbar";
@@ -13,6 +13,7 @@ import ShopFeaturedCarousel from "@/components/shop/ShopFeaturedCarousel";
 import ShopProfileTab from "@/components/shop/ShopProfileTab";
 import ShopProductGrid from "@/components/shop/ShopProductGrid";
 import ShopPromoBanner from "@/components/shop/ShopPromoBanner";
+import ShopProductFilterBar, { type SortOption } from "@/components/shop/ShopProductFilterBar";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,6 +25,7 @@ const ShopPage = () => {
   
   // UI State
   const [activeTab, setActiveTab] = useState<ShopTab>("home");
+  const [sortBy, setSortBy] = useState<SortOption>("popular");
 
   useEffect(() => {
     document.title = "Gian hàng | DigitalMarket";
@@ -72,6 +74,24 @@ const ShopPage = () => {
     fetchShopData();
   }, [slug, id, sellerId]);
 
+  // Sorted products for product tab
+  const sortedProducts = useMemo(() => {
+    const sorted = [...products];
+    switch (sortBy) {
+      case "newest":
+        return sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      case "bestselling":
+        return sorted.sort((a, b) => (b.purchases || 0) - (a.purchases || 0));
+      case "price_asc":
+        return sorted.sort((a, b) => a.price - b.price);
+      case "price_desc":
+        return sorted.sort((a, b) => b.price - a.price);
+      case "popular":
+      default:
+        return sorted.sort((a, b) => (b.quality_score || 0) - (a.quality_score || 0));
+    }
+  }, [products, sortBy]);
+
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-muted/30">
@@ -112,49 +132,64 @@ const ShopPage = () => {
       <EnhancedNavbar />
       
       <main className="flex-1 pb-20 md:pb-0">
-        {/* Shop Header */}
-        <ShopHeader seller={seller} />
-        
-        {/* Promo Banner */}
-        <ShopPromoBanner sellerId={seller.id} />
-        
-        {/* Stats Bar */}
-        <ShopStatsBar 
-          productsCount={products.length}
-          rating={seller.seller_rating}
-          responseRate={seller.response_rate}
-        />
-        
-        {/* Tabs Navigation */}
-        <ShopTabsNavigation 
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
-        
-        {/* Tab Content */}
-        {activeTab === "home" && (
-          <>
-            <ShopVouchersSection sellerId={seller.id} />
-            <ShopFeaturedCarousel products={products} title="Bán chạy nhất" />
-            <ShopFeaturedCarousel 
-              products={[...products].sort((a, b) => 
-                new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-              )} 
-              title="Mới nhất" 
-            />
-          </>
-        )}
-        
-        {activeTab === "products" && (
-          <ShopProductGrid 
-            products={products}
-            viewMode="grid-2"
+        {/* Container for desktop */}
+        <div className="max-w-6xl mx-auto">
+          {/* Shop Header */}
+          <ShopHeader seller={seller} />
+          
+          {/* Stats Bar - Compact */}
+          <ShopStatsBar 
+            productsCount={products.length}
+            rating={seller.seller_rating}
+            responseRate={seller.response_rate}
           />
-        )}
-        
-        {activeTab === "profile" && (
-          <ShopProfileTab seller={seller} />
-        )}
+          
+          {/* Tabs Navigation */}
+          <ShopTabsNavigation 
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+          
+          {/* Tab Content */}
+          {activeTab === "home" && (
+            <>
+              {/* Promo Banner */}
+              <ShopPromoBanner sellerId={seller.id} />
+              
+              {/* Vouchers - 2 column scroll */}
+              <ShopVouchersSection sellerId={seller.id} />
+              
+              {/* Featured Products */}
+              <ShopFeaturedCarousel products={products} title="Bán chạy nhất" />
+              <ShopFeaturedCarousel 
+                products={[...products].sort((a, b) => 
+                  new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                )} 
+                title="Mới nhất" 
+              />
+            </>
+          )}
+          
+          {activeTab === "products" && (
+            <>
+              {/* Filter Bar */}
+              <ShopProductFilterBar 
+                sortBy={sortBy}
+                onSortChange={setSortBy}
+              />
+              
+              {/* Products Grid */}
+              <ShopProductGrid 
+                products={sortedProducts}
+                viewMode="grid-2"
+              />
+            </>
+          )}
+          
+          {activeTab === "profile" && (
+            <ShopProfileTab seller={seller} />
+          )}
+        </div>
       </main>
 
       <MobileBottomNav />
