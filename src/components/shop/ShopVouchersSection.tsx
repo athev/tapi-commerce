@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Ticket, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 
 interface Voucher {
@@ -55,86 +54,60 @@ const ShopVouchersSection = ({ sellerId }: ShopVouchersSectionProps) => {
     return `${(voucher.discount_value / 1000).toFixed(0)}k`;
   };
 
-  const getRemainingCount = (voucher: Voucher) => {
-    if (!voucher.usage_limit) return null;
-    return voucher.usage_limit - (voucher.used_count || 0);
-  };
-
   if (isLoading || vouchers.length === 0) return null;
 
-  // Split vouchers into rows of 2 for horizontal scroll
-  const voucherPairs: Voucher[][] = [];
-  for (let i = 0; i < vouchers.length; i += 2) {
-    voucherPairs.push(vouchers.slice(i, i + 2));
-  }
-
   return (
-    <div className="bg-card border-b">
+    <div className="bg-card">
       <div className="px-4 py-3">
         {/* Header */}
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Ticket className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">MÃ GIẢM GIÁ CỦA SHOP</span>
+            <span className="text-xs font-medium text-foreground">MÃ GIẢM GIÁ CỦA SHOP</span>
           </div>
           <button className="flex items-center text-xs text-primary">
             Xem tất cả <ChevronRight className="h-3 w-3" />
           </button>
         </div>
 
-        {/* 2-Column Horizontal Scroll */}
-        <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
-          {voucherPairs.map((pair, pairIndex) => (
-            <div key={pairIndex} className="flex flex-col gap-2 flex-shrink-0">
-              {pair.map((voucher) => {
-                const remaining = getRemainingCount(voucher);
+        {/* Single Row Horizontal Scroll */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
+          {vouchers.map((voucher) => (
+            <div 
+              key={voucher.id}
+              className="flex-shrink-0 w-[160px] bg-gradient-to-r from-primary/5 to-transparent border border-primary/20 rounded-lg overflow-hidden flex"
+            >
+              {/* Left - Discount */}
+              <div className="w-[50px] bg-primary/10 flex flex-col items-center justify-center py-2 border-r border-dashed border-primary/30">
+                <span className="text-base font-bold text-primary leading-none">
+                  {formatDiscount(voucher)}
+                </span>
+                <span className="text-[8px] text-primary/80 mt-0.5">GIẢM</span>
+              </div>
+              
+              {/* Right - Info */}
+              <div className="flex-1 p-1.5 flex flex-col justify-between min-w-0">
+                <div className="text-[9px] text-muted-foreground line-clamp-2 leading-tight">
+                  {voucher.min_purchase_amount 
+                    ? `Đơn tối thiểu ${(voucher.min_purchase_amount / 1000).toFixed(0)}k`
+                    : "Không giới hạn"
+                  }
+                </div>
                 
-                return (
-                  <div 
-                    key={voucher.id}
-                    className="w-[200px] bg-gradient-to-r from-primary/5 to-transparent border border-primary/20 rounded-lg overflow-hidden flex"
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[8px] px-1 py-0.5 bg-primary/10 text-primary rounded">
+                    Mã shop
+                  </span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-4 px-1.5 text-[9px] text-primary hover:text-primary hover:bg-primary/10"
+                    onClick={() => handleSaveVoucher(voucher.code)}
                   >
-                    {/* Left - Discount */}
-                    <div className="w-[70px] bg-primary/10 flex flex-col items-center justify-center p-2 border-r border-dashed border-primary/30">
-                      <span className="text-xl font-bold text-primary leading-none">
-                        {formatDiscount(voucher)}
-                      </span>
-                      <span className="text-[10px] text-primary/80 mt-0.5">GIẢM</span>
-                    </div>
-                    
-                    {/* Right - Info */}
-                    <div className="flex-1 p-2 flex flex-col justify-between">
-                      <div>
-                        <div className="text-[10px] text-muted-foreground line-clamp-1">
-                          {voucher.min_purchase_amount 
-                            ? `Đơn tối thiểu ${(voucher.min_purchase_amount / 1000).toFixed(0)}k`
-                            : "Không giới hạn đơn"
-                          }
-                        </div>
-                        {voucher.valid_until && (
-                          <div className="text-[9px] text-muted-foreground/70 mt-0.5">
-                            HSD: {format(new Date(voucher.valid_until), 'dd/MM')}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center justify-between mt-1.5">
-                        <span className="text-[9px] px-1.5 py-0.5 bg-primary/10 text-primary rounded">
-                          Mã shop
-                        </span>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-5 px-2 text-[10px] text-primary hover:text-primary hover:bg-primary/10"
-                          onClick={() => handleSaveVoucher(voucher.code)}
-                        >
-                          Lưu
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                    Lưu
+                  </Button>
+                </div>
+              </div>
             </div>
           ))}
         </div>
