@@ -13,8 +13,8 @@ const ShopStatsBar = ({
   return (
     <div className="bg-card border-b">
       <div className="grid grid-cols-3 divide-x divide-border">
-        <div className="flex flex-col items-center justify-center py-3">
-          <span className="text-lg font-bold text-foreground">
+        <div className="flex flex-col items-center justify-center py-2">
+          <span className="text-base font-bold text-foreground">
             {productsCount}
           </span>
           <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
@@ -22,8 +22,8 @@ const ShopStatsBar = ({
           </span>
         </div>
         
-        <div className="flex flex-col items-center justify-center py-3">
-          <span className="text-lg font-bold text-foreground">
+        <div className="flex flex-col items-center justify-center py-2">
+          <span className="text-base font-bold text-foreground">
             {rating.toFixed(1)}/5.0
           </span>
           <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
@@ -31,8 +31,8 @@ const ShopStatsBar = ({
           </span>
         </div>
         
-        <div className="flex flex-col items-center justify-center py-3">
-          <span className="text-lg font-bold text-foreground">
+        <div className="flex flex-col items-center justify-center py-2">
+          <span className="text-base font-bold text-foreground">
             {responseRate}%
           </span>
           <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
