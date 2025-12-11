@@ -131,13 +131,15 @@ const ShopPage = () => {
       
       <EnhancedNavbar />
       
-      <main className="flex-1 pb-20 md:pb-0">
+      <main className="flex-1 pb-20 md:pb-0 bg-muted/50">
         {/* Container for desktop */}
         <div className="max-w-6xl mx-auto">
           {/* Shop Header */}
-          <ShopHeader seller={seller} />
+          <div className="bg-card">
+            <ShopHeader seller={seller} />
+          </div>
           
-          {/* Stats Bar - Compact */}
+          {/* Stats Bar - Compact with separation */}
           <ShopStatsBar 
             productsCount={products.length}
             rating={seller.seller_rating}
@@ -145,50 +147,66 @@ const ShopPage = () => {
           />
           
           {/* Tabs Navigation */}
-          <ShopTabsNavigation 
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-          />
+          <div className="bg-card">
+            <ShopTabsNavigation 
+              activeTab={activeTab}
+              onTabChange={setActiveTab}
+            />
+          </div>
           
-          {/* Tab Content */}
-          {activeTab === "home" && (
-            <>
-              {/* Promo Banner */}
-              <ShopPromoBanner sellerId={seller.id} />
-              
-              {/* Vouchers - 2 column scroll */}
-              <ShopVouchersSection sellerId={seller.id} />
-              
-              {/* Featured Products */}
-              <ShopFeaturedCarousel products={products} title="Bán chạy nhất" />
-              <ShopFeaturedCarousel 
-                products={[...products].sort((a, b) => 
-                  new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-                )} 
-                title="Mới nhất" 
-              />
-            </>
-          )}
-          
-          {activeTab === "products" && (
-            <>
-              {/* Filter Bar */}
-              <ShopProductFilterBar 
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-              />
-              
-              {/* Products Grid */}
-              <ShopProductGrid 
-                products={sortedProducts}
-                viewMode="grid-2"
-              />
-            </>
-          )}
-          
-          {activeTab === "profile" && (
-            <ShopProfileTab seller={seller} />
-          )}
+          {/* Tab Content with spacing */}
+          <div className="space-y-2 mt-2">
+            {activeTab === "home" && (
+              <>
+                {/* Promo Banner */}
+                <div className="bg-card">
+                  <ShopPromoBanner sellerId={seller.id} />
+                </div>
+                
+                {/* Vouchers - 1 row scroll */}
+                <ShopVouchersSection sellerId={seller.id} />
+                
+                {/* Featured Products */}
+                <div className="bg-card">
+                  <ShopFeaturedCarousel products={products} title="Bán chạy nhất" />
+                </div>
+                <div className="bg-card">
+                  <ShopFeaturedCarousel 
+                    products={[...products].sort((a, b) => 
+                      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                    )} 
+                    title="Mới nhất" 
+                  />
+                </div>
+              </>
+            )}
+            
+            {activeTab === "products" && (
+              <>
+                {/* Filter Bar */}
+                <div className="bg-card">
+                  <ShopProductFilterBar 
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                  />
+                </div>
+                
+                {/* Products Grid */}
+                <div className="bg-card">
+                  <ShopProductGrid 
+                    products={sortedProducts}
+                    viewMode="grid-2"
+                  />
+                </div>
+              </>
+            )}
+            
+            {activeTab === "profile" && (
+              <div className="bg-card">
+                <ShopProfileTab seller={seller} />
+              </div>
+            )}
+          </div>
         </div>
       </main>
 
