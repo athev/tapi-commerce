@@ -5,6 +5,7 @@ export type ShopTab = "home" | "products" | "profile";
 interface ShopTabsNavigationProps {
   activeTab: ShopTab;
   onTabChange: (tab: ShopTab) => void;
+  className?: string;
 }
 
 const ShopTabsNavigation = ({ 

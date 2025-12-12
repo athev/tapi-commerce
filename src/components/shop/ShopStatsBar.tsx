@@ -2,6 +2,7 @@ interface ShopStatsBarProps {
   productsCount: number;
   rating?: number;
   responseRate?: number;
+  className?: string;
 }
 const ShopStatsBar = ({
   productsCount,

@@ -3,74 +3,90 @@ import EnhancedNavbar from "@/components/layout/EnhancedNavbar";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import Footer from "@/components/layout/Footer";
 import HeroSearchSection from "@/components/home/HeroSearchSection";
+import HomeVouchersSection from "@/components/home/HomeVouchersSection";
+import TrustBanner from "@/components/home/TrustBanner";
+import FeaturedBanner from "@/components/home/FeaturedBanner";
 import CategoryScroller from "@/components/home/CategoryScroller";
-import FlashSaleSection from "@/components/home/FlashSaleSection";
+import TopDealSection from "@/components/home/TopDealSection";
 import ProductGrid from "@/components/products/ProductGrid";
-import SellerCTA from "@/components/home/SellerCTA";
 import ProductToolbar, { SortOption, ViewMode } from "@/components/products/ProductToolbar";
 import FilterPanel, { FilterState } from "@/components/products/FilterPanel";
-import { QuickHelpSection } from "@/components/home/QuickHelpSection";
+
 const Index = () => {
   const [sortBy, setSortBy] = useState<SortOption>("recommended");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [filters, setFilters] = useState<FilterState | null>(null);
-  return <div className="flex flex-col min-h-screen bg-background pb-16 lg:pb-0">
+
+  return (
+    <div className="flex flex-col min-h-screen bg-muted/30 pb-16 lg:pb-0">
       <EnhancedNavbar />
       
       <main className="flex-1">
+        {/* Hero Search */}
         <HeroSearchSection />
-        <div className="h-4 md:h-6" />
 
+        {/* Vouchers Section */}
+        <HomeVouchersSection />
+
+        {/* Trust Banner */}
+        <TrustBanner />
+
+        {/* Featured Banner - Best Seller */}
+        <FeaturedBanner />
+
+        {/* Categories */}
         <CategoryScroller />
-        <div className="h-4 md:h-6" />
 
-        {/* Flash Sale Section */}
-        <section className="mb-4 md:mb-6">
-          <div className="container mx-auto px-2 md:px-4">
-            <FlashSaleSection />
-          </div>
-        </section>
+        {/* Top Deal Section */}
+        <TopDealSection />
         
-        {/* Product Grid */}
-        <section className="bg-neutral-50 py-4 md:py-6 lg:py-8">
-          <div className="container mx-auto px-2 md:px-4">
+        {/* Product Grid Section */}
+        <section className="py-4 md:py-6">
+          <div className="container mx-auto px-4">
             <div className="flex gap-6">
               {/* Desktop Filter Sidebar */}
               <aside className="hidden lg:block w-64 flex-shrink-0">
                 <div className="sticky top-24 bg-card border border-border rounded-lg p-4">
-                  <h3 className="font-bold text-lg mb-4">Bộ lọc</h3>
+                  <h3 className="font-bold text-base mb-4">Bộ lọc</h3>
                   <FilterPanel onFilterChange={setFilters} />
                 </div>
               </aside>
 
               {/* Main Content */}
               <div className="flex-1 min-w-0">
-                <div className="mb-3 md:mb-6">
-                  <h2 className="text-xl md:text-2xl lg:text-3xl font-bold">
-                    Sản Phẩm Nổi Bật
-                  </h2>
-                  <p className="text-xs md:text-sm text-muted-foreground mt-0.5 md:mt-1">
-                    Khám phá sản phẩm số chất lượng từ người bán uy tín
-                  </p>
+                <div className="bg-card rounded-lg border border-border p-4 mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <h2 className="text-lg md:text-xl font-bold text-foreground">
+                        Sản Phẩm Nổi Bật
+                      </h2>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Khám phá sản phẩm số chất lượng từ người bán uy tín
+                      </p>
+                    </div>
+                  </div>
+
+                  <ProductToolbar
+                    sortBy={sortBy}
+                    onSortChange={setSortBy}
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
+                    onFilterChange={setFilters}
+                    totalProducts={0}
+                  />
                 </div>
 
-                <ProductToolbar sortBy={sortBy} onSortChange={setSortBy} viewMode={viewMode} onViewModeChange={setViewMode} onFilterChange={setFilters} totalProducts={0} />
-
-                <div className="mt-3 md:mt-6">
-                  <ProductGrid sortBy={sortBy} filters={filters} />
-                </div>
+                <ProductGrid sortBy={sortBy} filters={filters} />
               </div>
             </div>
           </div>
         </section>
-        
-        <QuickHelpSection />
-        
-        <SellerCTA />
       </main>
       
       <Footer />
       <MobileBottomNav />
-    </div>;
+    </div>
+  );
 };
+
 export default Index;
