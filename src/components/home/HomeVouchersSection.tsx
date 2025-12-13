@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Ticket, ChevronRight } from "lucide-react";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -25,7 +24,7 @@ const HomeVouchersSection = () => {
         .eq('is_active', true)
         .or('valid_until.is.null,valid_until.gte.' + new Date().toISOString())
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(4);
 
       if (error) throw error;
       return data as Voucher[];
@@ -62,57 +61,54 @@ const HomeVouchersSection = () => {
           </button>
         </div>
 
-        <ScrollArea className="w-full">
-          <div className="flex gap-3 pb-2">
-            {vouchers.map((voucher) => (
-              <div
-                key={voucher.id}
-                className="flex-shrink-0 w-[200px] bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg overflow-hidden"
-              >
-                <div className="flex h-full">
-                  {/* Left: Discount */}
-                  <div className="w-20 bg-primary/10 flex flex-col items-center justify-center p-2 border-r border-dashed border-primary/30">
-                    <span className="text-xl font-bold text-primary">
-                      {formatDiscount(voucher)}
-                    </span>
-                    <span className="text-[10px] text-primary/70 uppercase font-medium">
-                      GIẢM
-                    </span>
-                  </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {vouchers.map((voucher) => (
+            <div
+              key={voucher.id}
+              className="bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg overflow-hidden"
+            >
+              <div className="flex h-full">
+                {/* Left: Discount */}
+                <div className="w-16 md:w-20 bg-primary/10 flex flex-col items-center justify-center p-2 border-r border-dashed border-primary/30">
+                  <span className="text-lg md:text-xl font-bold text-primary">
+                    {formatDiscount(voucher)}
+                  </span>
+                  <span className="text-[9px] md:text-[10px] text-primary/70 uppercase font-medium">
+                    GIẢM
+                  </span>
+                </div>
 
-                  {/* Right: Info */}
-                  <div className="flex-1 p-2 flex flex-col justify-between">
-                    <div>
-                      <p className="text-xs font-medium text-foreground line-clamp-1">
-                        {voucher.discount_type === 'percentage' 
-                          ? `Giảm ${voucher.discount_value}%`
-                          : `Giảm ${(voucher.discount_value / 1000).toFixed(0)}K`
-                        }
+                {/* Right: Info */}
+                <div className="flex-1 p-2 flex flex-col justify-between min-w-0">
+                  <div>
+                    <p className="text-xs font-medium text-foreground line-clamp-1">
+                      {voucher.discount_type === 'percentage' 
+                        ? `Giảm ${voucher.discount_value}%`
+                        : `Giảm ${(voucher.discount_value / 1000).toFixed(0)}K`
+                      }
+                    </p>
+                    {voucher.min_purchase_amount && (
+                      <p className="text-[10px] text-muted-foreground">
+                        Đơn từ {(voucher.min_purchase_amount / 1000).toFixed(0)}K
                       </p>
-                      {voucher.min_purchase_amount && (
-                        <p className="text-[10px] text-muted-foreground">
-                          Đơn từ {(voucher.min_purchase_amount / 1000).toFixed(0)}K
-                        </p>
-                      )}
-                      {voucher.valid_until && (
-                        <p className="text-[9px] text-muted-foreground mt-0.5">
-                          HSD: {format(new Date(voucher.valid_until), 'dd/MM')}
-                        </p>
-                      )}
-                    </div>
-                    <button
-                      onClick={() => handleSaveVoucher(voucher.code)}
-                      className="mt-1.5 w-full text-[10px] font-semibold text-primary border border-primary rounded px-2 py-1 hover:bg-primary hover:text-primary-foreground transition-colors"
-                    >
-                      Lưu
-                    </button>
+                    )}
+                    {voucher.valid_until && (
+                      <p className="text-[9px] text-muted-foreground mt-0.5">
+                        HSD: {format(new Date(voucher.valid_until), 'dd/MM')}
+                      </p>
+                    )}
                   </div>
+                  <button
+                    onClick={() => handleSaveVoucher(voucher.code)}
+                    className="mt-1.5 w-full text-[10px] font-semibold text-primary border border-primary rounded px-2 py-1 hover:bg-primary hover:text-primary-foreground transition-colors"
+                  >
+                    Lưu
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-          <ScrollBar orientation="horizontal" />
-        </ScrollArea>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
