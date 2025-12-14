@@ -24,7 +24,7 @@ const HomeVouchersSection = () => {
         .eq('is_active', true)
         .or('valid_until.is.null,valid_until.gte.' + new Date().toISOString())
         .order('created_at', { ascending: false })
-        .limit(4);
+        .limit(8);
 
       if (error) throw error;
       return data as Voucher[];
@@ -61,11 +61,11 @@ const HomeVouchersSection = () => {
           </button>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
           {vouchers.map((voucher) => (
             <div
               key={voucher.id}
-              className="bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg overflow-hidden"
+              className="flex-shrink-0 w-[calc(50%-6px)] md:w-[calc(25%-9px)] bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg overflow-hidden"
             >
               <div className="flex h-full">
                 {/* Left: Discount */}
