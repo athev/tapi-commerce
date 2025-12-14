@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Ticket, ChevronRight } from "lucide-react";
+import { Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -50,60 +50,61 @@ const HomeVouchersSection = () => {
   return (
     <section className="bg-card py-4">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Ticket className="h-5 w-5 text-primary" />
-            <h2 className="text-base font-bold text-foreground">Mã Giảm Giá Hôm Nay</h2>
-          </div>
-          <button className="text-xs text-primary hover:text-primary/80 flex items-center gap-0.5 font-medium">
-            Xem tất cả
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
+        <div className="flex items-center gap-2 mb-4">
+          <Ticket className="h-5 w-5 text-primary" />
+          <h2 className="text-base font-bold text-foreground">Mã Giảm Giá Hôm Nay</h2>
         </div>
 
-        <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
+        <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
           {vouchers.map((voucher) => (
             <div
               key={voucher.id}
-              className="flex-shrink-0 w-[160px] md:w-[180px] bg-card border border-border rounded-lg overflow-hidden"
+              className="flex-shrink-0 w-[240px] md:w-[260px] bg-card border border-border rounded-lg overflow-hidden"
             >
               <div className="flex h-full">
                 {/* Left: Discount */}
-                <div className="w-[60px] md:w-[65px] bg-muted flex flex-col items-center justify-center py-3 border-r border-border">
-                  <span className="text-lg md:text-xl font-bold text-foreground">
+                <div className="w-[70px] bg-muted/50 flex flex-col items-center justify-center py-4 border-r border-border">
+                  <span className="text-xl font-bold text-foreground">
                     {formatDiscount(voucher)}
                   </span>
-                  <span className="text-[9px] text-muted-foreground uppercase font-medium">
+                  <span className="text-[10px] text-muted-foreground uppercase font-medium">
                     GIẢM
                   </span>
                 </div>
 
                 {/* Right: Info */}
-                <div className="flex-1 p-2 flex flex-col justify-between min-w-0">
-                  <div>
-                    <p className="text-[11px] font-medium text-foreground line-clamp-1">
+                <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-semibold text-foreground line-clamp-1">
                       {voucher.discount_type === 'percentage' 
                         ? `Giảm ${voucher.discount_value}%`
                         : `Giảm ${(voucher.discount_value / 1000).toFixed(0)}K`
                       }
                     </p>
-                    {voucher.min_purchase_amount && (
-                      <p className="text-[10px] text-muted-foreground">
-                        Đơn từ {(voucher.min_purchase_amount / 1000).toFixed(0)}K
+                    {voucher.min_purchase_amount ? (
+                      <p className="text-xs text-muted-foreground line-clamp-1">
+                        Cho đơn hàng từ {(voucher.min_purchase_amount / 1000).toFixed(0)}K
                       </p>
-                    )}
-                    {voucher.valid_until && (
-                      <p className="text-[9px] text-muted-foreground mt-0.5">
-                        HSD: {format(new Date(voucher.valid_until), 'dd/MM')}
+                    ) : (
+                      <p className="text-xs text-muted-foreground line-clamp-1">
+                        Áp dụng cho mọi đơn hàng
                       </p>
                     )}
                   </div>
-                  <button
-                    onClick={() => handleSaveVoucher(voucher.code)}
-                    className="mt-1.5 w-full text-[10px] font-semibold bg-primary text-primary-foreground rounded px-2 py-1 hover:bg-primary/90 transition-colors"
-                  >
-                    Lưu
-                  </button>
+                  <div className="flex items-center justify-between mt-2">
+                    <p className="text-[11px] text-muted-foreground">
+                      {voucher.valid_until 
+                        ? `HSD: ${format(new Date(voucher.valid_until), 'dd/MM')}`
+                        : 'Không giới hạn'
+                      }
+                    </p>
+                    <button
+                      onClick={() => handleSaveVoucher(voucher.code)}
+                      className="text-xs font-semibold bg-primary text-primary-foreground rounded px-4 py-1.5 hover:bg-primary/90 transition-colors"
+                    >
+                      Lưu
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
