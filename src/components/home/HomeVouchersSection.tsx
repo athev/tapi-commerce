@@ -61,19 +61,19 @@ const HomeVouchersSection = () => {
           </button>
         </div>
 
-        <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
+        <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-4 px-4 pb-1">
           {vouchers.map((voucher) => (
             <div
               key={voucher.id}
-              className="flex-shrink-0 w-[calc(50%-6px)] md:w-[calc(25%-9px)] bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg overflow-hidden"
+              className="flex-shrink-0 w-[160px] md:w-[180px] bg-card border border-border rounded-lg overflow-hidden"
             >
               <div className="flex h-full">
                 {/* Left: Discount */}
-                <div className="w-16 md:w-20 bg-primary/10 flex flex-col items-center justify-center p-2 border-r border-dashed border-primary/30">
-                  <span className="text-lg md:text-xl font-bold text-primary">
+                <div className="w-[60px] md:w-[65px] bg-muted flex flex-col items-center justify-center py-3 border-r border-border">
+                  <span className="text-lg md:text-xl font-bold text-foreground">
                     {formatDiscount(voucher)}
                   </span>
-                  <span className="text-[9px] md:text-[10px] text-primary/70 uppercase font-medium">
+                  <span className="text-[9px] text-muted-foreground uppercase font-medium">
                     GIẢM
                   </span>
                 </div>
@@ -81,7 +81,7 @@ const HomeVouchersSection = () => {
                 {/* Right: Info */}
                 <div className="flex-1 p-2 flex flex-col justify-between min-w-0">
                   <div>
-                    <p className="text-xs font-medium text-foreground line-clamp-1">
+                    <p className="text-[11px] font-medium text-foreground line-clamp-1">
                       {voucher.discount_type === 'percentage' 
                         ? `Giảm ${voucher.discount_value}%`
                         : `Giảm ${(voucher.discount_value / 1000).toFixed(0)}K`
@@ -100,7 +100,7 @@ const HomeVouchersSection = () => {
                   </div>
                   <button
                     onClick={() => handleSaveVoucher(voucher.code)}
-                    className="mt-1.5 w-full text-[10px] font-semibold text-primary border border-primary rounded px-2 py-1 hover:bg-primary hover:text-primary-foreground transition-colors"
+                    className="mt-1.5 w-full text-[10px] font-semibold bg-primary text-primary-foreground rounded px-2 py-1 hover:bg-primary/90 transition-colors"
                   >
                     Lưu
                   </button>
