@@ -2,13 +2,10 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { X, Check, BookOpen, Code, Smartphone, Video, Palette, FileText, ShoppingBag, Music, Gamepad2 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { X, Check, Monitor, User, Gamepad2, GraduationCap, FileText, BookOpen, Music, Briefcase } from "lucide-react";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import EnhancedProductCard from "@/components/products/EnhancedProductCard";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Category {
   id: string;
@@ -23,19 +20,36 @@ interface Subcategory {
   icon_url?: string;
 }
 
-// Icon mapping for categories
+interface Product {
+  id: string;
+  title: string;
+  price: number;
+  image: string | null;
+  category: string;
+  seller_name: string;
+  seller_id: string;
+  average_rating: number | null;
+  review_count: number | null;
+  purchases: number | null;
+  warranty_period: string | null;
+  in_stock: number | null;
+}
+
+// Icon mapping for categories - matching reference design
 const categoryIcons: Record<string, any> = {
-  "Ebook": BookOpen,
-  "E-Book": BookOpen,
-  "Khóa học": Video,
-  "Phần mềm": Code,
-  "Template": Palette,
-  "Biểu mẫu": FileText,
-  "Tài khoản AI": Smartphone,
+  "Phần mềm": Monitor,
+  "Tài khoản": User,
+  "Tài khoản AI": User,
+  "Game & Key": Gamepad2,
   "Giải trí": Gamepad2,
-  "Học tập": BookOpen,
-  "Dịch vụ": ShoppingBag,
+  "Khóa học": GraduationCap,
+  "Học tập": GraduationCap,
+  "Biểu mẫu": FileText,
+  "Template": FileText,
+  "E-Book": BookOpen,
+  "Ebook": BookOpen,
   "Âm nhạc": Music,
+  "Dịch vụ": Briefcase,
 };
 
 interface CategoryModalProps {
@@ -63,7 +77,7 @@ const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
   });
 
   // Fetch subcategories for selected category
-  const { data: subcategories = [] } = useQuery({
+  const { data: subcategories = [], isLoading: loadingSubcategories } = useQuery({
     queryKey: ['subcategories', selectedCategory?.id],
     queryFn: async () => {
       if (!selectedCategory?.id) return [];
@@ -79,6 +93,26 @@ const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
       return data || [];
     },
     enabled: !!selectedCategory?.id,
+  });
+
+  // Fetch products when no subcategories
+  const { data: products = [], isLoading: loadingProducts } = useQuery({
+    queryKey: ['category-products', selectedCategory?.name, subcategories.length],
+    queryFn: async () => {
+      if (!selectedCategory?.name || subcategories.length > 0) return [];
+      
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, title, price, image, category, seller_name, seller_id, average_rating, review_count, purchases, warranty_period, in_stock')
+        .eq('category', selectedCategory.name)
+        .eq('status', 'active')
+        .order('quality_score', { ascending: false })
+        .limit(12);
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!selectedCategory?.name && subcategories.length === 0 && !loadingSubcategories,
   });
 
   // Auto-select first category when modal opens
@@ -111,18 +145,27 @@ const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
     }
   };
 
+  const handleProductClick = (productId: string) => {
+    navigate(`/product/${productId}`);
+    onClose();
+  };
+
+  const isLoading = loadingSubcategories || (subcategories.length === 0 && loadingProducts);
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-2xl p-0 gap-0 overflow-hidden">
+    <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <SheetContent side="bottom" className="h-[85vh] p-0 rounded-t-2xl">
         {/* Header */}
-        <DialogHeader className="p-4 pb-0 border-b-0">
-          <DialogTitle className="text-lg font-bold text-foreground">
-            Danh Mục Sản Phẩm
-          </DialogTitle>
-        </DialogHeader>
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <div />
+          <h2 className="text-lg font-bold text-foreground">Danh Mục Sản Phẩm</h2>
+          <button onClick={onClose} className="p-1 rounded-full hover:bg-muted">
+            <X className="h-5 w-5 text-muted-foreground" />
+          </button>
+        </div>
 
         {/* Yellow Banner */}
-        <div className="bg-amber-50 border-y border-amber-200 py-2.5 px-4 flex items-center gap-2">
+        <div className="bg-amber-50 py-2 px-4 flex items-center justify-center gap-2">
           <Check className="h-4 w-4 text-amber-600" />
           <span className="text-sm text-amber-700 font-medium">
             30 ngày đổi ý & miễn phí trả hàng
@@ -130,87 +173,133 @@ const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
         </div>
 
         {/* Content - 2 Columns */}
-        <div className="flex min-h-[350px]">
+        <div className="flex h-[calc(85vh-100px)] overflow-hidden">
           {/* Left Sidebar - Categories */}
-          <div className="w-[140px] md:w-[160px] border-r border-border bg-muted/30 flex-shrink-0">
+          <div className="w-20 md:w-24 border-r border-border bg-muted/30 flex-shrink-0 overflow-y-auto">
             {categories.map((category) => {
-              const IconComponent = categoryIcons[category.name] || BookOpen;
+              const IconComponent = categoryIcons[category.name] || Monitor;
               const isActive = selectedCategory?.id === category.id;
               
               return (
                 <button
                   key={category.id}
                   onClick={() => handleCategoryClick(category)}
-                  className={`w-full flex items-center gap-2.5 px-3 py-3 text-left transition-all ${
+                  className={`w-full flex flex-col items-center gap-1.5 px-2 py-3 text-center transition-all border-l-2 ${
                     isActive 
-                      ? 'bg-background border-l-2 border-primary text-primary font-medium' 
-                      : 'text-foreground hover:bg-background/50'
+                      ? 'bg-background border-primary text-primary' 
+                      : 'border-transparent text-muted-foreground hover:bg-background/50'
                   }`}
                 >
-                  <IconComponent className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
-                  <span className="text-sm truncate">{category.name}</span>
+                  <IconComponent className={`h-6 w-6 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                  <span className="text-xs font-medium leading-tight">{category.name}</span>
                 </button>
               );
             })}
           </div>
 
-          {/* Right Content - Subcategories */}
-          <div className="flex-1 p-4 overflow-y-auto">
+          {/* Right Content - Subcategories or Products */}
+          <div className="flex-1 overflow-y-auto">
             {selectedCategory && (
               <>
                 {/* Breadcrumb */}
-                <div className="text-sm text-muted-foreground mb-4 flex items-center gap-1">
+                <div className="sticky top-0 bg-background z-10 text-sm text-muted-foreground p-3 border-b border-border flex items-center gap-1">
                   <button 
                     onClick={handleViewAllCategory}
-                    className="text-primary hover:underline"
+                    className="font-semibold text-foreground hover:text-primary"
                   >
                     {selectedCategory.name}
                   </button>
-                  <span>&gt;</span>
+                  <span className="text-muted-foreground">&gt;</span>
                   <span>Tất cả</span>
                 </div>
 
-                {/* Subcategories Grid */}
-                <div className="grid grid-cols-3 gap-3">
-                  {subcategories.map((subcategory) => (
-                    <button
-                      key={subcategory.id}
-                      onClick={() => handleSubcategoryClick(subcategory)}
-                      className="flex flex-col items-center gap-2 p-3 rounded-lg border border-border bg-background hover:border-primary hover:bg-primary/5 transition-all group"
-                    >
-                      {/* Subcategory Icon - placeholder square */}
-                      <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center">
-                        {subcategory.icon_url ? (
-                          <img 
-                            src={subcategory.icon_url} 
-                            alt={subcategory.name}
-                            className="w-8 h-8 object-contain"
-                          />
-                        ) : (
-                          <span className="text-lg font-bold text-muted-foreground">
-                            {subcategory.name.charAt(0)}
-                          </span>
-                        )}
+                {/* Loading State */}
+                {isLoading && (
+                  <div className="p-3 grid grid-cols-3 gap-3">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="flex flex-col items-center gap-2 p-3">
+                        <Skeleton className="w-14 h-14 rounded-lg" />
+                        <Skeleton className="w-16 h-3" />
                       </div>
-                      <span className="text-xs text-center text-foreground group-hover:text-primary font-medium">
-                        {subcategory.name}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
 
-                {/* Empty state */}
-                {subcategories.length === 0 && (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p className="text-sm">Chưa có danh mục con</p>
+                {/* Subcategories Grid */}
+                {!isLoading && subcategories.length > 0 && (
+                  <div className="p-3 grid grid-cols-3 gap-3">
+                    {subcategories.map((subcategory) => (
+                      <button
+                        key={subcategory.id}
+                        onClick={() => handleSubcategoryClick(subcategory)}
+                        className="flex flex-col items-center gap-2 p-3 rounded-lg hover:bg-muted/50 transition-all group"
+                      >
+                        {/* Subcategory Icon */}
+                        <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
+                          {subcategory.icon_url ? (
+                            <img 
+                              src={subcategory.icon_url} 
+                              alt={subcategory.name}
+                              className="w-10 h-10 object-contain"
+                            />
+                          ) : (
+                            <span className="text-xl font-bold text-primary">
+                              {subcategory.name.charAt(0)}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-xs text-center text-foreground font-medium line-clamp-2">
+                          {subcategory.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Products Grid when no subcategories */}
+                {!isLoading && subcategories.length === 0 && products.length > 0 && (
+                  <div className="p-3 grid grid-cols-2 gap-2">
+                    {products.map((product) => (
+                      <div key={product.id} onClick={() => handleProductClick(product.id)}>
+                        <EnhancedProductCard
+                          id={product.id}
+                          title={product.title}
+                          price={{ min: product.price, max: product.price }}
+                          image={product.image || '/placeholder.svg'}
+                          category={product.category}
+                          rating={product.average_rating || 0}
+                          reviews={product.review_count || 0}
+                          seller={{ name: product.seller_name, verified: false }}
+                          averageRating={product.average_rating || 0}
+                          reviewCount={product.review_count || 0}
+                          soldCount={product.purchases || 0}
+                          warrantyPeriod={product.warranty_period || undefined}
+                          inStock={product.in_stock || 0}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Empty state - no subcategories and no products */}
+                {!isLoading && subcategories.length === 0 && products.length === 0 && (
+                  <div className="text-center py-12 px-4 text-muted-foreground">
+                    <Monitor className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm">Chưa có sản phẩm trong danh mục này</p>
+                    <button 
+                      onClick={handleViewAllCategory}
+                      className="mt-3 text-primary text-sm font-medium hover:underline"
+                    >
+                      Xem tất cả sản phẩm
+                    </button>
                   </div>
                 )}
               </>
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 };
 
