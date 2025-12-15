@@ -1151,6 +1151,44 @@ export type Database = {
         }
         Relationships: []
       }
+      subcategories: {
+        Row: {
+          created_at: string | null
+          icon_url: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          parent_category_id: string
+          sort_order: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          parent_category_id: string
+          sort_order?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          icon_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          parent_category_id?: string
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subcategories_parent_category_id_fkey"
+            columns: ["parent_category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       unmatched_transactions: {
         Row: {
           account_number: string | null
