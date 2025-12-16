@@ -95,11 +95,11 @@ const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
     enabled: !!selectedCategory?.id,
   });
 
-  // Fetch products when no subcategories
+  // Always fetch products for selected category
   const { data: products = [], isLoading: loadingProducts } = useQuery({
-    queryKey: ['category-products', selectedCategory?.name, subcategories.length],
+    queryKey: ['category-products', selectedCategory?.name],
     queryFn: async () => {
-      if (!selectedCategory?.name || subcategories.length > 0) return [];
+      if (!selectedCategory?.name) return [];
       
       const { data, error } = await supabase
         .from('products')
@@ -107,12 +107,12 @@ const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
         .eq('category', selectedCategory.name)
         .eq('status', 'active')
         .order('quality_score', { ascending: false })
-        .limit(12);
+        .limit(8);
       
       if (error) throw error;
       return data || [];
     },
-    enabled: !!selectedCategory?.name && subcategories.length === 0 && !loadingSubcategories,
+    enabled: !!selectedCategory?.name,
   });
 
   // Auto-select first category when modal opens
@@ -134,13 +134,13 @@ const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
   };
 
   const handleSubcategoryClick = (subcategory: Subcategory) => {
-    navigate(`/?category=${encodeURIComponent(selectedCategory?.name || '')}&subcategory=${encodeURIComponent(subcategory.name)}`);
+    navigate(`/search?category=${encodeURIComponent(selectedCategory?.name || '')}&subcategory=${encodeURIComponent(subcategory.name)}`);
     onClose();
   };
 
   const handleViewAllCategory = () => {
     if (selectedCategory) {
-      navigate(`/?category=${encodeURIComponent(selectedCategory.name)}`);
+      navigate(`/search?category=${encodeURIComponent(selectedCategory.name)}`);
       onClose();
     }
   };
@@ -150,7 +150,7 @@ const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
     onClose();
   };
 
-  const isLoading = loadingSubcategories || (subcategories.length === 0 && loadingProducts);
+  const isLoading = loadingSubcategories;
 
   return (
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -252,42 +252,56 @@ const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
                   </div>
                 )}
 
-                {/* Products Grid when no subcategories */}
-                {!isLoading && subcategories.length === 0 && products.length > 0 && (
+                {/* Products Grid - Always show */}
+                {!isLoading && products.length > 0 && (
+                  <>
+                    <div className="px-3 pt-3 pb-1 flex items-center justify-between">
+                      <span className="text-sm font-medium text-muted-foreground">Sản phẩm nổi bật</span>
+                      <button 
+                        onClick={handleViewAllCategory}
+                        className="text-xs text-primary font-medium hover:underline"
+                      >
+                        Xem tất cả →
+                      </button>
+                    </div>
+                    <div className="p-3 pt-1 grid grid-cols-2 gap-2">
+                      {products.map((product) => (
+                        <div key={product.id} onClick={() => handleProductClick(product.id)}>
+                          <EnhancedProductCard
+                            id={product.id}
+                            title={product.title}
+                            price={{ min: product.price, max: product.price }}
+                            image={product.image || '/placeholder.svg'}
+                            category={product.category}
+                            rating={product.average_rating || 0}
+                            reviews={product.review_count || 0}
+                            seller={{ name: product.seller_name, verified: false }}
+                            averageRating={product.average_rating || 0}
+                            reviewCount={product.review_count || 0}
+                            soldCount={product.purchases || 0}
+                            warrantyPeriod={product.warranty_period || undefined}
+                            inStock={product.in_stock || 0}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Loading products */}
+                {!isLoading && loadingProducts && (
                   <div className="p-3 grid grid-cols-2 gap-2">
-                    {products.map((product) => (
-                      <div key={product.id} onClick={() => handleProductClick(product.id)}>
-                        <EnhancedProductCard
-                          id={product.id}
-                          title={product.title}
-                          price={{ min: product.price, max: product.price }}
-                          image={product.image || '/placeholder.svg'}
-                          category={product.category}
-                          rating={product.average_rating || 0}
-                          reviews={product.review_count || 0}
-                          seller={{ name: product.seller_name, verified: false }}
-                          averageRating={product.average_rating || 0}
-                          reviewCount={product.review_count || 0}
-                          soldCount={product.purchases || 0}
-                          warrantyPeriod={product.warranty_period || undefined}
-                          inStock={product.in_stock || 0}
-                        />
-                      </div>
+                    {[...Array(4)].map((_, i) => (
+                      <Skeleton key={i} className="aspect-square rounded-lg" />
                     ))}
                   </div>
                 )}
 
-                {/* Empty state - no subcategories and no products */}
-                {!isLoading && subcategories.length === 0 && products.length === 0 && (
+                {/* Empty state - no products */}
+                {!isLoading && !loadingProducts && products.length === 0 && (
                   <div className="text-center py-12 px-4 text-muted-foreground">
                     <Monitor className="h-12 w-12 mx-auto mb-3 opacity-50" />
                     <p className="text-sm">Chưa có sản phẩm trong danh mục này</p>
-                    <button 
-                      onClick={handleViewAllCategory}
-                      className="mt-3 text-primary text-sm font-medium hover:underline"
-                    >
-                      Xem tất cả sản phẩm
-                    </button>
                   </div>
                 )}
               </>
