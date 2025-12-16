@@ -14,21 +14,27 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Search } from "lucide-react";
+import { Search, Grid3x3 } from "lucide-react";
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('q') || '';
-  const categoryParam = searchParams.get('category') || 'all';
+  const categoryParam = searchParams.get('category') || '';
+  const subcategoryParam = searchParams.get('subcategory') || '';
   
-  const [sortBy, setSortBy] = useState<SortOption>(searchQuery ? "relevance" : "newest");
+  // Determine if this is a category browse or search
+  const isCategoryBrowse = !searchQuery && categoryParam;
+  
+  const [sortBy, setSortBy] = useState<SortOption>(searchQuery ? "relevance" : "recommended");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [filters, setFilters] = useState<any>(null);
 
-  // Reset to relevance when search query changes
+  // Reset sort when search query changes
   useEffect(() => {
     if (searchQuery) {
       setSortBy("relevance");
+    } else {
+      setSortBy("recommended");
     }
   }, [searchQuery]);
 
@@ -46,15 +52,43 @@ const SearchResults = () => {
                   <BreadcrumbLink href="/">Trang chủ</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Tìm kiếm</BreadcrumbPage>
-                </BreadcrumbItem>
-                {searchQuery && (
+                {isCategoryBrowse ? (
                   <>
+                    <BreadcrumbItem>
+                      <BreadcrumbPage>Danh mục</BreadcrumbPage>
+                    </BreadcrumbItem>
                     <BreadcrumbSeparator />
                     <BreadcrumbItem>
-                      <BreadcrumbPage className="font-semibold">{searchQuery}</BreadcrumbPage>
+                      {subcategoryParam ? (
+                        <BreadcrumbLink href={`/search?category=${encodeURIComponent(categoryParam)}`}>
+                          {categoryParam}
+                        </BreadcrumbLink>
+                      ) : (
+                        <BreadcrumbPage className="font-semibold">{categoryParam}</BreadcrumbPage>
+                      )}
                     </BreadcrumbItem>
+                    {subcategoryParam && (
+                      <>
+                        <BreadcrumbSeparator />
+                        <BreadcrumbItem>
+                          <BreadcrumbPage className="font-semibold">{subcategoryParam}</BreadcrumbPage>
+                        </BreadcrumbItem>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <BreadcrumbItem>
+                      <BreadcrumbPage>Tìm kiếm</BreadcrumbPage>
+                    </BreadcrumbItem>
+                    {searchQuery && (
+                      <>
+                        <BreadcrumbSeparator />
+                        <BreadcrumbItem>
+                          <BreadcrumbPage className="font-semibold">{searchQuery}</BreadcrumbPage>
+                        </BreadcrumbItem>
+                      </>
+                    )}
                   </>
                 )}
               </BreadcrumbList>
@@ -62,20 +96,44 @@ const SearchResults = () => {
           </div>
         </div>
 
-        {/* Search Summary Bar */}
+        {/* Summary Bar */}
         <div className="bg-muted/30 border-b border-border">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Search className="h-5 w-5 text-primary" />
+                {isCategoryBrowse ? (
+                  <Grid3x3 className="h-5 w-5 text-primary" />
+                ) : (
+                  <Search className="h-5 w-5 text-primary" />
+                )}
               </div>
               <div>
-                <h1 className="text-lg md:text-xl font-bold">
-                  Kết quả tìm kiếm cho: <span className="text-primary">"{searchQuery}"</span>
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Khám phá sản phẩm phù hợp với nhu cầu của bạn
-                </p>
+                {isCategoryBrowse ? (
+                  <>
+                    <h1 className="text-lg md:text-xl font-bold">
+                      {subcategoryParam ? (
+                        <>
+                          <span className="text-muted-foreground">{categoryParam} &gt;</span>{' '}
+                          <span className="text-primary">{subcategoryParam}</span>
+                        </>
+                      ) : (
+                        <span className="text-primary">{categoryParam}</span>
+                      )}
+                    </h1>
+                    <p className="text-sm text-muted-foreground">
+                      Khám phá các sản phẩm trong danh mục này
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h1 className="text-lg md:text-xl font-bold">
+                      Kết quả tìm kiếm cho: <span className="text-primary">"{searchQuery}"</span>
+                    </h1>
+                    <p className="text-sm text-muted-foreground">
+                      Khám phá sản phẩm phù hợp với nhu cầu của bạn
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -107,7 +165,7 @@ const SearchResults = () => {
                 <div className="mt-6">
                   <ProductGrid 
                     searchTerm={searchQuery}
-                    category={categoryParam}
+                    category={categoryParam || 'all'}
                     sortBy={sortBy}
                   />
                 </div>
