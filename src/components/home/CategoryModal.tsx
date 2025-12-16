@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { X, Check, Monitor, User, Gamepad2, GraduationCap, FileText, BookOpen, Music, Briefcase } from "lucide-react";
+import { Check, Monitor, User, Gamepad2, GraduationCap, FileText, BookOpen, Music, Briefcase } from "lucide-react";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import EnhancedProductCard from "@/components/products/EnhancedProductCard";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -156,12 +156,8 @@ const CategoryModal = ({ isOpen, onClose }: CategoryModalProps) => {
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="bottom" className="h-[85vh] p-0 rounded-t-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <div />
+        <div className="flex items-center justify-center px-4 py-3 border-b border-border">
           <h2 className="text-lg font-bold text-foreground">Danh Mục Sản Phẩm</h2>
-          <button onClick={onClose} className="p-1 rounded-full hover:bg-muted">
-            <X className="h-5 w-5 text-muted-foreground" />
-          </button>
         </div>
 
         {/* Yellow Banner */}
