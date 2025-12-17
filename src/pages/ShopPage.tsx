@@ -12,8 +12,11 @@ import ShopVouchersSection from "@/components/shop/ShopVouchersSection";
 import ShopFeaturedCarousel from "@/components/shop/ShopFeaturedCarousel";
 import ShopProfileTab from "@/components/shop/ShopProfileTab";
 import ShopProductGrid from "@/components/shop/ShopProductGrid";
-import ShopPromoBanner from "@/components/shop/ShopPromoBanner";
 import ShopProductFilterBar, { type SortOption } from "@/components/shop/ShopProductFilterBar";
+import ShopHeroBannerCarousel from "@/components/shop/ShopHeroBannerCarousel";
+import ShopFlashDealBanner from "@/components/shop/ShopFlashDealBanner";
+import ShopCategoryLinks from "@/components/shop/ShopCategoryLinks";
+import ShopFeaturedGrid from "@/components/shop/ShopFeaturedGrid";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 const ShopPage = () => {
@@ -137,20 +140,55 @@ const ShopPage = () => {
           {/* Tab Content with spacing */}
           <div className="space-y-2 mt-2 mx-0 px-0 my-0 py-0">
             {activeTab === "home" && <>
-                {/* Promo Banner */}
-                <div className="bg-card">
-                  <ShopPromoBanner sellerId={seller.id} />
+                {/* Hero Banner Carousel */}
+                <div className="px-2">
+                  <ShopHeroBannerCarousel 
+                    shopBanner={seller.shop_banner}
+                    shopName={seller.full_name}
+                    shopDescription={seller.shop_description}
+                  />
                 </div>
                 
-                {/* Vouchers - 1 row scroll */}
+                {/* Vouchers */}
                 <ShopVouchersSection sellerId={seller.id} />
                 
-                {/* Featured Products */}
+                {/* Flash Deal Banner */}
+                <div className="px-2">
+                  <ShopFlashDealBanner sellerId={seller.id} />
+                </div>
+                
+                {/* Category Links */}
+                <div className="px-2">
+                  <ShopCategoryLinks 
+                    sellerId={seller.id} 
+                    onCategoryClick={(cat) => {
+                      if (cat) {
+                        setActiveTab("products");
+                      }
+                    }}
+                  />
+                </div>
+                
+                {/* Featured Products Carousels */}
                 <div className="bg-card">
-                  <ShopFeaturedCarousel products={products} title="Bán chạy nhất" />
+                  <ShopFeaturedCarousel 
+                    products={[...products].sort((a, b) => (b.purchases || 0) - (a.purchases || 0))} 
+                    title="🔥 Bán chạy nhất" 
+                  />
                 </div>
                 <div className="bg-card">
-                  <ShopFeaturedCarousel products={[...products].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())} title="Mới nhất" />
+                  <ShopFeaturedCarousel 
+                    products={[...products].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())} 
+                    title="✨ Mới nhất" 
+                  />
+                </div>
+                
+                {/* Featured Grid */}
+                <div className="px-2">
+                  <ShopFeaturedGrid 
+                    products={[...products].sort((a, b) => (b.quality_score || 0) - (a.quality_score || 0))}
+                    title="⭐ Sản phẩm nổi bật"
+                  />
                 </div>
               </>}
             
