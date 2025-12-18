@@ -35,3 +35,6 @@ verify_jwt = true
 
 [functions.send-delivery-email]
 verify_jwt = true
+
+[functions.send-zalo-notification]
+verify_jwt = false
