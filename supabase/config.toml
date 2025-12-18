@@ -38,3 +38,6 @@ verify_jwt = true
 
 [functions.send-zalo-notification]
 verify_jwt = false
+
+[functions.zalo-bot-webhook]
+verify_jwt = false
