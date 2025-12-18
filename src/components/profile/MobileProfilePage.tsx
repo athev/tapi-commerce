@@ -15,6 +15,7 @@ import BuyerPIWallet from "@/components/buyer/BuyerPIWallet";
 import BuyerServiceTickets from "@/components/buyer/BuyerServiceTickets";
 import OrderDetailsModal from "@/components/orders/OrderDetailsModal";
 import ReviewModal from "@/components/reviews/ReviewModal";
+import ZaloLinkSection from "./ZaloLinkSection";
 
 type ViewType = 'profile' | 'orders' | 'pi-wallet' | 'services';
 
@@ -183,8 +184,13 @@ const MobileProfilePage = ({ orders, reviewedOrders, onRefetchReviews }: MobileP
         onVouchers={() => {}}
       />
 
-      {/* Support Section */}
+      {/* Zalo Notification Section */}
       <div className="p-4">
+        <ZaloLinkSection />
+      </div>
+
+      {/* Support Section */}
+      <div className="p-4 pt-0">
         <h3 className="font-semibold mb-3">Hỗ trợ</h3>
         <Card className="divide-y">
           <button className="w-full flex items-center justify-between p-4 hover:bg-accent/50 transition-colors">

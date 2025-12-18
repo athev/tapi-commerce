@@ -832,6 +832,7 @@ export type Database = {
           shop_description: string | null
           slug: string | null
           total_products: number | null
+          zalo_user_id: string | null
         }
         Insert: {
           address?: string | null
@@ -850,6 +851,7 @@ export type Database = {
           shop_description?: string | null
           slug?: string | null
           total_products?: number | null
+          zalo_user_id?: string | null
         }
         Update: {
           address?: string | null
@@ -868,6 +870,7 @@ export type Database = {
           shop_description?: string | null
           slug?: string | null
           total_products?: number | null
+          zalo_user_id?: string | null
         }
         Relationships: []
       }
