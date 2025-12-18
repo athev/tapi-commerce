@@ -171,14 +171,20 @@ const ZaloLinkSection = () => {
               </p>
             </div>
 
-            <div className="p-3 rounded-lg bg-muted/50 space-y-2">
-              <p className="text-sm font-medium">Hướng dẫn lấy Zalo User ID:</p>
-              <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-                <li>Mở Zalo và tìm kiếm "TAPI Bot"</li>
-                <li>Nhắn tin bất kỳ để kích hoạt</li>
-                <li>Bot sẽ gửi lại Zalo User ID của bạn</li>
-                <li>Dán ID vào ô trên và nhấn Liên kết</li>
+            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 space-y-2">
+              <p className="text-sm font-medium text-blue-700 dark:text-blue-400">
+                📱 Hướng dẫn lấy Zalo User ID:
+              </p>
+              <ol className="text-xs text-muted-foreground space-y-1.5 list-decimal list-inside">
+                <li>Mở Zalo trên điện thoại</li>
+                <li>Tìm kiếm OA "<strong>TAPI Store</strong>"</li>
+                <li>Nhắn tin bất kỳ (VD: "xin chào")</li>
+                <li>Bot tự động gửi lại Zalo User ID</li>
+                <li>Copy ID và dán vào ô trên</li>
               </ol>
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-2">
+                💡 Chưa tìm thấy? Liên hệ hỗ trợ qua chat
+              </p>
             </div>
             
             <Button 
