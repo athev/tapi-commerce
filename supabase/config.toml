@@ -41,3 +41,9 @@ verify_jwt = false
 
 [functions.zalo-bot-webhook]
 verify_jwt = false
+
+[functions.zalo-oa-callback]
+verify_jwt = false
+
+[functions.zalo-oa-webhook]
+verify_jwt = false
