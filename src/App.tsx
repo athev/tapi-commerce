@@ -27,6 +27,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AccountantDashboard from "./pages/AccountantDashboard";
 import ShopPage from "./pages/ShopPage";
 import ZaloVerification from "./pages/ZaloVerification";
+import ZaloCallback from "./pages/ZaloCallback";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
           <Routes>
             {/* Zalo verification route - must be before catch-all */}
             <Route path="/zalo_verifierMisLTuNyHci3-kTZqjDVPIh2Yqd6j5yKDJWp.html" element={<ZaloVerification />} />
+            <Route path="/zalo-callback" element={<ZaloCallback />} />
             
             <Route path="/" element={<Index />} />
             <Route path="/search" element={<SearchResults />} />
