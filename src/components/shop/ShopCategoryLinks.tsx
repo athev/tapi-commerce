@@ -67,10 +67,47 @@ const ShopCategoryLinks = ({ sellerId, onCategoryClick }: ShopCategoryLinksProps
   if (categories.length === 0) return null;
 
   return (
-    <div className="bg-card rounded-lg p-3">
-      <h3 className="text-sm font-semibold text-foreground mb-3">Danh mục sản phẩm</h3>
+    <div className="bg-card rounded-lg p-4">
+      <h3 className="text-sm font-semibold text-foreground mb-4">Danh mục sản phẩm</h3>
       
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+      {/* Desktop: Grid layout */}
+      <div className="hidden md:grid md:grid-cols-7 gap-3">
+        {categories.map((category) => (
+          <button
+            key={category.name}
+            onClick={() => handleClick(category.name)}
+            className={cn(
+              "flex flex-col items-center gap-2 p-3 rounded-xl transition-all border",
+              selectedCategory === category.name
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-muted/50 hover:bg-muted text-foreground border-transparent hover:border-border"
+            )}
+          >
+            <div className={cn(
+              "p-2.5 rounded-full",
+              selectedCategory === category.name
+                ? "bg-primary-foreground/20"
+                : "bg-background shadow-sm"
+            )}>
+              {categoryIcons[category.name] || <Package className="h-5 w-5" />}
+            </div>
+            <span className="text-xs font-medium text-center line-clamp-1">
+              {category.name}
+            </span>
+            <span className={cn(
+              "text-[10px] font-medium",
+              selectedCategory === category.name
+                ? "text-primary-foreground/80"
+                : "text-muted-foreground"
+            )}>
+              {category.count} SP
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Mobile: Horizontal scroll */}
+      <div className="flex md:hidden gap-2 overflow-x-auto no-scrollbar pb-1">
         {categories.map((category) => (
           <button
             key={category.name}
