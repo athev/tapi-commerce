@@ -41,7 +41,7 @@ const ShopFlashDealBanner = ({ sellerId }: ShopFlashDealBannerProps) => {
         `)
         .gt('discount_percentage', 0)
         .eq('is_active', true)
-        .limit(10);
+        .limit(20);
 
       if (!variants || variants.length === 0) return;
 
@@ -54,7 +54,7 @@ const ShopFlashDealBanner = ({ sellerId }: ShopFlashDealBannerProps) => {
         .eq('seller_id', sellerId)
         .in('id', productIds)
         .eq('status', 'active')
-        .limit(3);
+        .limit(6);
 
       if (products) {
         const dealsWithDiscount = products.map(product => {
@@ -63,7 +63,7 @@ const ShopFlashDealBanner = ({ sellerId }: ShopFlashDealBannerProps) => {
             ...product,
             discount: variant?.discount_percentage || 0
           };
-        }).filter(p => p.discount > 0).slice(0, 3);
+        }).filter(p => p.discount > 0).slice(0, 6);
 
         setDealProducts(dealsWithDiscount);
       }
@@ -135,8 +135,38 @@ const ShopFlashDealBanner = ({ sellerId }: ShopFlashDealBannerProps) => {
         </div>
       </div>
 
-      {/* Deal Products */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar">
+      {/* Deal Products - Desktop: 6 columns grid */}
+      <div className="hidden md:grid md:grid-cols-6 gap-3">
+        {dealProducts.map((product) => (
+          <Link
+            key={product.id}
+            to={product.slug ? `/product/${product.slug}` : `/product/id/${product.id}`}
+            className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow group"
+          >
+            <div className="relative aspect-square">
+              <img
+                src={product.image || '/placeholder.svg'}
+                alt={product.title}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              <span className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+                -{product.discount}%
+              </span>
+            </div>
+            <div className="p-2.5">
+              <p className="text-sm text-foreground font-medium line-clamp-2 mb-1">
+                {product.title}
+              </p>
+              <p className="text-sm text-red-500 font-bold">
+                {formatPrice(product.price)}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Mobile: Horizontal scroll */}
+      <div className="flex md:hidden gap-2 overflow-x-auto no-scrollbar">
         {dealProducts.map((product) => (
           <Link
             key={product.id}
