@@ -1,8 +1,13 @@
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Store, MessageCircle, UserPlus, Heart } from "lucide-react";
+import { Store, MessageCircle, UserPlus, UserCheck, Heart, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import { useShopFollow } from "@/hooks/useShopFollow";
+import { useToast } from "@/hooks/use-toast";
+
 interface ShopHeaderProps {
   seller: {
     id: string;
@@ -12,23 +17,66 @@ interface ShopHeaderProps {
     slug?: string;
     seller_rating?: number;
   };
-  followersCount?: number;
 }
-const ShopHeader = ({
-  seller,
-  followersCount = 0
-}: ShopHeaderProps) => {
+
+const ShopHeader = ({ seller }: ShopHeaderProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { isFollowing, followersCount, loading, toggleFollow } = useShopFollow(seller.id);
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const formatFollowers = (count: number) => {
     if (count >= 1000) {
       return `${(count / 1000).toFixed(1)}k`;
     }
     return count.toString();
   };
-  return <div className="relative">
+
+  const handleFollowClick = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    await toggleFollow();
+    setIsProcessing(false);
+  };
+
+  const handleChatClick = () => {
+    if (!user) {
+      toast({
+        title: "Cần đăng nhập",
+        description: "Vui lòng đăng nhập để chat với người bán",
+        variant: "destructive",
+      });
+      navigate('/login');
+      return;
+    }
+
+    if (user.id === seller.id) {
+      toast({
+        title: "Không thể chat",
+        description: "Bạn không thể chat với chính mình",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Navigate to chat with seller parameter
+    navigate(`/chat?seller=${seller.id}`);
+  };
+
+  return (
+    <div className="relative">
       {/* Banner Section - Shorter height */}
       <div className="relative w-full h-24 md:h-32 overflow-hidden">
-        {seller.shop_banner ? <img src={seller.shop_banner} alt={`${seller.full_name} banner`} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-gradient-to-r from-primary via-primary/80 to-primary/60" />}
+        {seller.shop_banner ? (
+          <img 
+            src={seller.shop_banner} 
+            alt={`${seller.full_name} banner`} 
+            className="w-full h-full object-cover" 
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-r from-primary via-primary/80 to-primary/60" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
       </div>
 
@@ -71,18 +119,41 @@ const ShopHeader = ({
 
           {/* Action Buttons - Full width */}
           <div className="flex gap-2 mt-3">
-            <Button variant="outline" size="sm" className="flex-1 h-9">
-              <UserPlus className="h-4 w-4 mr-1.5" />
-              Theo dõi
+            <Button 
+              variant={isFollowing ? "default" : "outline"} 
+              size="sm" 
+              className="flex-1 h-9"
+              onClick={handleFollowClick}
+              disabled={isProcessing || loading}
+            >
+              {isProcessing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isFollowing ? (
+                <>
+                  <UserCheck className="h-4 w-4 mr-1.5" />
+                  Đang theo dõi
+                </>
+              ) : (
+                <>
+                  <UserPlus className="h-4 w-4 mr-1.5" />
+                  Theo dõi
+                </>
+              )}
             </Button>
             
-            <Button size="sm" onClick={() => navigate(`/chat?seller=${seller.slug || seller.id}`)} className="flex-1 h-9">
+            <Button 
+              size="sm" 
+              onClick={handleChatClick} 
+              className="flex-1 h-9"
+            >
               <MessageCircle className="h-4 w-4 mr-1.5" />
               Chat
             </Button>
           </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default ShopHeader;

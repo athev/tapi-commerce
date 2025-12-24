@@ -124,10 +124,10 @@ const ShopPage = () => {
       <main className="flex-1 pb-20 md:pb-0 bg-muted/50">
         {/* Container for desktop */}
         <div className="max-w-6xl mx-auto">
-          {/* Shop Header */}
-          <div className="bg-card">
-            <ShopHeader seller={seller} />
-          </div>
+        {/* Shop Header */}
+        <div className="bg-card">
+          <ShopHeader seller={seller} />
+        </div>
           
           {/* Stats Bar - Compact with separation */}
           <ShopStatsBar productsCount={products.length} rating={seller.seller_rating} responseRate={seller.response_rate} className="py-0 rounded-none border-none mx-[4px] my-[3px]" />
