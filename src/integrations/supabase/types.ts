@@ -820,6 +820,7 @@ export type Database = {
           avatar: string | null
           created_at: string
           email: string
+          followers_count: number | null
           full_name: string
           id: string
           is_online: boolean | null
@@ -839,6 +840,7 @@ export type Database = {
           avatar?: string | null
           created_at?: string
           email: string
+          followers_count?: number | null
           full_name: string
           id: string
           is_online?: boolean | null
@@ -858,6 +860,7 @@ export type Database = {
           avatar?: string | null
           created_at?: string
           email?: string
+          followers_count?: number | null
           full_name?: string
           id?: string
           is_online?: boolean | null
@@ -1123,6 +1126,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      shop_follows: {
+        Row: {
+          created_at: string | null
+          id: string
+          seller_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          seller_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          seller_id?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       site_settings: {
         Row: {
